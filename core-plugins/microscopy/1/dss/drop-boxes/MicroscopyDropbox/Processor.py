@@ -205,7 +205,6 @@ class Processor:
         # Assign the dataset to the experiment
         dataset.setExperiment(openBISExperiment)
         self._transaction.moveFile(fileName, dataset)
-        self._transaction.copyFile(fileName, dataset)
 
         # The following code registers each series in the file as an independent
         # dataset that shares the file (using hard-links)

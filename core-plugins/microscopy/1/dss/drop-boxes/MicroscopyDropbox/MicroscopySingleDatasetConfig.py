@@ -82,7 +82,7 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
     #     # Get the indices of series and channel from the channel code
     #     (seriesIndx, channelIndx) = self._getSeriesAndChannelNumbers(channelCode)
     #
-    #     if seriesIndx != self._seriesNum:
+    #     if self._seriesNum != -1 and seriesIndx != self._seriesNum:
     #         return
     #
     #     # Try extracting the channel colors for the given series
@@ -143,7 +143,7 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
             timepoint = id.timeSeriesIndex
 
             # Make sure to process only the relevant series
-            if series != -1 and series != self._seriesNum:
+            if self._seriesNum != -1 and series != self._seriesNum:
                 continue
 
             # Build the channel code
@@ -185,7 +185,7 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
         # Get the indices of series and channel from the channel code
         (seriesIndx, channelIndx) = self._getSeriesAndChannelNumbers(channelCode)
 
-        if seriesIndx != self._seriesNum:
+        if self._seriesNum != -1 and seriesIndx != self._seriesNum:
             return
 
         # Try extracting the channel colors for the given series
