@@ -32,7 +32,8 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
 
         @param metadataReader: MetadataReader object (with extracted metadata)
         @param seriesNum: Int Number of the series to register. All other series in
-                   the file will be ignored.
+                   the file will be ignored. Set to -1 to register all series 
+                   to the same dataset
         @param logger: logger object
         """
 
@@ -142,7 +143,7 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
             timepoint = id.timeSeriesIndex
 
             # Make sure to process only the relevant series
-            if series != self._seriesNum:
+            if series != -1 and series != self._seriesNum:
                 continue
 
             # Build the channel code

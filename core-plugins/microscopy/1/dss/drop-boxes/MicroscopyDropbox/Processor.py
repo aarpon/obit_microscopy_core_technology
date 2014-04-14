@@ -183,32 +183,58 @@ class Processor:
         # to the same file)
         num_series = bioFormatsProcessor.getNumSeries()
 
-         for i in range(num_series):
+        # Create a configuration object for current file
+        singleDatasetConfig = \
+             MicroscopySingleDatasetConfig(bioFormatsProcessor, self._logger, -1)
+        
+        # Create and register a dataset
+        dataset = self._transaction.createNewImageDataSet(singleDatasetConfig,
+                                                          java.io.File(fileName))
+        
+        # TEMP: Create a sample with auto-generated name
+        # This should be either replaced by meaningful samples, or dropped when
+        # openBIS will be fixed to allow for datasets to be registered to an
+        # experiment without the need for a sample to be registered and assigned
+        # as well. Please mind, that the sample MUST be assigned to the experiment.
+        sample = self._transaction.createNewSampleWithGeneratedCode("MICROSCOPY",
+                                                                    "MICROSCOPY_SAMPLE_TYPE")
 
-            # Create a configuration object for current series
-            singleDatasetConfig = \
-                MicroscopySingleDatasetConfig(bioFormatsProcessor,
-                                              self._logger, i)
+        sample.setExperiment(openBISExperiment)
+        dataset.setSample(sample)
 
-            # Create and register a dataset
-            dataset = self._transaction.createNewImageDataSet(singleDatasetConfig,
-                                                              java.io.File(fileName))
+        # Assign the dataset to the experiment
+        dataset.setExperiment(openBISExperiment)
+        self._transaction.moveFile(fileName, dataset)
+        self._transaction.copyFile(fileName, dataset)
 
-            # TEMP: Create a sample with auto-generated name
-            # This should be either replaced by meaningful samples, or dropped when
-            # openBIS will be fixed to allow for datasets to be registered to an
-            # experiment without the need for a sample to be registered ans assigned
-            # as well. Please mind, that the sample MUST be assigned to the experiment.
-            sample = self._transaction.createNewSampleWithGeneratedCode("MICROSCOPY",
-                                                                        "MICROSCOPY_SAMPLE_TYPE")
+        # The following code registers each series in the file as an independent
+        # dataset that shares the file (using hard-links)
+        #for i in range(num_series):
+        #
+        #    # Create a configuration object for current series
+        #    singleDatasetConfig = \
+        #        MicroscopySingleDatasetConfig(bioFormatsProcessor,
+        #                                      self._logger, i)
+        #
+        #    # Create and register a dataset
+        #    dataset = self._transaction.createNewImageDataSet(singleDatasetConfig,
+        #                                                      java.io.File(fileName))
+        #
+        #    # TEMP: Create a sample with auto-generated name
+        #    # This should be either replaced by meaningful samples, or dropped when
+        #    # openBIS will be fixed to allow for datasets to be registered to an
+        #    # experiment without the need for a sample to be registered and assigned
+        #    # as well. Please mind, that the sample MUST be assigned to the experiment.
+        #    sample = self._transaction.createNewSampleWithGeneratedCode("MICROSCOPY",
+        #                                                                "MICROSCOPY_SAMPLE_TYPE")
 
-            sample.setExperiment(openBISExperiment)
-            dataset.setSample(sample)
+        #    sample.setExperiment(openBISExperiment)
+        #    dataset.setSample(sample)
 
-            # Assign the dataset to the experiment
-            dataset.setExperiment(openBISExperiment)
-            self._transaction.copyFile(fileName, dataset,
-                                       os.path.basename(fileName), True)
+        #    # Assign the dataset to the experiment
+        #    dataset.setExperiment(openBISExperiment)
+        #    self._transaction.copyFile(fileName, dataset,
+        #                               os.path.basename(fileName), True)
 
 
     def register(self, tree):
