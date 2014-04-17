@@ -158,8 +158,8 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
             imageMetadata.timepoint = timepoint
             imageMetadata.depth = plane
             imageMetadata.channelCode = channelCode
+            imageMetadata.tileNumber = self._seriesNum
             imageMetadata.well = "IGNORED"
-            imageMetadata.tileNumber = 1
 
             # Append metadata for current image
             metaData.append(imageMetadata)
