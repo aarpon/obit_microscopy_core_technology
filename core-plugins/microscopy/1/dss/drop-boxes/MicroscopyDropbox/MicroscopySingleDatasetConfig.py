@@ -85,7 +85,8 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
             channelNames = \
             self._metadataReader.getMetadata()[seriesIndx]['channelNames']
         except IndexError:
-            err = "Could not channel name for series " + str(seriesIndx) + \
+            err = "MICROSCOPYSINGLEDATASETCONFIG::createChannel(): " + \
+            "Could not create channel name for series " + str(seriesIndx) + \
             " from MetadataReader."
             self._logger.error(err)
             raise(err)
@@ -94,7 +95,8 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
         try:
             name = channelNames[channelIndx]
         except:
-            err = "Could not extract name with index " + channelIndx
+            err = "MICROSCOPYSINGLEDATASETCONFIG::createChannel(): " + \
+            "Could not extract name with index " + channelIndx
             self._logger.error(err)
             raise(err)
     
@@ -107,8 +109,9 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
             channelColors = \
             self._metadataReader.getMetadata()[seriesIndx]['channelColors']
         except IndexError:
-            err = "Could not extract channel colors for series " + str(seriesIndx) + \
-                  " from MetadataReader."
+            err = "MICROSCOPYSINGLEDATASETCONFIG::createChannel(): " + \
+            "Could not extract channel colors for series " + str(seriesIndx) + \
+            " from MetadataReader."
             self._logger.error(err)
             raise(err)
 
@@ -119,20 +122,21 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
             G = color[1]
             B = color[2]
         except:
-            err = "Could not extract color with index " + channelIndx
+            err = "MICROSCOPYSINGLEDATASETCONFIG::createChannel(): " + \
+            "Could not extract color with index " + channelIndx
             self._logger.error(err)
             raise(err)
 
         # Log
-        self._logger.info("getChannelsColorRGB(): channel code " +
-                     channelCode + " has color (" + str(R) + ", " +
-                     str(G) + ", " + str(B) + ")")
+        self._logger.info("MICROSCOPYSINGLEDATASETCONFIG::createChannel(): " +
+                          channelCode + " has color (" + str(R) + ", " +
+                          str(G) + ", " + str(B) + ")")
 
         # Create the ChannelColorRGB object
         colorRGB = ChannelColorRGB(R, G, B)
     
         # Log
-        self._logger.info("createChannel(): channel code " + \
+        self._logger.info("MICROSCOPYSINGLEDATASETCONFIG::createChannel(): " +
                      channelCode + " has name " + name)
     
         # Return the color
@@ -181,18 +185,19 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
             imageMetadata.timepoint = timepoint
             imageMetadata.depth = plane
             imageMetadata.channelCode = channelCode
-            imageMetadata.tileNumber = self._seriesNum
+            imageMetadata.tileNumber = 1 # + self._seriesNum
             imageMetadata.well = "IGNORED"
 
             # Append metadata for current image
             metaData.append(imageMetadata)
 
             # Log image geometry information
-            self._logger.info("Current image: series = " + str(series) +
-                         " channel = " + str(ch) +
-                         " plane = " + str(plane) +
-                         " timepoint = " + str(timepoint) +
-                         " channel code = " + channelCode)
+            self._logger.info("MICROSCOPYSINGLEDATASETCONFIG::extractImagesMetadata(): " +
+                        "Current image: series = " + str(series) +
+                        " channel = " + str(ch) +
+                        " plane = " + str(plane) +
+                        " timepoint = " + str(timepoint) +
+                        " channel code = " + channelCode)
 
         # Now return the metaData array
         return metaData
@@ -209,7 +214,8 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
         p = re.compile("SERIES-(\d+)_CHANNEL-(\d+)")
         m = p.match(channelCode)
         if m is None or len(m.groups()) != 2:
-            err = "Could not extract series and channel number!"
+            err = "MICROSCOPYSINGLEDATASETCONFIG::_getSeriesAndChannelNumbers(): " + \
+            "Could not extract series and channel number!"
             self._logger.error(err)
             raise Exception(err)
 

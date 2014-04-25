@@ -72,14 +72,17 @@ class Processor:
         expId = expId + "_" + self.getCustomTimeStamp()
 
         # Create the experiment
-        self._logger.info("Register experiment %s" % expId)
+        self._logger.info("PROCESSOR::createExperiment(): " + 
+                          "Register experiment %s" % expId)
         exp = self._transaction.createNewExperiment(expId, expType)
         if not exp:
-            msg = "Could not create experiment " + expId + "!"
+            msg = "PROCESSOR::createExperiment(): " + \
+            "Could not create experiment " + expId + "!"
             self._logger.error(msg)
             raise Exception(msg)
         else:
-            self._logger.info("Created experiment with ID " + expId + ".")
+            self._logger.info("PROCESSOR::createExperiment(): " + 
+                              "Created experiment with ID " + expId + ".")
 
         # Store the name
         exp.setPropertyValue("MICROSCOPY_EXPERIMENT_NAME", expName)
@@ -125,7 +128,8 @@ class Processor:
         openBISExperiment = self.createExperiment(openBISIdentifier,
                                                   expName, openBISExpType)
         if not openBISExperiment:
-            msg = "Could not create experiment " + openBISIdentifier
+            msg = "PROCESSOR::processExperiment(): " + \
+            "Could not create experiment " + openBISIdentifier
             self._logger.error(msg)
             raise Exception(msg)
 
@@ -177,18 +181,32 @@ class Processor:
 
         # Log the number of series found
         num_series = bioFormatsProcessor.getNumSeries()
-        self._logger.info("File " + self._incoming.getName() + " contains " + str(num_series) + " series.")
+        self._logger.info("PROCESSOR::processMicroscopyFile(): " +
+                          "File " + self._incoming.getName() + " contains " +
+                           str(num_series) + " series.")
         image_data_set = None
         for i in range(num_series):
             # Create a configuration object
-            singleDatasetConfig = MicroscopySingleDatasetConfig(bioFormatsProcessor, self._logger, i)
+            singleDatasetConfig = MicroscopySingleDatasetConfig(bioFormatsProcessor,
+                                                                self._logger, i)
             if image_data_set is None:
-                dataset = self._transaction.createNewImageDataSet(singleDatasetConfig, java.io.File(fileName))
+                self._logger.info("PROCESSOR::processMicroscopyFile(): " +
+                                  "Creating new image dataset for file " +
+                                   str(fileName))
+                dataset = self._transaction.createNewImageDataSet(singleDatasetConfig,
+                                                                  java.io.File(fileName))
+                self._logger.info("PROCESSOR::processMicroscopyFile(): " +
+                                  "Dataset is " + str(dataset))
                 image_data_set = dataset
                 self._transaction.moveFile(fileName, image_data_set)
             else:
-                dataset = self._transaction.createNewImageDataSetFromDataSet(singleDatasetConfig, image_data_set)
-            sample = self._transaction.createNewSampleWithGeneratedCode("MICROSCOPY", "MICROSCOPY_SAMPLE_TYPE")
+                self._logger.info("PROCESSOR::processMicroscopyFile(): " +
+                                  "Creating new image dataset for dataset " +
+                                  str(image_data_set))
+                dataset = self._transaction.createNewImageDataSetFromDataSet(singleDatasetConfig,
+                                                                             image_data_set)
+            sample = self._transaction.createNewSampleWithGeneratedCode("MICROSCOPY",
+                                                                        "MICROSCOPY_SAMPLE_TYPE")
             sample.setExperiment(openBISExperiment)
             dataset.setSample(sample)
     
@@ -208,7 +226,8 @@ class Processor:
             # The tag of the immediate children of the root experimentNode
             # must be Experiment
             if experimentNode.tag != "Experiment":
-                msg = "Expected Experiment node, found " + experimentNode.tag
+                msg = "PROCESSOR::register(): " + \
+                      "Expected Experiment node, found " + experimentNode.tag
                 self._logger.error(msg)
                 raise Exception(msg)
 
@@ -220,8 +239,9 @@ class Processor:
             for microscopyFileNode in experimentNode:
 
                 if microscopyFileNode.tag != "MicroscopyFile":
-                    msg = "Expected MicroscopyFile node (found " + \
-                          microscopyFileNode.tag + "!"
+                    msg = "PROCESSOR::register(): " + \
+                    "Expected MicroscopyFile node (found " + \
+                          microscopyFileNode.tag + ")!"
                     self._logger.error(msg)
                     raise Exception(msg)
 
@@ -229,7 +249,8 @@ class Processor:
                 self.processMicroscopyFile(microscopyFileNode, openBISExperiment)
 
         # Log that we are finished with the registration
-        self._logger.info("REGISTER: Registration completed")
+        self._logger.info("PROCESSOR::register(): " + 
+                          "Registration completed")
 
 
     def run(self):
@@ -237,17 +258,21 @@ class Processor:
 
         # Make sure that incoming is a folder
         if not self._incoming.isDirectory():
-            msg = "Incoming MUST be a folder!"
+            msg = "PROCESSOR::run(): " + \
+            "Incoming MUST be a folder!"
             self._logger.error(msg)
             raise Exception(msg)
 
         # Log
-        self._logger.info("Incoming folder: " + self._incoming.getAbsolutePath())
+        self._logger.info("PROCESSOR::run(): " +
+                          "Incoming folder: " + 
+                          self._incoming.getAbsolutePath())
 
         # There must be just one subfolder: the user subfolder
         subFolders = self.getSubFolders()
         if len(subFolders) != 1:
-            msg = "Expected user subfolder!"
+            msg = "PROCESSOR::run(): " + \
+            "Expected user subfolder!"
             self._logger.error(msg)
             raise Exception(msg)
 
@@ -258,7 +283,8 @@ class Processor:
         # In the user subfolder we must find the data_structure.ois file
         dataFileName = os.path.join(userFolder, "data_structure.ois")
         if not os.path.exists(dataFileName):
-            msg = "File data_structure.ois not found!"
+            msg = "PROCESSOR::run(): " + \
+            "File data_structure.ois not found!"
             self._logger.error(msg)
             raise Exception(msg)
 
@@ -273,14 +299,16 @@ class Processor:
                 propertiesFile = os.path.join(self._incoming.getAbsolutePath(),
                                               line)
                 propertiesFileList.append(propertiesFile)
-                self._logger.info("Found: " + str(propertiesFile))
+                self._logger.info("PROCESSOR::run(): " +
+                                  "Found: " + str(propertiesFile))
         finally:
             f.close()
 
         # Process (and ultimately register) all experiments
         for propertiesFile in propertiesFileList:
             # Log
-            self._logger.info("* * * Processing: " + propertiesFile)
+            self._logger.info("PROCESSOR::run(): " +
+                              "Processing: " + propertiesFile)
 
             # Read the properties file into an ElementTree
             tree = xml.parse(propertiesFile)
