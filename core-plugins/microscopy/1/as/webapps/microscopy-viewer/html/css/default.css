@@ -2,19 +2,16 @@ body {
     font-family: Sans-serif;
 }
 
-#detailViewContainer {
-}
-
 #detailViewAction {
     min-height: 60px;
     vertical-align: middle;
 }
 
-#treeView {
-}
-          
-#detailViewSample {
+#detailView {
 }
 
-#detailView {
+#viewer {
+    min-height: 60px;
+    border-style: dashed;
+    border-radius: 10px;
 }
