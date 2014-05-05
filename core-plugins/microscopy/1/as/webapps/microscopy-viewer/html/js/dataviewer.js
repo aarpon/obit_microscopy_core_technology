@@ -21,6 +21,7 @@ function DataViewer() {
  */
 DataViewer.prototype.displayExperimentInfo = function(exp) {
 
+    // Get the detail view
     detailView = $("#detailView");
     detailView.empty();
 
@@ -48,4 +49,21 @@ DataViewer.prototype.displayExperimentInfo = function(exp) {
     detailView.append(
             "<p>" + spOp + "Experiment code" + spCl + "</p>" +
             "<p>" + code + "</p>");
+
+    // Add actions (placeholder)
+    detailView.append(
+            "<p><span class=\"label label-warning\">Actions</span></p>" +
+            "<p>" + "..." + "</p>");
+
+    // Get the parameter view
+    paramView = $("#paramView");
+    paramView.empty();
+
+    // Add the parameters (placeholder)
+    paramView.append(
+        "<p>" + spOp + "Acquisition parameters" + spCl + "</p>"
+    );
+
+    // These will be later queried from the experiment
+    paramView.append("<p>...</p>");
 };
