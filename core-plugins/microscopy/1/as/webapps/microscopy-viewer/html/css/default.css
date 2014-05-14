@@ -2,6 +2,11 @@ body {
     font-family: Sans-serif;
 }
 
+#experimentNameView {
+    min-height: 20px;
+    vertical-align: middle;
+}
+
 #detailViewAction {
     min-height: 60px;
     vertical-align: middle;
