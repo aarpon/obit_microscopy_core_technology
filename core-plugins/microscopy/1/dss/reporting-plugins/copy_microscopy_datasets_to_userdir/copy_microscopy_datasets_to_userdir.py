@@ -98,6 +98,10 @@ class Mover():
     def __init__(self, experimentId, mode, userId, properties):
         '''Constructor'''
 
+        # Store the valid file extensions
+        self._validExtensions = self._getValidExtensions()
+        self._regexValidExtensions = self._getRegexValidExtensions()
+
         # Store properties
         self._properties = properties
 
@@ -229,6 +233,43 @@ class Mover():
     # Private methods
     # =========================================================================
 
+    def _getValidExtensions(self):
+        """Build an array with all valid microscopy file extensions."""
+
+        ext = [ "nd2", "czi", "zvi", "lsm", "stk", "tif", "tiff", "lif",
+                "liff", "ics", "ids", "ims", "oib", "oif", "ome", "r3d",
+                "dicom", "dm3", "lei", "png", "jp2", "jpg", "1sc", "2",
+                "2fl", "3", "4", "5", "acff", "afm", "aim", "al3d", "am",
+                "amiramesh", "apl", "arf", "avi", "bip", "bmp", "c01",
+                "cfg", "cr2", "crw", "cxd", "dat", "dcm", "dm2", "dti",
+                "dv", "eps", "epsi", "exp", "fdf", "fff", "ffr", "fits",
+                "flex", "fli", "frm", "gel", "gif", "grey", "hdr", "hed",
+                "his", "htd", "html", "hx", "img", "inr", "ipl", "ipm",
+                "ipw", "jpk", "jpx", "l2d", "labels", "lim", "mdb", "mea",
+                "mnc", "mng", "mod", "mov", "mrc", "mrw", "mtb", "mvd2",
+                "naf", "nd", "ndpi", "nef", "nhdr", "nrrd", "obsep", "par",
+                "pcx", "pds", "pgm", "pic", "pict", "pnl", "pr3", "ps",
+                "psd", "raw", "res", "scn", "sdt", "seq", "sld", "sm2",
+                "sm3", "spi", "stp", "svs", "sxm", "tfr", "tga", "tnb",
+                "top", "txt", "v", "vms", "vsi", "vws", "wat", "xdce",
+                "xml", "xqd", "xqf", "xv", "xys", "zfp", "zfr" ]
+
+        return ext
+
+
+    def _getRegexValidExtensions(self):
+        """Build a regex to use to filter dataset files by extension."""
+
+        reg = ".*\.("
+        for ext in self._validExtensions:
+            reg += ext + "|"
+        
+        reg = reg[:-1]
+        reg += ")"
+        
+        return reg
+
+
     def _copyFilesForExperiment(self):
         """
         Copies the microscopy files in the experiment to the user directory.
@@ -292,13 +333,14 @@ class Mover():
         dataSetFiles = []
         for dataSet in dataSets:
             content = contentProvider.getContent(dataSet.getDataSetCode())
-            nodes = content.listMatchingNodes("original", ".*\.nd2")
+            nodes = content.listMatchingNodes("original", 
+                                              self._regexValidExtensions)
             if nodes is not None:
                 for node in nodes:
                     fileName = node.tryGetFile()
                     if fileName is not None:
                         fileName = str(fileName)
-                        if fileName.lower().endswith(".nd2"):
+                        if self._isValidMicroscopyFile(fileName):
                             dataSetFiles.append(fileName)
 
         if len(dataSetFiles) == 0:
@@ -306,6 +348,16 @@ class Mover():
 
         # Return the files
         return dataSetFiles
+
+
+    def _isValidMicroscopyFile(self, fileName):
+        """Checks whether the file has a compatible extension."""
+
+        for validExt in self._validExtensions:
+            fileName.lower().endswith("." + validExt)
+            return True
+
+        return False
 
 
     def _copyFile(self, source, dstDir):
