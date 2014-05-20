@@ -142,7 +142,9 @@ class Processor:
         openBISExperiment.setPropertyValue("MICROSCOPY_EXPERIMENT_DESCRIPTION",
                                            description)
 
-        # Set the acquisition hardware
+        # Get the series metadata from the XML file otherwise parse the file
+        
+        
         # TODO: Add this
         # openBISExperiment.setPropertyValue("MICROSCOPY_EXPERIMENT_ACQ_HARDWARE",
         #                                   acqHardware)
@@ -173,19 +175,41 @@ class Processor:
         relativeFileName = microscopyFileNode.attrib.get("relativeFileName")
         fileName = os.path.join(self._incoming.getAbsolutePath(), relativeFileName)
 
-        # Instantiate a BioFormatsProcessor
-        bioFormatsProcessor = BioFormatsProcessor(fileName, self._logger)
+        # Check if the series metadata has been extracted already (i.e. if
+        # the microscopyFileNode has at least one child), otherwise
+        # process it
+        if len(microscopyFileNode) == 0:
+            
+            # Instantiate a BioFormatsProcessor
+            bioFormatsProcessor = BioFormatsProcessor(fileName, self._logger)
 
-        # Extract and store metadata
-        bioFormatsProcessor.extractMetadata()
+            # Extract series metadata
+            bioFormatsProcessor.parse()
 
-        # Log the number of series found
-        num_series = bioFormatsProcessor.getNumSeries()
+            # Get the metadata from the BioFormatsProcessor object
+            seriesMetadata = bioFormatsProcessor.getMetadataXML()
+
+            # Get the number of series
+            num_series = bioFormatsProcessor.getNumSeries()
+        
+        else:
+            
+            # Get the metadata from the XML file
+            seriesMetadata = []
+            for series in microscopyFileNode:
+                seriesMetadata.append(series.attrib)
+
+            # Get the number of series
+            num_series = len(microscopyFileNode)
+
         self._logger.info("PROCESSOR::processMicroscopyFile(): " +
                           "File " + self._incoming.getName() + " contains " +
                            str(num_series) + " series.")
+        
+        # Register all series in the file
         image_data_set = None
         for i in range(num_series):
+            
             # Create a configuration object
             singleDatasetConfig = MicroscopySingleDatasetConfig(bioFormatsProcessor,
                                                                 self._logger, i)
@@ -209,6 +233,9 @@ class Processor:
                                                                         "MICROSCOPY_SAMPLE_TYPE")
             sample.setExperiment(openBISExperiment)
             dataset.setSample(sample)
+            
+            # Store the metadata in the property
+            dataset.setProperty("MICROSCOPY_IMG_CONTAINER_METADATA", seriesMetadata)
     
 
     def register(self, tree):
