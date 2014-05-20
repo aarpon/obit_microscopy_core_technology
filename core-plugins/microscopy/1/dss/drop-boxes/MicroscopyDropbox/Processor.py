@@ -191,17 +191,17 @@ class Processor:
             bioFormatsProcessor.parse()
 
             # Get the metadata from the BioFormatsProcessor object
-            seriesMetadata = bioFormatsProcessor.getMetadataXML()
+            allSeriesMetadataXML = bioFormatsProcessor.getMetadataXML()
 
             # Get the number of series
             num_series = bioFormatsProcessor.getNumSeries()
-        
+
         else:
-            
+
             # Get the metadata from the XML file
-            seriesMetadata = []
+            allSeriesMetadataXML = []
             for series in microscopyFileNode:
-                seriesMetadata.append(series.attrib)
+                allSeriesMetadataXML.append(series.attrib)
 
             # Get the number of series
             num_series = len(microscopyFileNode)
@@ -213,13 +213,14 @@ class Processor:
         # Register all series in the file
         image_data_set = None
         for i in range(num_series):
-            
+
             # Create a configuration object
-            singleDatasetConfig = MicroscopySingleDatasetConfig(bioFormatsProcessor,
+            singleDatasetConfig = MicroscopySingleDatasetConfig(allSeriesMetadataXML,
                                                                 self._logger, i)
-            
+
             # Extract the metadata associated to this series
-            seriesMetadata = 
+            seriesMetadata = allSeriesMetadataXML[i]
+            
             if image_data_set is None:
                 
                 # Register the file for the first time (for series 0)
