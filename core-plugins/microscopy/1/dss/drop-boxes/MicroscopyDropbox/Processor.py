@@ -183,6 +183,10 @@ class Processor:
             # Instantiate a BioFormatsProcessor
             bioFormatsProcessor = BioFormatsProcessor(fileName, self._logger)
 
+            self._logger.info("PROCESSOR::processMicroscopyFile(): " +
+                          "Parsing file with bio-formats library version " + 
+                          bioFormatsProcessor.bioformats_version())
+
             # Extract series metadata
             bioFormatsProcessor.parse()
 
@@ -213,30 +217,58 @@ class Processor:
             # Create a configuration object
             singleDatasetConfig = MicroscopySingleDatasetConfig(bioFormatsProcessor,
                                                                 self._logger, i)
+            
+            # Extract the metadata associated to this series
+            seriesMetadata = 
             if image_data_set is None:
+                
+                # Register the file for the first time (for series 0)
+                
+                # Log
                 self._logger.info("PROCESSOR::processMicroscopyFile(): " +
                                   "Creating new image dataset for file " +
                                    str(fileName))
+                
+                # Create an image dataset
                 dataset = self._transaction.createNewImageDataSet(singleDatasetConfig,
                                                                   java.io.File(fileName))
-                self._logger.info("PROCESSOR::processMicroscopyFile(): " +
-                                  "Dataset is " + str(dataset))
+                
+                # Store the metadata in the MICROSCOPY_IMG_CONTAINER_METADATA property
+                dataset.setProperty("MICROSCOPY_IMG_CONTAINER_METADATA", seriesMetadata)
+
+                # Now store a reference to the first dataset
                 image_data_set = dataset
+                
+                # Move the file
                 self._transaction.moveFile(fileName, image_data_set)
+
             else:
+                
+                # Register subsequent series to point to the same file
+                
+                # Log
                 self._logger.info("PROCESSOR::processMicroscopyFile(): " +
                                   "Creating new image dataset for dataset " +
                                   str(image_data_set))
+                
+                # Create an image dataset that points to an exising one
+                # (and points to its file)
                 dataset = self._transaction.createNewImageDataSetFromDataSet(singleDatasetConfig,
                                                                              image_data_set)
+
+                # Store the metadata in the MICROSCOPY_IMG_CONTAINER_METADATA property
+                dataset.setProperty("MICROSCOPY_IMG_CONTAINER_METADATA", seriesMetadata)
+
+            # Create a sample for the dataset
             sample = self._transaction.createNewSampleWithGeneratedCode("MICROSCOPY",
                                                                         "MICROSCOPY_SAMPLE_TYPE")
-            sample.setExperiment(openBISExperiment)
-            dataset.setSample(sample)
             
-            # Store the metadata in the property
-            dataset.setProperty("MICROSCOPY_IMG_CONTAINER_METADATA", seriesMetadata)
-    
+            # Set the experiment
+            sample.setExperiment(openBISExperiment)
+            
+            # Set the sample
+            dataset.setSample(sample)
+
 
     def register(self, tree):
         """Register the Experiment using the parsed properties file.

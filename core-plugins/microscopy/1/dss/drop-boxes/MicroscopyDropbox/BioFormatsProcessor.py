@@ -52,6 +52,13 @@ class BioFormatsProcessor:
         self._metadataStore = self._reader.getMetadataStore()
 
 
+    def bioformats_version(self):
+        """Return the version of the bio-formats library used for parsing the
+        metadata information."""
+
+        return str(FormatTools.VERSION)
+
+
     def parse(self):
         """Scan the metadata for metadata information and stores it."""
         
@@ -154,14 +161,16 @@ class BioFormatsProcessor:
     def getMetadataXML(self):
         """
         Return the extracted metadata in an array of Annotation Tool-
-        compatible XML nodes.
+        compatible XML nodes sorted by series number.
         """
         
         xml = []
-        for key in self._metadata.keys():
-            
+        keys = self._metadata.keys()
+        keys.sort()
+        for key in keys:
+
             # Create an XML node (the key is "series_n", with n = 0, 1, ...)
-            node = ET.Element(key)
+            node = ET.Element("MicroscopyFileSeries")
 
             # Get dictionary of metadata attributes for current series
             d = self._metadata[key]
