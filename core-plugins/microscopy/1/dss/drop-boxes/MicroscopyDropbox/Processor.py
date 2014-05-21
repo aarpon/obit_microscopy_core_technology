@@ -236,6 +236,9 @@ class Processor:
             # XML to store it in the MICROSCOPY_IMG_CONTAINER_METADATA property
             # of the MICROSCOPY_IMG_CONTAINER_METADATA (series) dataset type
             seriesMetadataXML = self.dictToXML(allSeriesMetadata[i])
+            
+            # Log the content of the metadata
+            self._logger.info("Series metadata (XML): " + str(seriesMetadataXML))
 
             if image_data_set is None:
                 
