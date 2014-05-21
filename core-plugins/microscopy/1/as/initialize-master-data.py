@@ -102,16 +102,42 @@ prop_type_MICROSCOPY_IMG_CONTAINER_METADATA.setInternalNamespace(False)
 script_MICROSCOPY_SERIES_METADATA_EDITOR = tr.getOrCreateNewScript('MICROSCOPY_SERIES_METADATA_EDITOR')
 script_MICROSCOPY_SERIES_METADATA_EDITOR.setName('MICROSCOPY_SERIES_METADATA_EDITOR')
 script_MICROSCOPY_SERIES_METADATA_EDITOR.setDescription('Plug-in for viewing and editing microscopy series metadata information.')
-script_MICROSCOPY_SERIES_METADATA_EDITOR.setScript('''def configureUI():
+script_MICROSCOPY_SERIES_METADATA_EDITOR.setScript('''import xml.etree.ElementTree as ET
+
+def configureUI():
+
+    # Create a table builder
     tableBuilder = createTableBuilder()
-    tableBuilder.addHeader("Metadata")
-    row = tableBuilder.addRow()
-    row.setCell("Test", "Test")
+
+    try:
+
+        # Get the property value and create an XML tree
+        root = ET.fromstring(property.getValue().encode('UTF-8'))
+
+        # Extract and sort the metadata attributes
+        keys = root.attrib.keys()
+        keys.sort()
+
+        # Create the header
+        for key in keys: 
+            tableBuilder.addHeader(key)
+
+        # Fill in the values
+        row = tableBuilder.addRow()
+        for key in keys:
+            row.setCell(key, root.attrib[key])
+
+    except Exception:
+
+        # Report an error
+        tableBuilder.addHeader("Error")
+        row = tableBuilder.addRow()
+        row.setCell("Error", "Could not retrieve metadata information.")
+
+    # Return the table
     property.setOwnTab(True)
     uiDesc = property.getUiDescription()
     uiDesc.useTableOutput(tableBuilder.getTableModel())
-
-
 ''')
 script_MICROSCOPY_SERIES_METADATA_EDITOR.setEntityForScript('DATA_SET')
 script_MICROSCOPY_SERIES_METADATA_EDITOR.setScriptType('MANAGED_PROPERTY')
