@@ -7,7 +7,7 @@ Created on Feb 20, 2014
 import java.io.File
 import os
 import re
-import xml.etree.ElementTree as xml
+import xml.etree.ElementTree as ET
 from datetime import datetime
 from BioFormatsProcessor import BioFormatsProcessor
 from MicroscopySingleDatasetConfig import MicroscopySingleDatasetConfig
@@ -34,6 +34,23 @@ class Processor:
 
         # Set up logger
         self._logger = logger
+
+
+    def dictToXML(self, d):
+        """Converts a dictionary into an XML string."""
+
+        # Create an XML node
+        node = ET.Element("MicroscopyFileSeries")
+
+        # Add all attributes to the XML node
+        for k, v in d.iteritems():
+            node.set(k, str(v))
+
+        # Convert to XML string
+        xml = ET.tostring(node)
+
+        # Return the XML string
+        return xml
 
     def getCustomTimeStamp(self):
         """Create an univocal time stamp based on the current date and time
@@ -71,9 +88,11 @@ class Processor:
         # Create univocal ID
         expId = expId + "_" + self.getCustomTimeStamp()
 
-        # Create the experiment
+        # Log
         self._logger.info("PROCESSOR::createExperiment(): " + 
                           "Register experiment %s" % expId)
+
+        # Create the experiment
         exp = self._transaction.createNewExperiment(expId, expType)
         if not exp:
             msg = "PROCESSOR::createExperiment(): " + \
@@ -162,7 +181,6 @@ class Processor:
         # Return the openBIS Experiment object
         return openBISExperiment
 
-
     def processMicroscopyFile(self, microscopyFileNode, openBISExperiment):
         """Register the Microscopy File using the parsed properties file.
 
@@ -183,25 +201,21 @@ class Processor:
             # Instantiate a BioFormatsProcessor
             bioFormatsProcessor = BioFormatsProcessor(fileName, self._logger)
 
-            self._logger.info("PROCESSOR::processMicroscopyFile(): " +
-                          "Parsing file with bio-formats library version " + 
-                          bioFormatsProcessor.bioformats_version())
-
             # Extract series metadata
             bioFormatsProcessor.parse()
 
-            # Get the metadata from the BioFormatsProcessor object
-            allSeriesMetadataXML = bioFormatsProcessor.getMetadataXML()
+            # Get the metadata for the series
+            allSeriesMetadata = bioFormatsProcessor.getMetadata()
 
             # Get the number of series
             num_series = bioFormatsProcessor.getNumSeries()
 
         else:
 
-            # Get the metadata from the XML file
-            allSeriesMetadataXML = []
+            # Get the metadata for all series from the (processed) settings XML 
+            allSeriesMetadata = []
             for series in microscopyFileNode:
-                allSeriesMetadataXML.append(series.attrib)
+                allSeriesMetadata.append(series.attrib)
 
             # Get the number of series
             num_series = len(microscopyFileNode)
@@ -209,18 +223,20 @@ class Processor:
         self._logger.info("PROCESSOR::processMicroscopyFile(): " +
                           "File " + self._incoming.getName() + " contains " +
                            str(num_series) + " series.")
-        
+
         # Register all series in the file
         image_data_set = None
         for i in range(num_series):
 
             # Create a configuration object
-            singleDatasetConfig = MicroscopySingleDatasetConfig(allSeriesMetadataXML,
+            singleDatasetConfig = MicroscopySingleDatasetConfig(allSeriesMetadata,
                                                                 self._logger, i)
 
-            # Extract the metadata associated to this series
-            seriesMetadata = allSeriesMetadataXML[i]
-            
+            # Extract the metadata associated to this series and convert it to
+            # XML to store it in the MICROSCOPY_IMG_CONTAINER_METADATA property
+            # of the MICROSCOPY_IMG_CONTAINER_METADATA (series) dataset type
+            seriesMetadataXML = self.dictToXML(allSeriesMetadata[i])
+
             if image_data_set is None:
                 
                 # Register the file for the first time (for series 0)
@@ -233,9 +249,9 @@ class Processor:
                 # Create an image dataset
                 dataset = self._transaction.createNewImageDataSet(singleDatasetConfig,
                                                                   java.io.File(fileName))
-                
+
                 # Store the metadata in the MICROSCOPY_IMG_CONTAINER_METADATA property
-                dataset.setProperty("MICROSCOPY_IMG_CONTAINER_METADATA", seriesMetadata)
+                dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_METADATA", seriesMetadataXML)
 
                 # Now store a reference to the first dataset
                 image_data_set = dataset
@@ -258,15 +274,16 @@ class Processor:
                                                                              image_data_set)
 
                 # Store the metadata in the MICROSCOPY_IMG_CONTAINER_METADATA property
-                dataset.setProperty("MICROSCOPY_IMG_CONTAINER_METADATA", seriesMetadata)
+                dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_METADATA", 
+                                         seriesMetadataXML)
 
             # Create a sample for the dataset
             sample = self._transaction.createNewSampleWithGeneratedCode("MICROSCOPY",
                                                                         "MICROSCOPY_SAMPLE_TYPE")
-            
+
             # Set the experiment
             sample.setExperiment(openBISExperiment)
-            
+
             # Set the sample
             dataset.setSample(sample)
 
@@ -371,7 +388,7 @@ class Processor:
                               "Processing: " + propertiesFile)
 
             # Read the properties file into an ElementTree
-            tree = xml.parse(propertiesFile)
+            tree = ET.parse(propertiesFile)
 
             # Now register the experiment
             self.register(tree)

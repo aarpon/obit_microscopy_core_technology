@@ -150,26 +150,23 @@ class BioFormatsProcessor:
             self._metadata[seriesKey] = seriesAttr
 
 
-    def getMetadata(self):
+    def getMetadata(self, asXML=False):
         """
-        Return the extracted metadata.
+        Return the series metadata in a list.
         """
 
-        return self._metadata
+        # Instantiate metadata list
+        seriesMetadataArray = []
 
-
-    def getMetadataXML(self):
-        """
-        Return the extracted metadata in an array of Annotation Tool-
-        compatible XML nodes sorted by series number.
-        """
-        
-        xml = []
+        # Important: make sure to return metadata sorted by series number!
         keys = self._metadata.keys()
         keys.sort()
+        
+        # Process all series
         for key in keys:
 
-            # Create an XML node (the key is "series_n", with n = 0, 1, ...)
+            # Create an XML node (the name is irrelevant, since we
+            # will export the attributes only)
             node = ET.Element("MicroscopyFileSeries")
 
             # Get dictionary of metadata attributes for current series
@@ -179,11 +176,14 @@ class BioFormatsProcessor:
             for k, v in d.iteritems():
                 node.set(k, str(v))
 
-            # Convert node to string and append
-            xml.append(ET.tostring(node))
+            # Convert to XML string if needed or append as is
+            if asXML is True:
+                seriesMetadataArray.append(ET.tostring(node))
+            else:
+                seriesMetadataArray.append(node.attrib)
 
-        # Return the array of XML strings
-        return xml
+        # Return the list of metadata entries per series
+        return seriesMetadataArray
 
 
     def getNumSeries(self):
