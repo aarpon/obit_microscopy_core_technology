@@ -1,6 +1,6 @@
 /**
  * DataViewer class
- * 
+ *
  * @author Aaron Ponti
  *
  */
@@ -16,10 +16,10 @@ function DataViewer() {
 
 /**
  * Displays experiment info
- * 
+ *
  * @param exp openBIS Experiment object
  */
-DataViewer.prototype.displayExperimentInfo = function(exp) {
+DataViewer.prototype.displayExperimentInfo = function (exp) {
 
     var experimentNameView, detailView, paramView;
 
@@ -42,7 +42,7 @@ DataViewer.prototype.displayExperimentInfo = function(exp) {
         // Make sure we got the 18 random alphanumeric chars
         var suffix = exp.code.substr(indx);
         if (suffix.length == 19) {
-            name =  exp.code.substr(0, indx);
+            name = exp.code.substr(0, indx);
             code = "<b>" + name + "</b>" + suffix;
         } else {
             name = code;
@@ -63,7 +63,7 @@ DataViewer.prototype.displayExperimentInfo = function(exp) {
 
     // Add the parameters (placeholder)
     paramView.append(
-        "<p>" + spOp + "Acquisition parameters" + spCl + "</p>"
+            "<p>" + spOp + "Acquisition parameters" + spCl + "</p>"
     );
 
     // These will be later queried from the experiment
@@ -74,6 +74,9 @@ DataViewer.prototype.displayExperimentInfo = function(exp) {
 
     // Display the download action
     //this.displayDownloadAction(node);
+
+    // Display the viewer
+    this.displayViewer();
 };
 
 /**
@@ -81,14 +84,14 @@ DataViewer.prototype.displayExperimentInfo = function(exp) {
  * plugin 'copy_datasets_to_userdir'
  * @param node: DataTree node
  */
-DataViewer.prototype.displayExportAction = function(exp) {
+DataViewer.prototype.displayExportAction = function (exp) {
 
     // Get the detailViewAction div
     var detailViewAction = $("#detailViewAction");
 
     // Add actions (placeholder)
     detailViewAction.append(
-            "<p><span class=\"label label-warning\">Actions</span></p>");
+        "<p><span class=\"label label-warning\">Actions</span></p>");
 
     // Get the experiment identifier
     var experimentId = exp.identifier;
@@ -106,7 +109,7 @@ DataViewer.prototype.displayExportAction = function(exp) {
         $("#detailViewAction").append(
                 "<span><a class=\"btn btn-xs btn-primary\" " +
                 "href=\"#\" onclick='callAggregationPlugin(\"" +
-                experimentId  + "\", \"normal\");'>" +
+                experimentId + "\", \"normal\");'>" +
                 "<img src=\"img/export.png\" />&nbsp;" +
                 "Export to your folder</a></span>&nbsp;");
     }
@@ -115,7 +118,7 @@ DataViewer.prototype.displayExportAction = function(exp) {
     $("#detailViewAction").append(
             "<span><a class=\"btn btn-xs btn-primary\" " +
             "href=\"#\" onclick='callAggregationPlugin(\"" +
-            experimentId  + "\", \"zip\");'>" +
+            experimentId + "\", \"zip\");'>" +
             "<img src=\"img/zip.png\" />&nbsp;" +
             "Compress to archive</a></span>&nbsp;");
 
@@ -130,7 +133,7 @@ DataViewer.prototype.displayExportAction = function(exp) {
  *
  * @param tree DynaTree object
  */
-DataViewer.prototype.displayStatus = function(status, level) {
+DataViewer.prototype.displayStatus = function (status, level) {
 
     // Display the status
     $("#detailViewStatus").empty();
@@ -156,5 +159,35 @@ DataViewer.prototype.displayStatus = function(status, level) {
     status = "<div class=\"alert alert-" + cls + " alert-dismissable\">" +
         status + "</div>";
     $("#detailViewStatus").html(status);
+
+};
+
+DataViewer.prototype.displayViewer = function() {
+
+    // We need jQuery, openbis-screening and ImageViewerWidget
+    require([ "jquery", "openbis-screening", "components/imageviewer/ImageViewerWidget" ], function($, openbis, ImageViewerWidget) {
+
+        // create the image viewer component for the specific data sets
+        var widget = new ImageViewerWidget(window.DATAMODEL.openbisServer, [ "20140521141642128-4895" ]);
+
+        // do the customization once the component is loaded
+        widget.addLoadListener(function() {
+            var view = widget.getDataSetChooserWidget().getView();
+
+            // example of how to customize a widget
+            view.getDataSetText = function(dataSetCode) {
+                return "My data set: " + dataSetCode;
+            };
+
+            // example of how to add a change listener to a widget
+            widget.getDataSetChooserWidget().addChangeListener(function(event) {
+                console.log("data set changed from: " + event.getOldValue() + " to: " + event.getNewValue());
+            });
+        });
+
+        // render the component and add it to the page
+        $("#imageViewer").append(widget.render());
+
+    });
 
 };

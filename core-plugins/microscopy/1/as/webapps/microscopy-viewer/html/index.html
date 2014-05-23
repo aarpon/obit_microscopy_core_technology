@@ -73,27 +73,6 @@
         window.DATAMODEL = new DataModel();
         window.DATAVIEWER = new DataViewer();
 
-        // create the image viewer component for the specific data sets
-        var widget = new ImageViewerWidget(window.DATAMODEL.openbisServer, [ "20140425143152112-4747" ]);
-
-        // do the customization once the component is loaded
-        widget.addLoadListener(function() {
-            var view = widget.getDataSetChooserWidget().getView();
-
-        // example of how to customize a widget
-            view.getDataSetText = function(dataSetCode) {
-                return "My data set: " + dataSetCode;
-            };
-
-        // example of how to add a change listener to a widget
-        widget.getDataSetChooserWidget().addChangeListener(function(event) {
-                console.log("data set changed from: " + event.getOldValue() + " to: " + event.getNewValue());
-            });
-        });
-
-        // render the component and add it to the page
-        $("#imageViewer").append(widget.render());
-
     });
 
 </script>
