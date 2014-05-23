@@ -106,59 +106,20 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
         if self._seriesNum != -1 and seriesIndx != self._seriesNum:
             return
 
-        # Get the metadata for the requested series
-        metadata = self._allSeriesMetadata[seriesIndx]
-
-        # Try extracting the name for the given series and channel
-        try:
-            name = metadata["channelName" + str(channelIndx)] 
+        # Get the channel name
+        name = self._getChannelName(seriesIndx, channelIndx)
         
-        except KeyError:
-            err = "MICROSCOPYSINGLEDATASETCONFIG::createChannel(): " + \
-            "Could not create channel name for channel " + str(channelIndx) + \
-            " and series " + str(seriesIndx) + " from metadata."
-            self._logger.error(err)
-            raise(err)
-
-        # In case no name was found, assign default name
-        if name == "":
-            name = "No name"
-
-        # Try extracting the color for the given series and channel
-        try:
-            color = metadata["channelColor" + str(channelIndx)]
-
-        except KeyError:
-            err = "MICROSCOPYSINGLEDATASETCONFIG::createChannel(): " + \
-            "Could not extract channel color for channel " + \
-             str(channelIndex) + " and series " + str(seriesIndx) + \
-            " from metadata."
-            self._logger.error(err)
-            raise(err)
-
-        # Try extracting the color for current channel
-        colorComponents = color.split(",")
-        assert(len(colorComponents) == 4)
-        try:
-            R = int(float(colorComponents[0]))
-            G = int(float(colorComponents[1]))
-            B = int(float(colorComponents[2]))
-        except:
-            err = "MICROSCOPYSINGLEDATASETCONFIG::createChannel(): " + \
-            "Could not extract color with index " + str(channelIndx)
-            self._logger.error(err)
-            raise(err)
+        # Get the channel color (RGB)
+        colorRGB = self._getChannelColor(seriesIndx, channelIndx)
 
         # Log
         self._logger.info("MICROSCOPYSINGLEDATASETCONFIG::createChannel(): " +
-                          channelCode + " has color (" + str(R) + ", " +
-                          str(G) + ", " + str(B) + ") and name " + 
-                          name)
+                          "channel (s = "+ str(seriesIndx) + ", c = " +
+                          str(channelIndx) + ") has code " + channelCode +
+                          ", color (" + str(colorRGB) + " and name " + name)
 
-        # Create the ChannelColorRGB object
-        colorRGB = ChannelColorRGB(R, G, B)
-    
-        # Return the color
+        # Return the channel with given name and color (the code is set to
+        # be the same as the channel name).
         return Channel(channelCode, name, colorRGB)
 
 
@@ -221,6 +182,73 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
 
         # Now return the metaData array
         return metaData
+
+
+    def _getChannelName(self, seriesIndx, channelIndx):
+        """Returns the channel name (from the parsed metadata) for
+        a given channel in a given series."
+        """
+
+        # Get the metadata for the requested series
+        metadata = self._allSeriesMetadata[seriesIndx]
+
+        # Try extracting the name for the given series and channel
+        try:
+            name = metadata["channelName" + str(channelIndx)] 
+
+        except KeyError:
+            err = "MICROSCOPYSINGLEDATASETCONFIG::createChannel(): " + \
+            "Could not create channel name for channel " + str(channelIndx) + \
+            " and series " + str(seriesIndx) + " from metadata."
+            self._logger.error(err)
+            raise(err)
+
+        # In case no name was found, assign default name
+        if name == "":
+            name = "No name"
+
+
+        return name
+
+
+    def _getChannelColor(self, seriesIndx, channelIndx):
+        """Returns the channel color (from the parsed metadata) for
+        a given channel in a given series."
+        """
+
+        # Get the metadata for the requested series
+        metadata = self._allSeriesMetadata[seriesIndx]
+
+        # Try extracting the color for the given series and channel
+        try:
+            color = metadata["channelColor" + str(channelIndx)]
+
+        except KeyError:
+            err = "MICROSCOPYSINGLEDATASETCONFIG::createChannel(): " + \
+            "Could not extract channel color for channel " + \
+             str(channelIndex) + " and series " + str(seriesIndx) + \
+            " from metadata."
+            self._logger.error(err)
+            raise(err)
+
+        # Try extracting the color for current channel
+        colorComponents = color.split(",")
+        assert(len(colorComponents) == 4)
+        try:
+            R = int(float(colorComponents[0]))
+            G = int(float(colorComponents[1]))
+            B = int(float(colorComponents[2]))
+        except:
+            err = "MICROSCOPYSINGLEDATASETCONFIG::createChannel(): " + \
+            "Could not extract color with index " + str(channelIndx)
+            self._logger.error(err)
+            raise(err)
+
+        # Create the ChannelColorRGB object
+        colorRGB = ChannelColorRGB(R, G, B)
+
+        return colorRGB
+
 
     def _getSeriesAndChannelNumbers(self, channelCode):
         """Extract series and channel number from channel code in
