@@ -257,6 +257,9 @@ class Processor:
 
                 # Store the metadata in the MICROSCOPY_IMG_CONTAINER_METADATA property
                 dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_METADATA", seriesMetadataXML)
+                
+                # Store the series name in the MICROSCOPY_IMG_CONTAINER_NAME property
+                dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME", allSeriesMetadata[i]["name"])
 
                 # Now store a reference to the first dataset
                 image_data_set = dataset
@@ -265,9 +268,9 @@ class Processor:
                 self._transaction.moveFile(fileName, image_data_set)
 
             else:
-                
+
                 # Register subsequent series to point to the same file
-                
+
                 # Log
                 self._logger.info("PROCESSOR::processMicroscopyFile(): " +
                                   "Creating new image dataset for dataset " +
@@ -281,6 +284,9 @@ class Processor:
                 # Store the metadata in the MICROSCOPY_IMG_CONTAINER_METADATA property
                 dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_METADATA", 
                                          seriesMetadataXML)
+
+                # Store the series name in the MICROSCOPY_IMG_CONTAINER_NAME property
+                dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME", allSeriesMetadata[i]["name"])
 
             # Create a sample for the dataset
             sample = self._transaction.createNewSampleWithGeneratedCode("MICROSCOPY",
