@@ -44,7 +44,9 @@ class Processor:
 
         # Add all attributes to the XML node
         for k, v in d.iteritems():
-            node.set(k, str(v))
+            key = k.encode('utf-8')
+            value = v.encode('utf-8')
+            node.set(key, value)
 
         # Convert to XML string
         xml = ET.tostring(node)
