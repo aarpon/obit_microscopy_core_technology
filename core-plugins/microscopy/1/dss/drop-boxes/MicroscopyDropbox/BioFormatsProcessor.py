@@ -64,19 +64,19 @@ class BioFormatsProcessor:
         # Process all series
         for key in keys:
 
-            # Create an XML node (the name is irrelevant, since we
-            # will export the attributes only)
+            # Create an XML node
             node = ET.Element("MicroscopyFileSeries")
 
             # Get metadata attributes for current series
             d = metadata.get(key)
 
-            # Add all attributes to the XML node
+            # Add all attributes to the XML node (make sure to encode 
+            # everything as unicode).
             metadataKeys = d.keySet()
             for metadataKey in metadataKeys:
-                print(str(metadataKey))
-                print(str(d.get(metadataKey)))
-                node.set(str(metadataKey), str(d.get(metadataKey)))
+                key = metadataKey.encode('utf-8')
+                value = (d.get(metadataKey)).encode('utf-8')
+                node.set(key, value)
 
             # Convert to XML string if needed or append as is
             if asXML is True:
