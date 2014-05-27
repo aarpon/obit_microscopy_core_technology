@@ -30,37 +30,138 @@ function DataModel() {
     this.exp = null;
     this.expName = "";
 
+    // Datasets and dataset codes
+    this.dataSets = []
+    this.dataSetCodes = [];
+
+    // File URL
+    this.fileURL = [];
+
     // Alias
     var dataModelObj = this;
     
     // Get the experiment object for given ID and update the model
-    this.getExperiment(function(response) {
+    this.getExperimentData(function(response) {
         
         if (response.hasOwnProperty("error")) {
             // Server returned an error
             dataModelObj.exp = null;
             dataModelObj.expName = "Error: could not retrieve experiment!";
         } else {
-            // TODO: Add MICROSCOPY_EXPERIMENT_NAME!
             dataModelObj.exp = response.result[0];
             dataModelObj.expName = dataModelObj.exp.properties.MICROSCOPY_EXPERIMENT_NAME;
-        }
 
-        // Display the experiment summary
-        DATAVIEWER.displayExperimentInfo(dataModelObj.exp);
+            // Now retrieve the list of datasets for the experiment
+            dataModelObj.getDataSetsForExperiment(function(response) {
+
+                if (response.hasOwnProperty("error")) {
+                    // Server returned an error
+                    DATAVIEWER.displayStatus(response.error, "error");
+                } else {
+
+                    // Store the datasets
+                    if (response.hasOwnProperty("error") || response.result.length == 0) {
+
+                        var msg = "No datasets found for experiment with code " +
+                            dataModelObj.exp.code;
+                        DATAVIEWER.displayStatus(msg, "error");
+
+                    } else {
+
+                        // Put dataset codes into an array
+                        var dataSetCodes = []
+                        for (var i = 0; i < response.result.length; i++) {
+                            dataSetCodes.push(response.result[i].code)
+                        }
+
+                        // Sort by code
+                        dataSetCodes.sort()
+
+                        // Store
+                        dataModelObj.dataSetCodes = dataSetCodes;
+
+                        // Sort and store the datasets as well
+                        dataModelObj.dataSets = []
+                        var unsortedDataSets = response.result;
+                        for (var i = 0; i < dataSetCodes.length; i++) {
+                            for (var j = 0; j < unsortedDataSets.length; j++) {
+                                if (unsortedDataSets[j].code == dataSetCodes[i]) {
+                                    // Found. Add it to the datasets and remove it from the unsorted list
+                                    dataModelObj.dataSets.push(unsortedDataSets[j]);
+                                    unsortedDataSets.splice(j, 1);
+                                    break;
+                                }
+                            }
+                        }
+
+                        // Initialize the experiment view
+                        DATAVIEWER.initView();
+
+                    }
+                }
+
+            });
+        }
 
     });
 }
 
 /**
- * Get the plates for current experiment
+ * Get current experiment.
  * @param {Function} action Function callback
- * @returns {Array} plates  Array of plates.
  */
-DataModel.prototype.getExperiment = function(action) { 
+DataModel.prototype.getExperimentData = function(action) {
     // expId must be in an array: [expId]
     this.openbisServer.listExperimentsForIdentifiers([this.expId], action);
 };
+
+/**
+ * Get datasets for current experiments
+ * @param action
+ */
+DataModel.prototype.getDataSetsForExperiment = function(action) {
+
+    // Experiment criteria
+    var experimentCriteria =
+    {
+        targetEntityKind : "EXPERIMENT",
+        criteria : {
+            matchClauses :
+                [ {"@type" : "AttributeMatchClause",
+                    "attribute" : "CODE",
+                    "fieldType" : "ATTRIBUTE",
+                    "desiredValue" : this.exp.code
+                } ]
+        }
+    };
+
+    // Dataset container criteria
+    var criteria =
+    {
+        subCriterias : [ experimentCriteria ],
+        matchClauses :
+            [ {"@type":"AttributeMatchClause",
+                attribute : "TYPE",
+                fieldType : "ATTRIBUTE",
+                desiredValue : "MICROSCOPY_IMG_CONTAINER"
+            } ],
+        operator : "MATCH_ALL_CLAUSES"
+    };
+
+    // Search
+    this.openbisServer.searchForDataSets(criteria, action);
+
+}
+
+/**
+ * Return the series name for the dataset with given code.
+ * @param datasetCode Code of the series dataset
+ * @returns name of the series.
+ */
+DataModel.prototype.getSeriesName = function(datasetCode) {
+    // TODO: Return the series name
+    return datasetCode;
+}
 
 /**
  * Call an aggregation plug-in to copy the datasets associated to selected

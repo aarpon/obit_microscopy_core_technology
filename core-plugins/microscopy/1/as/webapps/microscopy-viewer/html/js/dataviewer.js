@@ -19,9 +19,14 @@ function DataViewer() {
  *
  * @param exp openBIS Experiment object
  */
-DataViewer.prototype.displayExperimentInfo = function (exp) {
+DataViewer.prototype.initView = function() {
 
-    var experimentNameView, detailView, paramView;
+    // Div IDs
+    var experimentNameView, detailView;
+
+    // Aliases
+    var exp = DATAMODEL.exp;
+    var dataSetCodes = DATAMODEL.dataSetCodes;
 
     // Get the experiment name view
     experimentNameView = $("#experimentNameView");
@@ -49,47 +54,128 @@ DataViewer.prototype.displayExperimentInfo = function (exp) {
         }
     }
 
-    // Store the experiment name
-    experimentNameView.append("<h2>" + name + "</h2>");
+    // Display the experiment name and code
+    experimentNameView.append("<h2>" + name + " <span class=\"code\">(" + code + ")</span></h2>");
 
-    // Store the experiment code
+    // Display the experiment description
     detailView.append(
-            "<p>" + spOp + "Experiment code" + spCl + "</p>" +
-            "<p>" + code + "</p>");
+            "<p>" + spOp + "Description" + spCl + "</p>" +
+            "<p>" + exp.properties.MICROSCOPY_EXPERIMENT_DESCRIPTION + "</p>");
 
-    // Get the parameter view
-    paramView = $("#paramView");
-    paramView.empty();
 
-    // Add the parameters (placeholder)
-    paramView.append(
-            "<p>" + spOp + "Acquisition parameters" + spCl + "</p>"
-    );
+    // Display the viewer (it will take care of refreshing automatically when
+    // the series cahnges, so we do no need to worry about it.
+    this.displayViewer(dataSetCodes);
 
-    // These will be later queried from the experiment
-    paramView.append("<p>...</p>");
+    // Refresh the series-dependent part of the UI. The same function will be attached
+    // to the ChangeListener of the series selector widget, so that the various parts of
+    // the UI are updated when the user chooses another series in the file.
+    this.refreshView(dataSetCodes[0]);
+
+};
+
+/**
+ * Update the view in response to a change in the selected series.
+ * @param selectedSeries Index of the selected series.
+ */
+DataViewer.prototype.refreshView = function(dataSetCode) {
+
+    // Display the metadata (for the first dataset)
+    this.displayMetadata(dataSetCode);
 
     // Display the export action
-    this.displayExportAction(exp);
+    this.displayActions(DATAMODEL.exp);
 
-    // Display the download action
-    //this.displayDownloadAction(node);
-
-    // Display the viewer
-    this.displayViewer();
 };
+
+/**
+ * Display metadata for specified dataset code.
+ * @param dataSetCode Data set code for which to display the metadata.
+ */
+DataViewer.prototype.displayMetadata = function(dataSetCode) {
+
+    var spOp = "<span class=\"label label-default\">";
+    var spCl = "</span>";
+
+    // Find data set object with given code
+    var dataSet = [];
+    for (var i = 0; i < DATAMODEL.dataSetCodes.length; i++) {
+        if (DATAMODEL.dataSets[i].code == dataSetCode) {
+            dataSet = DATAMODEL.dataSets[i];
+            break;
+        }
+    }
+
+    // Check that the dataset was found
+    if (dataSet.length == 0) {
+        this.displayStatus("Dataset with code " + dataSetCode + " not found!", "error");
+        return;
+    }
+
+    // Get the metadata
+    var metadata = dataSet.properties.MICROSCOPY_IMG_CONTAINER_METADATA;
+
+    // Get the parameter view
+    var paramView = $("#paramView");
+    paramView.empty();
+
+    var metadataObj;
+    if (window.DOMParser)
+    {
+        var parser = new DOMParser();
+        metadataObj = parser.parseFromString(metadata, "text/xml");
+    }
+    else // Internet Explorer
+    {
+        metadataObj = new ActiveXObject("Microsoft.XMLDOM");
+        metadataObj.async = false;
+        metadataObj.loadXML(metadata);
+    }
+
+    // Get the metadata for the series
+    var seriesMetadata = metadataObj.children[0];
+    var sizeX = seriesMetadata.attributes.getNamedItem("sizeX").value;
+    var sizeY = seriesMetadata.attributes.getNamedItem("sizeY").value;
+    var sizeZ = seriesMetadata.attributes.getNamedItem("sizeZ").value;
+    var sizeC = seriesMetadata.attributes.getNamedItem("sizeC").value;
+    var sizeT = seriesMetadata.attributes.getNamedItem("sizeT").value;
+    var voxelX = seriesMetadata.attributes.getNamedItem("voxelX").value;
+    var voxelY = seriesMetadata.attributes.getNamedItem("voxelY").value;
+    var voxelZ = seriesMetadata.attributes.getNamedItem("voxelZ").value;
+
+    // Format the metadata
+    var sVoxelX = (new Number(voxelX)).toPrecision(2);
+    var sVoxelY = (new Number(voxelY)).toPrecision(2);
+    var sVoxelZ = (new Number(voxelZ)).toPrecision(2);
+
+    // Display the metadata
+    paramView.append(
+            "<p>" + spOp + "Dataset sizes" + spCl + "</p>" +
+            "<table><tbody>" +
+                "<tr>" +
+                    "<th>X</th><th>Y</th><th>Z</th><th>C</th><th>T</th>" +
+                    "<th>vX [&micro;m]</th><th>vY [&micro;m]</th><th>vZ [&micro;m]</th>" +
+                "</tr>" +
+                "<tr>" +
+                    "<td>" + sizeX + "</td><td>" + sizeY + "</td><td>" + sizeZ + "</td>" +
+                    "<td>" + sizeC + "</td><td>" + sizeT + "</td>" +
+                    "<td>" + sVoxelX + "</td><td>" + sVoxelY + "</td><td>" + sVoxelZ + "</td>" +
+                "</tr>" +
+            "</tbody></table>");
+}
 
 /**
  * Build and display the code to trigger the server-side aggregation
  * plugin 'copy_datasets_to_userdir'
  * @param node: DataTree node
  */
-DataViewer.prototype.displayExportAction = function (exp) {
+DataViewer.prototype.displayActions = function(exp) {
 
-    // Get the detailViewAction div
+    // Get the detailViewAction div and empty it
     var detailViewAction = $("#detailViewAction");
+    detailViewAction.empty();
 
-    // Add actions (placeholder)
+    // Add actions
     detailViewAction.append(
         "<p><span class=\"label label-warning\">Actions</span></p>");
 
@@ -99,6 +185,13 @@ DataViewer.prototype.displayExportAction = function (exp) {
         DATAVIEWER.displayStatus("Could not retrieve experiment identifier!", "error");
         return;
     }
+
+    // Display metadata action
+    $("#detailViewAction").append(
+            "<span><a class=\"btn btn-xs btn-success\" " +
+            "href=\"#\" onclick='' >" +
+            "<img src=\"img/edit.png\" />&nbsp;" +
+            "View/Edit metadata</a></span>&nbsp;");
 
     // Build and display the call
     callAggregationPlugin = DATAMODEL.copyDatasetsToUserDir;
@@ -120,13 +213,12 @@ DataViewer.prototype.displayExportAction = function (exp) {
             "href=\"#\" onclick='callAggregationPlugin(\"" +
             experimentId + "\", \"zip\");'>" +
             "<img src=\"img/zip.png\" />&nbsp;" +
-            "Compress to archive</a></span>&nbsp;");
+            "Download</a></span>&nbsp;");
 
 };
 
 /**
- * Draw the initial root structure. The tree will then be extended
- * dynamically (via lazy loading) using DynaTree methods.
+ * Display status text color-coded by level.
  * @param status: text to be displayed
  * @param level: one of "success", "info", "warning", "error". Default is
  * "info"
@@ -162,30 +254,36 @@ DataViewer.prototype.displayStatus = function (status, level) {
 
 };
 
-DataViewer.prototype.displayViewer = function() {
+/**
+ * Display the data viewer for a specified list of dataset codes.
+ * @param dataSetCodes List of dataset codes to pass on to the ImageViewer.
+ */
+DataViewer.prototype.displayViewer = function(dataSetCodes) {
 
     // We need jQuery, openbis-screening and ImageViewerWidget
     require([ "jquery", "openbis-screening", "components/imageviewer/ImageViewerWidget" ], function($, openbis, ImageViewerWidget) {
 
-        // create the image viewer component for the specific data sets
-        var widget = new ImageViewerWidget(window.DATAMODEL.openbisServer, [ "20140521141642128-4895" ]);
+        // Create the image viewer component for the specific data sets
+        var widget = new ImageViewerWidget(window.DATAMODEL.openbisServer, dataSetCodes);
 
-        // do the customization once the component is loaded
+        // Do the customization once the component is loaded
         widget.addLoadListener(function() {
             var view = widget.getDataSetChooserWidget().getView();
 
-            // example of how to customize a widget
+            // Example of how to customize a widget
             view.getDataSetText = function(dataSetCode) {
-                return "My data set: " + dataSetCode;
+                indx = DATAMODEL.dataSetCodes.indexOf(dataSetCode)
+                return DATAMODEL.dataSets[indx].properties.MICROSCOPY_IMG_CONTAINER_NAME;
             };
 
-            // example of how to add a change listener to a widget
+            // Example of how to add a change listener to a widget
             widget.getDataSetChooserWidget().addChangeListener(function(event) {
-                console.log("data set changed from: " + event.getOldValue() + " to: " + event.getNewValue());
+                DATAVIEWER.refreshView(event.getNewValue());
             });
         });
 
-        // render the component and add it to the page
+        // Render the component and add it to the page
+        $("#imageViewer").empty();
         $("#imageViewer").append(widget.render());
 
     });

@@ -3,23 +3,44 @@ body {
 }
 
 #experimentNameView {
-    min-height: 20px;
+    min-height: 40px;
+    margin-bottom: 10px;
     vertical-align: middle;
 }
 
 #detailViewAction {
-    min-height: 60px;
+    min-height: 40px;
+    margin-bottom: 10px;
     vertical-align: middle;
 }
 
 #detailView {
+    min-height: 40px;
+    margin-bottom: 10px;
 }
 
 #paramView {
+    min-height: 40px;
+    margin-bottom: 10px;
 }
 
 #viewer {
     min-height: 60px;
     border-style: dashed;
     border-radius: 10px;
+}
+
+#paramView table {
+    text-align: center;
+    font-size: 12px;
+    width: 600px;
+}
+
+#paramView th, td {
+    text-align: center;
+    width: 60px;
+}
+
+.code {
+    font-size: 12px;
 }
