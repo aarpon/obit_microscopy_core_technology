@@ -119,21 +119,18 @@ DataViewer.prototype.displayMetadata = function(dataSetCode) {
     var paramView = $("#paramView");
     paramView.empty();
 
-    var metadataObj;
-    if (window.DOMParser)
-    {
-        var parser = new DOMParser();
-        metadataObj = parser.parseFromString(metadata, "text/xml");
-    }
-    else // Internet Explorer
-    {
-        metadataObj = new ActiveXObject("Microsoft.XMLDOM");
-        metadataObj.async = false;
-        metadataObj.loadXML(metadata);
+    // Use JQuery to parse the metadata XML into an object
+    var metadataObj = $.parseXML(metadata);
+
+    // Check whether we found metadata information
+    if (! metadataObj.hasChildNodes()) {
+        paramView.empty();
+        paramView.append("No metadata information found.");
+        return;
     }
 
-    // Get the metadata for the series
-    var seriesMetadata = metadataObj.children[0];
+    // Get the metadata for the series and display it
+    var seriesMetadata = metadataObj.childNodes[0];
     var sizeX = seriesMetadata.attributes.getNamedItem("sizeX").value;
     var sizeY = seriesMetadata.attributes.getNamedItem("sizeY").value;
     var sizeZ = seriesMetadata.attributes.getNamedItem("sizeZ").value;
@@ -264,7 +261,7 @@ DataViewer.prototype.displayViewer = function(dataSetCodes) {
     require([ "jquery", "openbis-screening", "components/imageviewer/ImageViewerWidget" ], function($, openbis, ImageViewerWidget) {
 
         // Create the image viewer component for the specific data sets
-        var widget = new ImageViewerWidget(window.DATAMODEL.openbisServer, dataSetCodes);
+        var widget = new ImageViewerWidget(DATAMODEL.openbisServer, dataSetCodes);
 
         // Do the customization once the component is loaded
         widget.addLoadListener(function() {
