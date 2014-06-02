@@ -36,7 +36,7 @@ body {
     width: 600px;
 }
 
-#paramView th, td {
+#paramView th, #paramView td {
     text-align: center;
     width: 60px;
 }
