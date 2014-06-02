@@ -44,6 +44,7 @@ class BioFormatsProcessor:
         """Scan the metadata for metadata information and stores it."""
         
         self._microscopyReader.parse()
+        self._microscopyReader.close()
 
 
     def getMetadata(self, asXML=False):
