@@ -40,11 +40,17 @@ class BioFormatsProcessor:
         return str(self._microscopyReader.bioformatsVersion())
 
 
+    def close(self):
+        """Close the file. After this, to read from the file, the object must 
+        be initialized again."""
+
+        self._microscopyReader.close()
+
+
     def parse(self):
         """Scan the metadata for metadata information and stores it."""
         
         self._microscopyReader.parse()
-        self._microscopyReader.close()
 
 
     def getMetadata(self, asXML=False):

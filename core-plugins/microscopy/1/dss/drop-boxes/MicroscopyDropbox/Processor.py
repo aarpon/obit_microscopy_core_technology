@@ -212,6 +212,9 @@ class Processor:
             # Get the number of series
             num_series = bioFormatsProcessor.getNumSeries()
 
+            # Close the file
+            bioFormatsProcessor.close()
+
         else:
 
             # Get the metadata for all series from the (processed) settings XML 

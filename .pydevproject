@@ -5,6 +5,6 @@
 <pydev_pathproperty name="org.python.pydev.PROJECT_SOURCE_PATH">
 <path>/obit_microscopy_core_technology</path>
 <path>/obit_microscopy_core_technology/core-plugins/microscopy/1/dss/drop-boxes/MicroscopyDropbox/lib/MicroscopyReader.jar</path>
-<path>/obit_microscopy_core_technology/core-plugins/microscopy/1/dss/drop-boxes/MicroscopyDropbox/lib/ij.jar</path>
 </pydev_pathproperty>
+
 </pydev_project>
