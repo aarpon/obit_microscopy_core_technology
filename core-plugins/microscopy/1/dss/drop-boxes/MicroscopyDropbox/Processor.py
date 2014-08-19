@@ -229,6 +229,13 @@ class Processor:
                           "File " + self._incoming.getName() + " contains " +
                            str(num_series) + " series.")
 
+        # Create a sample for the dataset
+        sample = self._transaction.createNewSampleWithGeneratedCode("MICROSCOPY",
+                                                                    "MICROSCOPY_SAMPLE_TYPE")
+
+        # Set the experiment
+        sample.setExperiment(openBISExperiment)
+
         # Register all series in the file
         image_data_set = None
         for i in range(num_series):
@@ -291,14 +298,7 @@ class Processor:
                 # Store the series name in the MICROSCOPY_IMG_CONTAINER_NAME property
                 dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME", allSeriesMetadata[i]["name"])
 
-            # Create a sample for the dataset
-            sample = self._transaction.createNewSampleWithGeneratedCode("MICROSCOPY",
-                                                                        "MICROSCOPY_SAMPLE_TYPE")
-
-            # Set the experiment
-            sample.setExperiment(openBISExperiment)
-
-            # Set the sample
+            # Set the (common) sample for the series
             dataset.setSample(sample)
 
 
