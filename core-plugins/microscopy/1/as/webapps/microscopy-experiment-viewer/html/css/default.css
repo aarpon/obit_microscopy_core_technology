@@ -1,0 +1,28 @@
+body {
+    font-family: Sans-serif;
+}
+
+#experimentNameView {
+    min-height: 40px;
+    margin-bottom: 10px;
+    vertical-align: middle;
+}
+
+#detailViewAction {
+    min-height: 40px;
+    margin-bottom: 10px;
+    vertical-align: middle;
+}
+
+#detailView {
+    min-height: 40px;
+    margin-bottom: 10px;
+}
+
+#sampleView {
+    margin-bottom: 20px;
+}
+
+.code {
+    font-size: 12px;
+}
