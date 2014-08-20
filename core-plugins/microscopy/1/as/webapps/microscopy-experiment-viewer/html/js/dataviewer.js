@@ -82,7 +82,13 @@ DataViewer.prototype.initView = function() {
         // Put the in a table for now
         sampleView.append("<table><tbody>");
         for (var i = 0; i < samples.length; i++) {
-            sampleView.append("<tr><td><a href=\"#\">" + samples[i].code + "</a></td></tr>");
+            var name;
+            if (samples[i].properties.MICROSCOPY_SAMPLE_NAME) {
+                name = samples[i].properties.MICROSCOPY_SAMPLE_NAME;
+            } else {
+                name = samples[i].code;
+            }
+            sampleView.append("<tr><td><a href=\"#\">" + name + "</a></td></tr>");
         }
         sampleView.append("</tbody></table>");
 

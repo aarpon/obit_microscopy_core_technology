@@ -67,7 +67,13 @@ DataViewer.prototype.initView = function() {
     }
 
     // Display the sample name and code
-    sampleNameView.append("<h2>...Add name as property...<span class=\"code\">(" + sample.code + ")</span></h2>");
+    var sample_name;
+    if (sample.properties.MICROSCOPY_SAMPLE_NAME) {
+        sample_name = sample.properties.MICROSCOPY_SAMPLE_NAME;
+    } else {
+        sample_name = sample.code;
+    }
+    sampleNameView.append("<h2>" + sample_name + "</h2>");
 
     // Display the experiment name
     detailView.append(
@@ -164,7 +170,7 @@ DataViewer.prototype.displayMetadata = function(dataSetCode) {
 
     // Display the metadata
     paramView.append(
-            "<p>" + spOp + "Dataset sizes" + spCl + "</p>" +
+            "<p>" + spOp + "Dataset/series sizes" + spCl + "</p>" +
             "<table><tbody>" +
                 "<tr>" +
                     "<th>X</th><th>Y</th><th>Z</th><th>C</th><th>T</th>" +

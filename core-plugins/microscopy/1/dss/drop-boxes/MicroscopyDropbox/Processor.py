@@ -232,6 +232,10 @@ class Processor:
         # Create a sample for the dataset
         sample = self._transaction.createNewSampleWithGeneratedCode("MICROSCOPY",
                                                                     "MICROSCOPY_SAMPLE_TYPE")
+        
+        # Set the sample name
+        sample.setPropertyValue("MICROSCOPY_SAMPLE_NAME",
+                                relativeFileName[relativeFileName.rfind('/') + 1:])
 
         # Set the experiment
         sample.setExperiment(openBISExperiment)
