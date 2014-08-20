@@ -229,8 +229,13 @@ class Processor:
                           "File " + self._incoming.getName() + " contains " +
                            str(num_series) + " series.")
 
+        # Get the correct space where to create the sample
+        identifier = openBISExperiment.getExperimentIdentifier()
+        sample_space = identifier[1:identifier.find('/', 1)]
+        self._logger.info("Creating sample in space " + sample_space)
+
         # Create a sample for the dataset
-        sample = self._transaction.createNewSampleWithGeneratedCode("MICROSCOPY",
+        sample = self._transaction.createNewSampleWithGeneratedCode(sample_space,
                                                                     "MICROSCOPY_SAMPLE_TYPE")
         
         # Set the sample name
