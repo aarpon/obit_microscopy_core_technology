@@ -22,10 +22,16 @@ function DataModel() {
     // Reuse the current sessionId that we received in the context for
     // all the facade calls
     this.openbisServer.useSession(this.context.getSessionId());  
-    
+
+    // Sample identifier
+    this.sampleId = this.context.getEntityIdentifier();
+
+    // Sample
+    this.sample = null;
+
     // Experiment identifier
-    this.expId = this.context.getEntityIdentifier();
-    
+    this.expId = null;
+
     // Experiment object and name
     this.exp = null;
     this.expName = "";
@@ -34,77 +40,125 @@ function DataModel() {
     this.dataSets = []
     this.dataSetCodes = [];
 
+    // Alias
+    var dataModelObj = this;
+
+    // Initialize all information concerning this sample
+    this.initData(function(response) {
+
+        if (response.hasOwnProperty("error")) {
+
+            // Server returned an error
+            dataModelObj.sample = null;
+            dataModelObj.expId = null;
+            dataModelObj.exp = null;
+            dataModelObj.expName = "Error: could not retrieve experiment!";
+
+        } else {
+
+            // Check that we got the sample associated with the openbisWebAppContext().getEntityIdentifier()
+            if (response.result && response.result.length == 1) {
+
+                // Store the sample object
+                dataModelObj.sample = response.result[0];
+                dataModelObj.expId = dataModelObj.sample.experimentIdentifierOrNull;
+
+                // Now retrieve the experiment object
+                dataModelObj.getExperimentData(function(response) {
+
+                    if (response.hasOwnProperty("error")) {
+                        // Server returned an error
+                        dataModelObj.exp = null;
+                        dataModelObj.expName = "Error: could not retrieve experiment!";
+                    } else {
+                        dataModelObj.exp = response.result[0];
+                        dataModelObj.expName = dataModelObj.exp.properties.MICROSCOPY_EXPERIMENT_NAME;
+
+                        // Now retrieve the list of datasets for the experiment and sample
+                        dataModelObj.getDataSetsForSampleAndExperiment(function(response) {
+
+                            if (response.hasOwnProperty("error")) {
+                                // Server returned an error
+                                DATAVIEWER.displayStatus(response.error, "error");
+                            } else {
+
+                                // Store the datasets
+                                if (response.hasOwnProperty("error") || response.result.length == 0) {
+
+                                    var msg = "No datasets found for experiment with code " +
+                                        dataModelObj.exp.code;
+                                    DATAVIEWER.displayStatus(msg, "error");
+
+                                } else {
+
+                                    // Put dataset codes into an array
+                                    var dataSetCodes = []
+                                    for (var i = 0; i < response.result.length; i++) {
+                                        dataSetCodes.push(response.result[i].code)
+                                    }
+
+                                    // Sort by code
+                                    dataSetCodes.sort()
+
+                                    // Store
+                                    dataModelObj.dataSetCodes = dataSetCodes;
+
+                                    // Sort and store the datasets as well
+                                    dataModelObj.dataSets = []
+                                    var unsortedDataSets = response.result;
+                                    for (var i = 0; i < dataSetCodes.length; i++) {
+                                        for (var j = 0; j < unsortedDataSets.length; j++) {
+                                            if (unsortedDataSets[j].code == dataSetCodes[i]) {
+                                                // Found. Add it to the datasets and remove it from the unsorted list
+                                                dataModelObj.dataSets.push(unsortedDataSets[j]);
+                                                unsortedDataSets.splice(j, 1);
+                                                break;
+                                            }
+                                        }
+                                    }
+
+                                    // Initialize the experiment view
+                                    DATAVIEWER.initView();
+
+                                }
+                            }
+
+                        });
+                    }
+
+                });
+
+            } else {
+
+                // Could not retrieve the sample object
+                dataModelObj.sample = null;
+                dataModelObj.expId = null;
+                dataModelObj.exp = null;
+                dataModelObj.expName = "Error: could not retrieve experiment!";
+
+            }
+        }
+    });
+
     // File URL
     this.fileURL = [];
 
-    // Alias
-    var dataModelObj = this;
-    
-    // Get the experiment object for given ID and update the model
-    this.getExperimentData(function(response) {
-        
-        if (response.hasOwnProperty("error")) {
-            // Server returned an error
-            dataModelObj.exp = null;
-            dataModelObj.expName = "Error: could not retrieve experiment!";
-        } else {
-            dataModelObj.exp = response.result[0];
-            dataModelObj.expName = dataModelObj.exp.properties.MICROSCOPY_EXPERIMENT_NAME;
-
-            // Now retrieve the list of datasets for the experiment
-            dataModelObj.getDataSetsForExperiment(function(response) {
-
-                if (response.hasOwnProperty("error")) {
-                    // Server returned an error
-                    DATAVIEWER.displayStatus(response.error, "error");
-                } else {
-
-                    // Store the datasets
-                    if (response.hasOwnProperty("error") || response.result.length == 0) {
-
-                        var msg = "No datasets found for experiment with code " +
-                            dataModelObj.exp.code;
-                        DATAVIEWER.displayStatus(msg, "error");
-
-                    } else {
-
-                        // Put dataset codes into an array
-                        var dataSetCodes = []
-                        for (var i = 0; i < response.result.length; i++) {
-                            dataSetCodes.push(response.result[i].code)
-                        }
-
-                        // Sort by code
-                        dataSetCodes.sort()
-
-                        // Store
-                        dataModelObj.dataSetCodes = dataSetCodes;
-
-                        // Sort and store the datasets as well
-                        dataModelObj.dataSets = []
-                        var unsortedDataSets = response.result;
-                        for (var i = 0; i < dataSetCodes.length; i++) {
-                            for (var j = 0; j < unsortedDataSets.length; j++) {
-                                if (unsortedDataSets[j].code == dataSetCodes[i]) {
-                                    // Found. Add it to the datasets and remove it from the unsorted list
-                                    dataModelObj.dataSets.push(unsortedDataSets[j]);
-                                    unsortedDataSets.splice(j, 1);
-                                    break;
-                                }
-                            }
-                        }
-
-                        // Initialize the experiment view
-                        DATAVIEWER.initView();
-
-                    }
-                }
-
-            });
-        }
-
-    });
 }
+
+/**
+ * Get all data relative to current sample
+ * @param action Function callback.
+ */
+DataModel.prototype.initData = function(action) {
+
+    // Build the code from the identifier
+    this.sampleCode = this.sampleId.substring(1 + this.sampleId.lastIndexOf("/"));
+
+    var searchCriteria = new SearchCriteria();
+    searchCriteria.addMatchClause(SearchCriteriaMatchClause.createAttributeMatch("CODE", this.sampleCode))
+    this.openbisServer.searchForSamples(searchCriteria, action);
+
+};
 
 /**
  * Get current experiment.
@@ -119,7 +173,7 @@ DataModel.prototype.getExperimentData = function(action) {
  * Get datasets for current experiments
  * @param action
  */
-DataModel.prototype.getDataSetsForExperiment = function(action) {
+DataModel.prototype.getDataSetsForSampleAndExperiment = function(action) {
 
     // Experiment criteria
     var experimentCriteria =
@@ -135,10 +189,24 @@ DataModel.prototype.getDataSetsForExperiment = function(action) {
         }
     };
 
+    // Sample criteria
+    var sampleCriteria =
+    {
+        targetEntityKind : "SAMPLE",
+        criteria : {
+            matchClauses :
+                [ {"@type" : "AttributeMatchClause",
+                    "attribute" : "CODE",
+                    "fieldType" : "ATTRIBUTE",
+                    "desiredValue" : this.sampleCode
+                } ]
+        }
+    };
+
     // Dataset container criteria
     var criteria =
     {
-        subCriterias : [ experimentCriteria ],
+        subCriterias : [ experimentCriteria, sampleCriteria ],
         matchClauses :
             [ {"@type":"AttributeMatchClause",
                 attribute : "TYPE",
