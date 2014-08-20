@@ -22,19 +22,31 @@ function DataViewer() {
 DataViewer.prototype.initView = function() {
 
     // Div IDs
-    var experimentNameView, detailView;
+    var sampleNameView, detailView, imageView;
 
     // Aliases
+    var sample = DATAMODEL.sample;
     var exp = DATAMODEL.exp;
     var dataSetCodes = DATAMODEL.dataSetCodes;
 
     // Get the experiment name view
-    experimentNameView = $("#experimentNameView");
-    experimentNameView.empty();
+    sampleNameView = $("#sampleNameView");
+    sampleNameView.empty();
 
     // Get the detail view
     detailView = $("#detailView");
     detailView.empty();
+
+    // Get the image viewer
+    imageView = $("#imageViewer");
+    imageView.empty();
+
+    // Make sure we have something to display
+    if (sample == null || exp == null) {
+        sampleNameView.append("<h2>Sorry, could not retrieve information!</h2>");
+        sampleNameView.append("<p>Please contact your administrator.</p>");
+        return;
+    }
 
     var spOp = "<span class=\"label label-default\">";
     var spCl = "</span>";
@@ -54,12 +66,17 @@ DataViewer.prototype.initView = function() {
         }
     }
 
-    // Display the experiment name and code
-    experimentNameView.append("<h2>" + name + " <span class=\"code\">(" + code + ")</span></h2>");
+    // Display the sample name and code
+    sampleNameView.append("<h2>...Add name as property...<span class=\"code\">(" + sample.code + ")</span></h2>");
+
+    // Display the experiment name
+    detailView.append(
+            "<p>" + spOp + "Experiment name" + spCl + "</p>" +
+            "<p>" + name + " (" + code + ")</p>");
 
     // Display the experiment description
     detailView.append(
-            "<p>" + spOp + "Description" + spCl + "</p>" +
+            "<p>" + spOp + "Experiment description" + spCl + "</p>" +
             "<p>" + exp.properties.MICROSCOPY_EXPERIMENT_DESCRIPTION + "</p>");
 
 

@@ -54,6 +54,9 @@ function DataModel() {
             dataModelObj.exp = null;
             dataModelObj.expName = "Error: could not retrieve experiment!";
 
+            // Initialize the experiment view
+            DATAVIEWER.initView();
+
         } else {
 
             // Check that we got the sample associated with the openbisWebAppContext().getEntityIdentifier()
@@ -136,8 +139,12 @@ function DataModel() {
                 dataModelObj.exp = null;
                 dataModelObj.expName = "Error: could not retrieve experiment!";
 
+                // Initialize the experiment view
+                DATAVIEWER.initView();
+
             }
         }
+
     });
 
     // File URL
@@ -155,7 +162,8 @@ DataModel.prototype.initData = function(action) {
     this.sampleCode = this.sampleId.substring(1 + this.sampleId.lastIndexOf("/"));
 
     var searchCriteria = new SearchCriteria();
-    searchCriteria.addMatchClause(SearchCriteriaMatchClause.createAttributeMatch("CODE", this.sampleCode))
+    searchCriteria.addMatchClause(SearchCriteriaMatchClause.createAttributeMatch("TYPE", "MICROSCOPY_SAMPLE_TYPE"));
+    searchCriteria.addMatchClause(SearchCriteriaMatchClause.createAttributeMatch("CODE", this.sampleCode));
     this.openbisServer.searchForSamples(searchCriteria, action);
 
 };
