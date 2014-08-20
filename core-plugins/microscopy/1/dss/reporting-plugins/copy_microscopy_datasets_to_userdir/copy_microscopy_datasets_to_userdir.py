@@ -22,6 +22,13 @@ def touch(full_file):
     f.close()
     
 
+def c_unique(seq):
+    """Implements 'unique' of a list.
+    """
+    seen = set()
+    seen_add = seen.add
+    return [ x for x in seq if not (x in seen or seen_add(x))]
+
 def zip_folder(folder_path, output_path):
     """Zip the contents of an entire folder recursively. Please notice that
     empty sub-folders will NOT be included in the archive.
@@ -95,8 +102,21 @@ class Mover():
     performs the actual copying.
     """
 
-    def __init__(self, experimentId, mode, userId, properties):
-        '''Constructor'''
+    def __init__(self, experimentId, sampleId, mode, userId, properties):
+        """Constructor
+        
+        experimentId: id of the experiment (must be specified)
+        sampleId:     id of the sample (optional, if specified, the sample id
+                      will be used in the search criteria; if set to "" only
+                      the experiment id will be used as filter).
+        mode:         "normal" or "zip". If mode is "normal", the files will be
+                      copied to the user folder; if mode is "zip", the files
+                      will be ackaged into a zip files and served for download
+                      via the browser.
+        userId:       user id.
+        properties:   plug-in properties. 
+             
+        """
 
         # Store the valid file extensions
         self._validExtensions = self._getValidExtensions()
@@ -107,10 +127,20 @@ class Mover():
 
         # Experiment identifier
         self._experimentId = experimentId
+        
+        # Sample identifier
+        self._sampleId = sampleId
 
         # Experiment code
         # If no / is found, _experimentCode will be the same as _experimentId
         self._experimentCode = self._experimentId[self._experimentId.rfind("/") + 1:]
+
+        # Sample code
+        # If no / is found, _sampleCode will be the same as _sampleId
+        if self._sampleId is not None and self._sampleId != "":
+            self._sampleCode = self._sampleId[self._sampleId.rfind("/") + 1:]
+        else:
+            self._sampleCode = None
 
         # User folder: depending on the 'mode' settings, the user folder changes
         if mode =="normal":
@@ -288,7 +318,11 @@ class Mover():
         dataSetFiles = self._getFilesForDataSets(dataSets)
         if len(dataSetFiles) == 0:
             return False
-        
+
+        # Since sub-series reference the same file, we make sure to keep
+        # a unique version of the file list
+        dataSetFiles = c_unique(dataSetFiles)
+
         # Copy the files to the experiment folder
         for micrFile in dataSetFiles:
             self._copyFile(micrFile, self._experimentPath)
@@ -299,23 +333,34 @@ class Mover():
 
     def _getDataSetsForExperiment(self):
         """
-        Return a list of datasets belonging to the experiment.
+        Return a list of datasets belonging to the experiment and optionally
+        to the sample. If the sample ID is empty, only the experiment is used
+        in the search criteria.
         If none are found, return [].
 
         """
 
-        # Set search criteria to retrieve all datasets for the experiment
+        # Set search criteria to retrieve all datasets for the experiment.
+        # If the sample code is set, we also filter by it.
         searchCriteria = SearchCriteria()
-        searchCriteria.addMatchClause(MatchClause.createAttributeMatch(MatchClauseAttribute.TYPE, "MICROSCOPY_IMG"))
+        searchCriteria.addMatchClause(MatchClause.createAttributeMatch(MatchClauseAttribute.TYPE, "MICROSCOPY_IMG_CONTAINER"))
         expCriteria = SearchCriteria()
         expCriteria.addMatchClause(MatchClause.createAttributeMatch(MatchClauseAttribute.CODE, self._experimentCode))
         searchCriteria.addSubCriteria(SearchSubCriteria.createExperimentCriteria(expCriteria))
+        if self._sampleCode is not None:
+            sampleCriteria = SearchCriteria()
+            sampleCriteria.addMatchClause(MatchClause.createAttributeMatch(MatchClauseAttribute.CODE, self._sampleCode))
+            searchCriteria.addSubCriteria(SearchSubCriteria.createSampleCriteria(sampleCriteria))
+
         dataSets = searchService.searchForDataSets(searchCriteria)
         
         if len(dataSets) == 0:
             dataSets = []
             self._message = "Could not retrieve datasets for experiment " \
-            "with code " + self._experimentCode + "."
+            "with code " + self._experimentCode
+            if self._sampleCode != "":
+                self._message = self._message + " and sample " + \
+                self._sampleCode
 
         # Return
         return dataSets
@@ -471,12 +516,15 @@ def aggregate(parameters, tableBuilder):
     # Get the experiment identifier
     experimentId = parameters.get("experimentId")
 
+    # Get the sample identifier
+    sampleId = parameters.get("sampleId")
+
     # Get the mode
     mode = parameters.get("mode")
 
     # Instantiate the Mover object - userId is a global variable
     # made available to the aggregation plug-in
-    mover = Mover(experimentId, mode, userId, properties)
+    mover = Mover(experimentId, sampleId, mode, userId, properties)
 
     # Process
     success = mover.process()

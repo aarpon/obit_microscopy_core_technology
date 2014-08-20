@@ -101,7 +101,7 @@ DataViewer.prototype.refreshView = function(dataSetCode) {
     this.displayMetadata(dataSetCode);
 
     // Display the export action
-    this.displayActions(DATAMODEL.exp);
+    this.displayActions(DATAMODEL.exp, DATAMODEL.sample);
 
 };
 
@@ -183,7 +183,7 @@ DataViewer.prototype.displayMetadata = function(dataSetCode) {
  * plugin 'copy_datasets_to_userdir'
  * @param node: DataTree node
  */
-DataViewer.prototype.displayActions = function(exp) {
+DataViewer.prototype.displayActions = function(exp, sample) {
 
     // Get the detailViewAction div and empty it
     var detailViewAction = $("#detailViewAction");
@@ -199,6 +199,9 @@ DataViewer.prototype.displayActions = function(exp) {
         DATAVIEWER.displayStatus("Could not retrieve experiment identifier!", "error");
         return;
     }
+
+    // Get the sample identifier
+    var sampleId = sample.identifier;
 
     // Display metadata action
     $("#detailViewAction").append(
@@ -216,7 +219,7 @@ DataViewer.prototype.displayActions = function(exp) {
         $("#detailViewAction").append(
                 "<span><a class=\"btn btn-xs btn-primary\" " +
                 "href=\"#\" onclick='callAggregationPlugin(\"" +
-                experimentId + "\", \"normal\");'>" +
+                experimentId + "\", \"" + sampleId + "\", \"normal\");'>" +
                 "<img src=\"img/export.png\" />&nbsp;" +
                 "Export to your folder</a></span>&nbsp;");
     }
@@ -225,7 +228,7 @@ DataViewer.prototype.displayActions = function(exp) {
     $("#detailViewAction").append(
             "<span><a class=\"btn btn-xs btn-primary\" " +
             "href=\"#\" onclick='callAggregationPlugin(\"" +
-            experimentId + "\", \"zip\");'>" +
+            experimentId + "\", \"" + sampleId + "\", \"zip\");'>" +
             "<img src=\"img/zip.png\" />&nbsp;" +
             "Download</a></span>&nbsp;");
 
@@ -236,8 +239,6 @@ DataViewer.prototype.displayActions = function(exp) {
  * @param status: text to be displayed
  * @param level: one of "success", "info", "warning", "error". Default is
  * "info"
- *
- * @param tree DynaTree object
  */
 DataViewer.prototype.displayStatus = function (status, level) {
 
