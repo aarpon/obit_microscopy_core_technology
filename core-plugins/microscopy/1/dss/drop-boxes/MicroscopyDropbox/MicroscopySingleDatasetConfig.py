@@ -68,6 +68,11 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
 
         # Enable thumbnail generation
         self.setGenerateThumbnails(True)
+        
+        # Specify thumbnail resolution explicitly
+        resolutions = ['128x128', '256x256']
+        self.setGenerateImageRepresentationsUsingImageResolutions(resolutions)
+        #self.setGenerateImageRepresentationsUsingScaleFactors([0.25, 0.5])
 
         # Set the recognized extensions
         self.setRecognizedImageExtensions([\
