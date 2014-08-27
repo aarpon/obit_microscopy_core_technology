@@ -269,7 +269,7 @@ class Processor:
             num_series = len(microscopyFileNode)
 
         self._logger.info("PROCESSOR::processMicroscopyFile(): " + 
-                          "File " + self._incoming.getName() + " contains " + 
+                          "File " + relativeFileName + " contains " + 
                            str(num_series) + " series.")
 
         # Get the correct space where to create the sample
