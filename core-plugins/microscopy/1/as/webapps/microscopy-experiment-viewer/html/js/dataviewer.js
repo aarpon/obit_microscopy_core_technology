@@ -50,23 +50,8 @@ DataViewer.prototype.initView = function() {
     var spOp = "<span class=\"label label-default\">";
     var spCl = "</span>";
 
-    // Extract experiment name and underline it in code
-    var name = "";
-    var code = "";
-    var indx = exp.code.lastIndexOf("_");
-    if (indx != -1) {
-        // Make sure we got the 18 random alphanumeric chars
-        var suffix = exp.code.substr(indx);
-        if (suffix.length == 19) {
-            name = exp.code.substr(0, indx);
-            code = "<b>" + name + "</b>" + suffix;
-        } else {
-            name = code;
-        }
-    }
-
     // Display the sample name and code
-    experimentNameView.append("<h2>" + name + " <span class=\"code\">(" + code + ")</span></h2>");
+    experimentNameView.append("<h2>" + exp.code + "</h2>");
 
     // Display the experiment description
     detailView.append(
