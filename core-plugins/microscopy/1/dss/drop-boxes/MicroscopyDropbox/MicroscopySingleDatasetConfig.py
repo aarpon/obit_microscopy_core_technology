@@ -68,11 +68,11 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
 
         # Enable thumbnail generation
         self.setGenerateThumbnails(True)
-        
+
         # Specify thumbnail resolution explicitly
         resolutions = ['128x128', '256x256']
         self.setGenerateImageRepresentationsUsingImageResolutions(resolutions)
-        #self.setGenerateImageRepresentationsUsingScaleFactors([0.25, 0.5])
+        # self.setGenerateImageRepresentationsUsingScaleFactors([0.25, 0.5])
 
         # Set the recognized extensions
         self.setRecognizedImageExtensions([\
@@ -118,9 +118,9 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
         colorRGB = self._getChannelColor(seriesIndx, channelIndx)
 
         # Log
-        self._logger.info("MICROSCOPYSINGLEDATASETCONFIG::createChannel(): " +
-                          "channel (s = "+ str(seriesIndx) + ", c = " +
-                          str(channelIndx) + ") has code " + channelCode +
+        self._logger.info("MICROSCOPYSINGLEDATASETCONFIG::createChannel(): " + 
+                          "channel (s = " + str(seriesIndx) + ", c = " + 
+                          str(channelIndx) + ") has code " + channelCode + 
                           ", color (" + str(colorRGB) + " and name " + name)
 
         # Return the channel with given name and color (the code is set to
@@ -171,18 +171,18 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
             imageMetadata.timepoint = timepoint
             imageMetadata.depth = plane
             imageMetadata.channelCode = channelCode
-            imageMetadata.tileNumber = 1 # + self._seriesNum
+            imageMetadata.tileNumber = 1  # + self._seriesNum
             imageMetadata.well = "IGNORED"
 
             # Append metadata for current image
             metaData.append(imageMetadata)
 
             # Log image geometry information
-            self._logger.info("MICROSCOPYSINGLEDATASETCONFIG::extractImagesMetadata(): " +
-                        "Current image: series = " + str(series) +
-                        " channel = " + str(ch) +
-                        " plane = " + str(plane) +
-                        " timepoint = " + str(timepoint) +
+            self._logger.info("MICROSCOPYSINGLEDATASETCONFIG::extractImagesMetadata(): " + 
+                        "Current image: series = " + str(series) + 
+                        " channel = " + str(ch) + 
+                        " plane = " + str(plane) + 
+                        " timepoint = " + str(timepoint) + 
                         " channel code = " + channelCode)
 
         # Now return the metaData array

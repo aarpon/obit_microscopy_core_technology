@@ -71,8 +71,51 @@ class Processor:
         return [name for name in os.listdir(incomingStr)
                 if os.path.isdir(os.path.join(incomingStr, name))]
 
-    def createExperiment(self, expId, expName,
+    def getOrCreateExperiment(self, expId, expName,
                          expType="MICROSCOPY_EXPERIMENT"):
+        """Get the experiment with given ID if it exists, or creates it.
+
+        @param expID, the experiment ID
+        @param expName, the experiment name
+        @param expType, the experiment type that must already exist; optional,
+        default is "MICROSCOPY_EXPERIMENT"
+        """
+
+        # Make sure to keep the code length within the limits imposed by
+        # openBIS for codes
+        if len(expId) > 60:
+            expId = expId[0:60]
+
+        # Try getting the experiment
+        exp = self._transaction.getExperimentForUpdate(expId)
+        if not exp:
+            # Log
+            msg = "PROCESSOR::getOrCreateExperiment(): " + \
+            "The experiment with ID " + expId + " does not exist. Create."
+            self._logger.info(msg)
+
+            # Create the experiment
+            exp = self._transaction.createNewExperiment(expId, expType)
+            if not exp:
+                msg = "PROCESSOR::createExperiment(): " + \
+                "Could not create experiment " + expId + "!"
+                self._logger.error(msg)
+                raise Exception(msg)
+            else:
+                self._logger.info("PROCESSOR::createExperiment(): " + 
+                                  "Created experiment with ID " + expId + ".")
+        else:
+            # Log
+            msg = "PROCESSOR::getOrCreateExperiment(): " + \
+            "Registering to already existing experiment with ID " + expId + "."
+            self._logger.info(msg)
+
+        # Store the name
+        exp.setPropertyValue("MICROSCOPY_EXPERIMENT_NAME", expName)
+
+        return exp
+
+    def createExperiment(self, expId, expName, expType="MICROSCOPY_EXPERIMENT"):
         """Create an experiment with given Experiment ID extended with the addition
         of a string composed from current date and time.
 
@@ -145,8 +188,8 @@ class Processor:
         # TODO: Add this
         # owner = experimentNode.attrib.get("owner_name")
 
-        # Create the experiment (with corrected ID if needed: see above)
-        openBISExperiment = self.createExperiment(openBISIdentifier,
+        # Get or create the experiment
+        openBISExperiment = self.getOrCreateExperiment(openBISIdentifier,
                                                   expName, openBISExpType)
         if not openBISExperiment:
             msg = "PROCESSOR::processExperiment(): " + \
@@ -225,8 +268,8 @@ class Processor:
             # Get the number of series
             num_series = len(microscopyFileNode)
 
-        self._logger.info("PROCESSOR::processMicroscopyFile(): " +
-                          "File " + self._incoming.getName() + " contains " +
+        self._logger.info("PROCESSOR::processMicroscopyFile(): " + 
+                          "File " + self._incoming.getName() + " contains " + 
                            str(num_series) + " series.")
 
         # Get the correct space where to create the sample
@@ -266,8 +309,8 @@ class Processor:
                 # Register the file for the first time (for series 0)
                 
                 # Log
-                self._logger.info("PROCESSOR::processMicroscopyFile(): " +
-                                  "Creating new image dataset for file " +
+                self._logger.info("PROCESSOR::processMicroscopyFile(): " + 
+                                  "Creating new image dataset for file " + 
                                    str(fileName))
                 
                 # Create an image dataset
@@ -291,8 +334,8 @@ class Processor:
                 # Register subsequent series to point to the same file
 
                 # Log
-                self._logger.info("PROCESSOR::processMicroscopyFile(): " +
-                                  "Creating new image dataset for dataset " +
+                self._logger.info("PROCESSOR::processMicroscopyFile(): " + 
+                                  "Creating new image dataset for dataset " + 
                                   str(image_data_set))
                 
                 # Create an image dataset that points to an exising one
@@ -301,7 +344,7 @@ class Processor:
                                                                              image_data_set)
 
                 # Store the metadata in the MICROSCOPY_IMG_CONTAINER_METADATA property
-                dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_METADATA", 
+                dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_METADATA",
                                          seriesMetadataXML)
 
                 # Store the series name in the MICROSCOPY_IMG_CONTAINER_NAME property
@@ -364,7 +407,7 @@ class Processor:
             raise Exception(msg)
 
         # Log
-        self._logger.info("PROCESSOR::run(): " +
+        self._logger.info("PROCESSOR::run(): " + 
                           "Incoming folder: " + 
                           self._incoming.getAbsolutePath())
 
@@ -399,7 +442,7 @@ class Processor:
                 propertiesFile = os.path.join(self._incoming.getAbsolutePath(),
                                               line)
                 propertiesFileList.append(propertiesFile)
-                self._logger.info("PROCESSOR::run(): " +
+                self._logger.info("PROCESSOR::run(): " + 
                                   "Found: " + str(propertiesFile))
         finally:
             f.close()
@@ -407,7 +450,7 @@ class Processor:
         # Process (and ultimately register) all experiments
         for propertiesFile in propertiesFileList:
             # Log
-            self._logger.info("PROCESSOR::run(): " +
+            self._logger.info("PROCESSOR::run(): " + 
                               "Processing: " + propertiesFile)
 
             # Read the properties file into an ElementTree
