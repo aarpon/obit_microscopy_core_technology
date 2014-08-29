@@ -120,8 +120,8 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
         # Log
         self._logger.info("MICROSCOPYSINGLEDATASETCONFIG::createChannel(): " + 
                           "channel (s = " + str(seriesIndx) + ", c = " + 
-                          str(channelIndx) + ") has code " + channelCode + 
-                          ", color (" + str(colorRGB) + " and name " + name)
+                          str(channelIndx) + ") has code " + str(channelCode) + 
+                          ", color (" + str(colorRGB) + " and name " + str(name))
 
         # Return the channel with given name and color (the code is set to
         # be the same as the channel name).
@@ -183,7 +183,7 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
                         " channel = " + str(ch) + 
                         " plane = " + str(plane) + 
                         " timepoint = " + str(timepoint) + 
-                        " channel code = " + channelCode)
+                        " channel code = " + str(channelCode))
 
         # Now return the metaData array
         return metaData
@@ -199,7 +199,8 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
 
         # Try extracting the name for the given series and channel
         try:
-            name = metadata["channelName" + str(channelIndx)] 
+            key = ("channelName" + str(channelIndx)).encode('utf-8')
+            name = (metadata[key]).encode('utf-8') 
 
         except KeyError:
             err = "MICROSCOPYSINGLEDATASETCONFIG::createChannel(): " + \
@@ -211,7 +212,6 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
         # In case no name was found, assign default name
         if name == "":
             name = "No name"
-
 
         return name
 
