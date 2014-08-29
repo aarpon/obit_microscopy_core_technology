@@ -54,9 +54,15 @@ DataViewer.prototype.initView = function() {
     experimentNameView.append("<h2>" + exp.code + "</h2>");
 
     // Display the experiment description
+    var exp_descr;
+    if (exp.properties.MICROSCOPY_EXPERIMENT_DESCRIPTION) {
+        exp_descr = exp.properties.MICROSCOPY_EXPERIMENT_DESCRIPTION;
+    } else {
+        exp_descr = "<i>No description provided.</i>";
+    }
     detailView.append(
             "<p>" + spOp + "Description" + spCl + "</p>" +
-            "<p>" + exp.properties.MICROSCOPY_EXPERIMENT_DESCRIPTION + "</p>");
+            "<p>" + exp_descr + "</p>");
 
 
     // Display the samples
