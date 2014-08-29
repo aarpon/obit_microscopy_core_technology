@@ -51,21 +51,6 @@ DataViewer.prototype.initView = function() {
     var spOp = "<span class=\"label label-default\">";
     var spCl = "</span>";
 
-    // Extract experiment name and underline it in code
-    var name = "";
-    var code = "";
-    var indx = exp.code.lastIndexOf("_");
-    if (indx != -1) {
-        // Make sure we got the 18 random alphanumeric chars
-        var suffix = exp.code.substr(indx);
-        if (suffix.length == 19) {
-            name = exp.code.substr(0, indx);
-            code = "<b>" + name + "</b>" + suffix;
-        } else {
-            name = code;
-        }
-    }
-
     // Display the sample name and code
     var sample_name;
     if (sample.properties.MICROSCOPY_SAMPLE_NAME) {
@@ -78,13 +63,30 @@ DataViewer.prototype.initView = function() {
     // Display the experiment name
     detailView.append(
             "<p>" + spOp + "Experiment name" + spCl + "</p>" +
-            "<p>" + name + " (" + code + ")</p>");
+            "<p>" + exp.code + "</p>");
 
     // Display the experiment description
+    var exp_descr;
+    if (exp.properties.MICROSCOPY_EXPERIMENT_DESCRIPTION) {
+        exp_descr = exp.properties.MICROSCOPY_EXPERIMENT_DESCRIPTION;
+    } else {
+        exp_descr = "<i>No description provided.</i>";
+    }
     detailView.append(
             "<p>" + spOp + "Experiment description" + spCl + "</p>" +
-            "<p>" + exp.properties.MICROSCOPY_EXPERIMENT_DESCRIPTION + "</p>");
+            "<p>" + exp_descr + "</p>");
 
+
+    // Display the sample description
+    var sample_descr;
+    if (sample.properties.MICROSCOPY_SAMPLE_DESCRIPTION) {
+        sample_descr = sample.properties.MICROSCOPY_SAMPLE_DESCRIPTION;
+    } else {
+        sample_descr = "<i>No description provided.</i>";
+    }
+    detailView.append(
+            "<p>" + spOp + "Dataset description" + spCl + "</p>" +
+            "<p>" + sample_descr + "</p>");
 
     // Display the viewer (it will take care of refreshing automatically when
     // the series cahnges, so we do no need to worry about it.
