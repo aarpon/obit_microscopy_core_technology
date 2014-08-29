@@ -202,9 +202,16 @@ class Processor:
         # openBISExperiment.setPropertyValue("MICROSCOPY_EXPERIMENT_DATE",
         #                                   expDate)
 
-        # Set the description
-        openBISExperiment.setPropertyValue("MICROSCOPY_EXPERIMENT_DESCRIPTION",
-                                           description)
+        # Set the description -- but only if is not empty. 
+        # This makes sure that the description of an already existing experiment
+        # is not overridden by an empty string.
+        if description != "":
+            openBISExperiment.setPropertyValue("MICROSCOPY_EXPERIMENT_DESCRIPTION",
+                                               description)
+        else:
+            currentDescription = openBISExperiment.getPropertyValue("MICROSCOPY_EXPERIMENT_DESCRIPTION")
+            if (currentDescription is None or currentDescription == ""):
+                openBISExperiment.setPropertyValue("MICROSCOPY_EXPERIMENT_DESCRIPTION", "")
 
         # Get the series metadata from the XML file otherwise parse the file
         
