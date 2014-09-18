@@ -115,7 +115,7 @@ DataViewer.prototype.refreshView = function(dataSetCode) {
     this.displayMetadata(dataSetCode);
 
     // Display the export action
-    this.displayActions(DATAMODEL.exp, DATAMODEL.sample);
+    this.displayActions(DATAMODEL.exp, DATAMODEL.sample, dataSetCode);
 
 };
 
@@ -197,7 +197,7 @@ DataViewer.prototype.displayMetadata = function(dataSetCode) {
  * plugin 'copy_datasets_to_userdir'
  * @param node: DataTree node
  */
-DataViewer.prototype.displayActions = function(exp, sample) {
+DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
 
     // Get the detailViewAction div and empty it
     var detailViewAction = $("#detailViewAction");
@@ -218,11 +218,26 @@ DataViewer.prototype.displayActions = function(exp, sample) {
     var sampleId = sample.identifier;
 
     // Display metadata action
-    $("#detailViewAction").append(
-            "<span><a class=\"btn btn-xs btn-success\" " +
-            "href=\"#\" onclick='' >" +
-            "<img src=\"img/edit.png\" />&nbsp;" +
-            "View/Edit metadata</a></span>&nbsp;");
+    indx = DATAMODEL.dataSetCodes.indexOf(dataSetCode);
+    if (indx != -1) {
+
+        var dataSet = DATAMODEL.dataSets[indx];
+
+        $("#detailViewAction").append(
+                "<span><a id=\"view_metadata\" class=\"btn btn-xs btn-success\" " +
+                "href=\"#\">" + "<img src=\"img/edit.png\" />&nbsp;" +
+                "View/Edit metadata</a></span>&nbsp;");
+
+
+        // Add link to the metadata view
+        $("#view_metadata").click(
+            function () {
+                window.top.location.hash = "#entity=DATA_SET&permId=" + dataSet.code
+                    + "&ui-subtab=managed_property_section_-MICROSCOPY_SERIES_METADATA_EDITOR&ui-timestamp=" + (new Date().getTime());
+                return false;
+            });
+
+    }
 
     // Build and display the call
     callAggregationPlugin = DATAMODEL.copyDatasetsToUserDir;
