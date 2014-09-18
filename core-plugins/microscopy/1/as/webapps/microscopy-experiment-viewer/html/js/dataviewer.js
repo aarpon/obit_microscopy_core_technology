@@ -70,18 +70,27 @@ DataViewer.prototype.initView = function() {
 
         sampleView.append("<p>" + spOp + "Datasets (samples)" + spCl + "</p>");
 
-        // Put the in a table for now
-        sampleView.append("<table><tbody>");
-        for (var i = 0; i < samples.length; i++) {
+        // Display samples with a link to their corresponding webapp. Later we will reorganize the layout
+        // (when the thumbnails are ready to be retrieved from openBIS).
+        samples.forEach(function(sample) {
+
+            // Prepare the name to be shown
             var name;
-            if (samples[i].properties.MICROSCOPY_SAMPLE_NAME) {
-                name = samples[i].properties.MICROSCOPY_SAMPLE_NAME;
+            if (sample.properties.MICROSCOPY_SAMPLE_NAME) {
+                name = sample.properties.MICROSCOPY_SAMPLE_NAME;
             } else {
-                name = samples[i].code;
+                name = sample.code;
             }
-            sampleView.append("<tr><td><a href=\"#\">" + name + "</a></td></tr>");
-        }
-        sampleView.append("</tbody></table>");
+
+            // Attach a link to the dataset (sample) viewer.
+            var link = $("<a>").text(name).attr("href", "#").click(
+                function() {
+                    window.top.location.hash = "#entity=SAMPLE&permId=" + sample.permId
+                        + "&ui-subtab=webapp-section&ui-timestamp=" + (new Date().getTime());
+                    return false;
+                });
+            sampleView.append($("<tr>")).append($("<td>")).append(link);
+        });
 
         // Display the export action
         this.displayActions(DATAMODEL.exp);
