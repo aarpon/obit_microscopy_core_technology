@@ -60,10 +60,16 @@ DataViewer.prototype.initView = function() {
     }
     sampleNameView.append("<h2>" + sample_name + "</h2>");
 
+    // Display the experiment name (code) and link it to the experiment web app
+    var link = $("<a>").text(exp.code).attr("href", "#").click(function() {
+        window.top.location.hash = "#entity=EXPERIMENT&permId=" + exp.permId +
+            "&ui-subtab=webapp-section&ui-timestamp=" + (new Date().getTime());
+        return false;
+    });
+
     // Display the experiment name
-    detailView.append(
-            "<p>" + spOp + "Experiment name" + spCl + "</p>" +
-            "<p>" + exp.code + "</p>");
+    detailView.append("<p>" + spOp + "Experiment name" + spCl + "</p>");
+    detailView.append($("<p>").append(link));
 
     // Display the experiment description
     var exp_descr;
