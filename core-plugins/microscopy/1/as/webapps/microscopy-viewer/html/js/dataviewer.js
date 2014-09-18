@@ -233,7 +233,7 @@ DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
         $("#view_metadata").click(
             function () {
                 window.top.location.hash = "#entity=DATA_SET&permId=" + dataSet.code
-                    + "&ui-subtab=managed_property_section_-MICROSCOPY_SERIES_METADATA_EDITOR&ui-timestamp=" + (new Date().getTime());
+                    + "&ui-subtab=managed_property_section_-s   eries%20metadata&ui-timestamp=" + (new Date().getTime());
                 return false;
             });
 
