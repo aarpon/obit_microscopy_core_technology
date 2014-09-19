@@ -11,6 +11,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 from BioFormatsProcessor import BioFormatsProcessor
 from MicroscopySingleDatasetConfig import MicroscopySingleDatasetConfig
+from MicroscopyCompositeDatasetConfig import MicroscopyCompositeDatasetConfig
 
 class Processor:
     """The Processor class performs all steps required for registering datasets
@@ -97,12 +98,12 @@ class Processor:
             # Create the experiment
             exp = self._transaction.createNewExperiment(expId, expType)
             if not exp:
-                msg = "PROCESSOR::createExperiment(): " + \
+                msg = "PROCESSOR::getOrCreateExperiment(): " + \
                 "Could not create experiment " + expId + "!"
                 self._logger.error(msg)
                 raise Exception(msg)
             else:
-                self._logger.info("PROCESSOR::createExperiment(): " + 
+                self._logger.info("PROCESSOR::getOrCreateExperiment(): " + 
                                   "Created experiment with ID " + expId + ".")
         else:
             # Log
@@ -282,7 +283,7 @@ class Processor:
         # Get the correct space where to create the sample
         identifier = openBISExperiment.getExperimentIdentifier()
         sample_space = identifier[1:identifier.find('/', 1)]
-        self._logger.info("Creating sample in space " + sample_space)
+        self._logger.info("Creating sample with auto-generated code in space " + sample_space)
 
         # Create a sample for the dataset
         sample = self._transaction.createNewSampleWithGeneratedCode(sample_space,
@@ -367,6 +368,69 @@ class Processor:
             dataset.setSample(sample)
 
 
+    def processMicroscopyCompositeFile(self, microscopyCompositeFileNode,
+                                       openBISExperiment):
+        """Register the Microscopy Composite File using the parsed properties file.
+
+        @param microscopyCompositeFileNode An XML node corresponding to a microscopy
+        file (dataset)
+        @param openBISExperiment An ISample object representing an Experiment
+        """
+
+        # Make sure to have a supported composite file type
+        compositeFileType = microscopyCompositeFileNode.attrib.get("compositeFileType")
+
+        if compositeFileType != "Leica TIFF Series":
+
+            msg = "PROCESSOR::processMicroscopyCompositeFile(): " + \
+                      "Invalid composite file type found: " + compositeFileType
+            self._logger.error(msg)
+            raise Exception(msg)
+
+        else:
+
+            self._logger.info("PROCESSOR::processMicroscopyCompositeFile(): " + \
+                              "Processing " + compositeFileType)
+
+        # Get the correct space where to create the sample
+        identifier = openBISExperiment.getExperimentIdentifier()
+        sample_space = identifier[1:identifier.find('/', 1)]
+        self._logger.info("Creating sample with auto-generated code in space " + sample_space)
+
+        # Create a sample for the dataset
+        sample = self._transaction.createNewSampleWithGeneratedCode(sample_space,
+                                                                    "MICROSCOPY_SAMPLE_TYPE")
+
+        # Set the sample name
+        name = microscopyCompositeFileNode.attrib.get("name")
+        sample.setPropertyValue("MICROSCOPY_SAMPLE_NAME", name)
+
+        # Set the sample description
+        sampleDescr = microscopyCompositeFileNode.attrib.get("description")
+        if sampleDescr is None:
+            sampleDescr = ""
+        sample.setPropertyValue("MICROSCOPY_SAMPLE_DESCRIPTION", sampleDescr)
+
+        # Set the experiment
+        sample.setExperiment(openBISExperiment)
+
+        # Get the relative path to the containing folder
+        relativeFolder = microscopyCompositeFileNode.attrib.get("relativeFolder")
+        fullFolder = os.path.join(self._incoming.getAbsolutePath(), relativeFolder)
+
+        # Create a configuration object
+        compositeDatasetConfig = MicroscopyCompositeDatasetConfig([],
+                                                                  self._logger,
+                                                                  0)
+
+        # Create a dataset
+        dataset = self._transaction.createNewImageDataSet(compositeDatasetConfig,
+                                                          java.io.File(fullFolder))
+
+        # Set the (common) sample for the series
+        dataset.setSample(sample)
+
+
     def register(self, tree):
         """Register the Experiment using the parsed properties file.
 
@@ -392,17 +456,28 @@ class Processor:
                                                        "MICROSCOPY_EXPERIMENT")
 
             # Process children of the Experiment
-            for microscopyFileNode in experimentNode:
+            for fileNode in experimentNode:
 
-                if microscopyFileNode.tag != "MicroscopyFile":
+                if fileNode.tag == "MicroscopyFile":
+
+                    # Process the MicroscopyFile node
+                    self.processMicroscopyFile(fileNode, openBISExperiment)
+
+                elif fileNode.tag == "MicroscopyCompositeFile":
+
+                    # Process the MicroscopyCompositeFile node
+                    self.processMicroscopyCompositeFile(fileNode, openBISExperiment)
+
+                    # Inform
+                    self._logger.info("Processed composite file")
+
+                else:
+
                     msg = "PROCESSOR::register(): " + \
-                    "Expected MicroscopyFile node (found " + \
-                          microscopyFileNode.tag + ")!"
+                    "Expected either MicroscopyFile or MicroscopyCompositeFile " + \
+                    "node; found instead " + fileNode.tag + ")!"
                     self._logger.error(msg)
                     raise Exception(msg)
-
-                # Process the MicroscopyFile node
-                self.processMicroscopyFile(microscopyFileNode, openBISExperiment)
 
         # Log that we are finished with the registration
         self._logger.info("PROCESSOR::register(): " + 
