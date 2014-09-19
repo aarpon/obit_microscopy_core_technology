@@ -40,7 +40,7 @@ class MicroscopyCompositeDatasetConfig(SimpleImageContainerDataConfig):
     _metadata = []
 
     # Regular expression pattern
-    _pattern = re.compile("(.*?)_s(\d.*?)_z(\d.*?)_ch(\d.*?)\.ti(f{1,2})$", re.IGNORECASE)
+    _pattern = re.compile("(.*?)(_s(\d.*?))?_z(\d.*?)_ch(\d.*?)\.ti(f{1,2})$", re.IGNORECASE)
 
     def __init__(self, allSeriesMetadata, logger, seriesNum=0):
         """Constructor.
@@ -159,7 +159,7 @@ class MicroscopyCompositeDatasetConfig(SimpleImageContainerDataConfig):
         # identifiers in this case do not carry any useful information.
         m = self._pattern.match(imagePath)
 
-        if m is None or len(m.groups()) != 5:
+        if m is None or len(m.groups()) != 6:
             err = "MICROSCOPYCOMPOSITEDATASETCONFIG::extractImageMetadata(): " + \
             "unexpected file name " + str(imagePath)
             self._logger.error(err)
@@ -170,14 +170,19 @@ class MicroscopyCompositeDatasetConfig(SimpleImageContainerDataConfig):
         if self._basename == "" or self._basename != basename:
             self._basename = basename
 
-        # Get the series number
-        series = int(m.group(2))
+        # The series number is not always defined in the file name.
+        # In the regex, the group(2) optionally matches _s{digits};
+        # in case group(2) is not None, the actual series number is
+        # stored in group(3). 
+        series = 0
+        if m.group(2) is not None:
+            series = int(m.group(3))
 
         # Get the plane number
-        plane = int(m.group(3))
+        plane = int(m.group(4))
 
         # Get the channel number
-        ch = int(m.group(4))
+        ch = int(m.group(5))
 
         # Get the timepoint
         timepoint = 1
