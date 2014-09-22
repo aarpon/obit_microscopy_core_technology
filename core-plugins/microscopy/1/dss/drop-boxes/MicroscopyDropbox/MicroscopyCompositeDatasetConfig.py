@@ -65,7 +65,7 @@ class MicroscopyCompositeDatasetConfig(SimpleImageContainerDataConfig):
         self._allSeriesMetadata = allSeriesMetadata
 
         # Store the series number
-        self._seriesNum = seriesNum
+        self._seriesNum = int(seriesNum)
 
         # This is microscopy data
         self.setMicroscopyData(True)
@@ -121,9 +121,6 @@ class MicroscopyCompositeDatasetConfig(SimpleImageContainerDataConfig):
         # Get the indices of series and channel from the channel code
         (seriesIndx, channelIndx) = self._getSeriesAndChannelNumbers(channelCode)
  
-        if self._seriesNum != -1 and seriesIndx != self._seriesNum:
-            return
- 
         # Get the channel name
         name = self._getChannelName(seriesIndx, channelIndx)
          
@@ -166,11 +163,6 @@ class MicroscopyCompositeDatasetConfig(SimpleImageContainerDataConfig):
             self._logger.error(err)
             raise Exception(err)
 
-        # Get and store the base name
-        basename = m.group(1)
-        if self._basename == "" or self._basename != basename:
-            self._basename = basename
-
         # The series number is not always defined in the file name.
         # In the regex, the group(2) optionally matches _s{digits};
         # in case group(2) is not None, the actual series number is
@@ -180,8 +172,13 @@ class MicroscopyCompositeDatasetConfig(SimpleImageContainerDataConfig):
             series = int(m.group(3))
 
         # Make sure to process only the relevant series
-        if self._seriesNum != -1 and series != self._seriesNum:
-            return
+        if series != self._seriesNum:
+            return []
+
+        # Get and store the base name
+        basename = m.group(1)
+        if self._basename == "" or self._basename != basename:
+            self._basename = basename
 
         # Get the plane number
         plane = int(m.group(4))
