@@ -440,16 +440,19 @@ class Processor:
                                    str(fullFolder) + " and series " + str(i))
 
                 # Create a dataset
-                image_data_set = self._transaction.createNewImageDataSet(compositeDatasetConfig,
-                                                                         java.io.File(fullFolder))
+                dataset = self._transaction.createNewImageDataSet(compositeDatasetConfig,
+                                                                  java.io.File(fullFolder))
 
                 # Store the metadata in the MICROSCOPY_IMG_CONTAINER_METADATA property
                 # TODO: Get the store the metadata information
-                image_data_set.setPropertyValue("MICROSCOPY_IMG_CONTAINER_METADATA", "")
+                dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_METADATA", "")
 
                 # Store the series name in the MICROSCOPY_IMG_CONTAINER_NAME property
                 # TODO Get and store the correct series name
-                image_data_set.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME", "Series_" + str(i))
+                dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME", "Series_" + str(i))
+
+                # Now store a reference to the first dataset
+                image_data_set = dataset
 
                 # Move the file
                 self._transaction.moveFile(fullFolder, image_data_set)
