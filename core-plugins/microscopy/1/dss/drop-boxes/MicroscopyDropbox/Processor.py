@@ -326,20 +326,17 @@ class Processor:
                 self._logger.info("PROCESSOR::processMicroscopyFile(): " + 
                                   "Creating new image dataset for file " + 
                                    str(fileName))
-                
+
                 # Create an image dataset
-                dataset = self._transaction.createNewImageDataSet(singleDatasetConfig,
-                                                                  java.io.File(fileName))
+                image_data_set = self._transaction.createNewImageDataSet(singleDatasetConfig,
+                                                                         java.io.File(fileName))
 
                 # Store the metadata in the MICROSCOPY_IMG_CONTAINER_METADATA property
-                dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_METADATA", seriesMetadataXML)
+                image_data_set.setPropertyValue("MICROSCOPY_IMG_CONTAINER_METADATA", seriesMetadataXML)
                 
                 # Store the series name in the MICROSCOPY_IMG_CONTAINER_NAME property
-                dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME", allSeriesMetadata[i]["name"])
+                image_data_set.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME", allSeriesMetadata[i]["name"])
 
-                # Now store a reference to the first dataset
-                image_data_set = dataset
-                
                 # Move the file
                 self._transaction.moveFile(fileName, image_data_set)
 
@@ -411,6 +408,10 @@ class Processor:
             sampleDescr = ""
         sample.setPropertyValue("MICROSCOPY_SAMPLE_DESCRIPTION", sampleDescr)
 
+        # Get the series indices
+        seriesIndices = microscopyCompositeFileNode.attrib.get("seriesIndices")
+        seriesIndices = seriesIndices.split(",")
+
         # Set the experiment
         sample.setExperiment(openBISExperiment)
 
@@ -418,17 +419,34 @@ class Processor:
         relativeFolder = microscopyCompositeFileNode.attrib.get("relativeFolder")
         fullFolder = os.path.join(self._incoming.getAbsolutePath(), relativeFolder)
 
-        # Create a configuration object
-        compositeDatasetConfig = MicroscopyCompositeDatasetConfig([],
-                                                                  self._logger,
-                                                                  0)
+        # Register all series in the file
+        image_data_set = None
+        for i in seriesIndices:
 
-        # Create a dataset
-        dataset = self._transaction.createNewImageDataSet(compositeDatasetConfig,
-                                                          java.io.File(fullFolder))
+            self._logger.info("Processing series " + str(i))
+
+            # Create a configuration object
+            compositeDatasetConfig = MicroscopyCompositeDatasetConfig([],
+                                                                      self._logger,
+                                                                      i)
+
+            # Create a dataset
+            image_data_set = self._transaction.createNewImageDataSet(compositeDatasetConfig,
+                                                                     java.io.File(fullFolder))
+
+            # Store the metadata in the MICROSCOPY_IMG_CONTAINER_METADATA property
+            # TODO: Get the store the metadata information
+            image_data_set.setPropertyValue("MICROSCOPY_IMG_CONTAINER_METADATA", "")
+
+            # Store the series name in the MICROSCOPY_IMG_CONTAINER_NAME property
+            # TODO Get and store the correct series name
+            image_data_set.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME", "Series_" + str(i))
+
+        # Move the file
+        self._transaction.moveFile(fullFolder, image_data_set)
 
         # Set the (common) sample for the series
-        dataset.setSample(sample)
+        image_data_set.setSample(sample)
 
 
     def register(self, tree):

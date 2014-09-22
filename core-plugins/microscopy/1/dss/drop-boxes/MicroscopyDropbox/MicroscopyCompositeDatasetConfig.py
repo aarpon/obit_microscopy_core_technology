@@ -15,6 +15,7 @@ from ch.systemsx.cisd.openbis.dss.etl.dto.api import ChannelColorRGB
 from ch.systemsx.cisd.openbis.dss.etl.dto.api import Channel
 import xml.etree.ElementTree as ET
 
+
 class MicroscopyCompositeDatasetConfig(SimpleImageContainerDataConfig):
     """Image data configuration class for composite image files."""
 
@@ -120,8 +121,8 @@ class MicroscopyCompositeDatasetConfig(SimpleImageContainerDataConfig):
         # Get the indices of series and channel from the channel code
         (seriesIndx, channelIndx) = self._getSeriesAndChannelNumbers(channelCode)
  
-        #if self._seriesNum != -1 and seriesIndx != self._seriesNum:
-        #    return
+        if self._seriesNum != -1 and seriesIndx != self._seriesNum:
+            return
  
         # Get the channel name
         name = self._getChannelName(seriesIndx, channelIndx)
@@ -178,6 +179,10 @@ class MicroscopyCompositeDatasetConfig(SimpleImageContainerDataConfig):
         if m.group(2) is not None:
             series = int(m.group(3))
 
+        # Make sure to process only the relevant series
+        if self._seriesNum != -1 and series != self._seriesNum:
+            return
+
         # Get the plane number
         plane = int(m.group(4))
 
@@ -196,15 +201,8 @@ class MicroscopyCompositeDatasetConfig(SimpleImageContainerDataConfig):
         # Initialize a new ImageMetadata object
         imageMetadata = ImageMetadata();
 
-        # Create the image identifier object
-        id = ImageIdentifier(series, timepoint, plane, ch)
- 
-        err = "MICROSCOPYCOMPOSITEDATASETCONFIG::extractImagesMetadata(): " + \
-        "file " + imagePath + " with input identifiers " + str(imageIdentifiers) + " -> series: " + str(series) + "; plane: " + str(plane) + "; channel: " + str(ch) + "; timepoint: " + str(timepoint) + "; channelCode: " + str(channelCode) + "; updated image identifier: " + str(id);
-        self._logger.info(err)
- 
         # Fill in all information
-        imageMetadata.imageIdentifier = id 
+        imageMetadata.imageIdentifier = imageIdentifiers.get(0) 
         imageMetadata.seriesNumber = series
         imageMetadata.timepoint = timepoint
         imageMetadata.depth = plane
@@ -216,7 +214,7 @@ class MicroscopyCompositeDatasetConfig(SimpleImageContainerDataConfig):
         "generate ImageMetadata object: " + str(imageMetadata);
         self._logger.info(err)
 
-        # Now store and return the image metadata object
+        # Now return the image metadata object in an array
         Metadata.append(imageMetadata)
         return Metadata
 
