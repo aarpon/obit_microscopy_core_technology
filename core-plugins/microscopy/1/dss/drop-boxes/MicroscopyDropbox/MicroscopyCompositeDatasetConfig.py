@@ -87,25 +87,8 @@ class MicroscopyCompositeDatasetConfig(SimpleImageContainerDataConfig):
         self.setGenerateImageRepresentationsUsingImageResolutions(resolutions)
         # self.setGenerateImageRepresentationsUsingScaleFactors([0.25, 0.5])
 
-        # Set the recognized extensions
-        self.setRecognizedImageExtensions([\
-                "nd2", "czi", "zvi", "lsm", "stk", "tif", "tiff", "lif",
-                "liff", "ics", "ids", "ims", "oib", "oif", "ome", "r3d",
-                "dicom", "dm3", "lei", "png", "jp2", "jpg", "1sc", "2",
-                "2fl", "3", "4", "5", "acff", "afm", "aim", "al3d", "am",
-                "amiramesh", "apl", "arf", "avi", "bip", "bmp", "c01",
-                "cfg", "cr2", "crw", "cxd", "dat", "dcm", "dm2", "dti",
-                "dv", "eps", "epsi", "exp", "fdf", "fff", "ffr", "fits",
-                "flex", "fli", "frm", "gel", "gif", "grey", "hdr", "hed",
-                "his", "htd", "html", "hx", "img", "inr", "ipl", "ipm",
-                "ipw", "jpk", "jpx", "l2d", "labels", "lim", "mdb", "mea",
-                "mnc", "mng", "mod", "mov", "mrc", "mrw", "mtb", "mvd2",
-                "naf", "nd", "ndpi", "nef", "nhdr", "nrrd", "obsep", "par",
-                "pcx", "pds", "pgm", "pic", "pict", "pnl", "pr3", "ps",
-                "psd", "raw", "res", "scn", "sdt", "seq", "sld", "sm2",
-                "sm3", "spi", "stp", "svs", "sxm", "tfr", "tga", "tnb",
-                "top", "txt", "v", "vms", "vsi", "vws", "wat", "xdce",
-                "xml", "xqd", "xqf", "xv", "xys", "zfp", "zfr"])
+        # Set the recognized extensions -- currently just tif(f)
+        self.setRecognizedImageExtensions(["tif", "tiff"])
 
         # Set the dataset type
         self.setDataSetType("MICROSCOPY_IMG")
