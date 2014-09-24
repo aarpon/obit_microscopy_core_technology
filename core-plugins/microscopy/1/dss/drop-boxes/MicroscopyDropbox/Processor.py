@@ -276,6 +276,7 @@ class Processor:
             # Get the number of series
             num_series = len(microscopyFileNode)
 
+        # Log
         self._logger.info("PROCESSOR::processMicroscopyFile(): " + 
                           "File " + relativeFileName + " contains " + 
                            str(num_series) + " series.")
@@ -362,7 +363,8 @@ class Processor:
                                          seriesMetadataXML)
 
                 # Store the series name in the MICROSCOPY_IMG_CONTAINER_NAME property
-                dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME", allSeriesMetadata[i]["name"])
+                dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME",
+                                         allSeriesMetadata[i]["name"])
 
             # Set the (common) sample for the series
             dataset.setSample(sample)
@@ -392,6 +394,14 @@ class Processor:
             self._logger.info("PROCESSOR::processMicroscopyCompositeFile(): " + \
                               "Processing " + compositeFileType)
 
+        # Get the metadata for all series from the (processed) settings XML 
+        allSeriesMetadata = []
+        for series in microscopyCompositeFileNode:
+            allSeriesMetadata.append(series.attrib)
+
+        # Get the number of series
+        num_series = len(microscopyCompositeFileNode)
+
         # Get the correct space where to create the sample
         identifier = openBISExperiment.getExperimentIdentifier()
         sample_space = identifier[1:identifier.find('/', 1)]
@@ -414,22 +424,28 @@ class Processor:
         # Set the experiment
         sample.setExperiment(openBISExperiment)
 
-        # Get the series indices
-        seriesIndices = microscopyCompositeFileNode.attrib.get("seriesIndices")
-        seriesIndices = seriesIndices.split(",")
-
         # Get the relative path to the containing folder
         relativeFolder = microscopyCompositeFileNode.attrib.get("relativeFolder")
         fullFolder = os.path.join(self._incoming.getAbsolutePath(), relativeFolder)
 
+        # Log
+        self._logger.info("PROCESSOR::processMicroscopyFile(): " + 
+                          "Folder " + relativeFolder + " contains " + 
+                           str(num_series) + " series.")
+
         # Register all series in the file
         image_data_set = None
-        for i in seriesIndices:
+        for i in range(num_series):
 
             # Create a configuration object
-            compositeDatasetConfig = MicroscopyCompositeDatasetConfig([],
+            compositeDatasetConfig = MicroscopyCompositeDatasetConfig(allSeriesMetadata,
                                                                       self._logger,
                                                                       i)
+
+            # Extract the metadata associated to this series and convert it to
+            # XML to store it in the MICROSCOPY_IMG_CONTAINER_METADATA property
+            # of the MICROSCOPY_IMG_CONTAINER_METADATA (series) dataset type
+            seriesMetadataXML = self.dictToXML(allSeriesMetadata[i])
 
             # Register all series in the composite file (folder)
             if image_data_set is None:
@@ -445,11 +461,13 @@ class Processor:
 
                 # Store the metadata in the MICROSCOPY_IMG_CONTAINER_METADATA property
                 # TODO: Get the store the metadata information
-                dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_METADATA", "")
+                dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_METADATA",
+                                         seriesMetadataXML)
 
                 # Store the series name in the MICROSCOPY_IMG_CONTAINER_NAME property
                 # TODO Get and store the correct series name
-                dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME", "Series_" + str(i))
+                dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME",
+                                         allSeriesMetadata[i]["name"])
 
                 # Now store a reference to the first dataset
                 image_data_set = dataset
