@@ -253,6 +253,17 @@ DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
                 "Export to your folder</a></span>&nbsp;");
     }
 
+    // Display the "Export to your HRM source folder" button only if enabled in the configuration file
+    if (CONFIG['enableExportToHRMSourceFolder'] == true) {
+
+        $("#detailViewAction").append(
+                "<span><a class=\"btn btn-xs btn-default\" " +
+                "href=\"#\" onclick='callAggregationPlugin(\"" +
+                experimentId + "\", \"" + sampleId + "\", \"hrm\");'>" +
+                "<img src=\"img/hrm.png\" />&nbsp;" +
+                "Export to your HRM source folder</a></span>&nbsp;");
+    }
+
     // Build and display the call for a zip archive
     $("#detailViewAction").append(
             "<span><a class=\"btn btn-xs btn-primary\" " +

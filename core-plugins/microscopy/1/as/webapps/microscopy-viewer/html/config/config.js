@@ -5,6 +5,7 @@
 CONFIG = {
 
     'enableExportToUserFolder': true,
+    'enableExportToHRMSourceFolder': true,
     'dataStoreServer': "DSS1"
 
 }

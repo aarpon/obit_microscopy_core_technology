@@ -109,10 +109,11 @@ class Mover():
         sampleId:     id of the sample (optional, if specified, the sample id
                       will be used in the search criteria; if set to "" only
                       the experiment id will be used as filter).
-        mode:         "normal" or "zip". If mode is "normal", the files will be
-                      copied to the user folder; if mode is "zip", the files
-                      will be ackaged into a zip files and served for download
-                      via the browser.
+        mode:         "normal", "zip", or "hrm". If mode is "normal", the files
+                      will be copied to the user folder; if mode is "zip", the
+                      files will be packaged into a zip files and served for 
+                      download via the browser; if mode is "hrm", the files
+                      will be copied to the HRM source folder.
         userId:       user id.
         properties:   plug-in properties. 
              
@@ -155,6 +156,12 @@ class Mover():
 
             # The user folder now will point to the Session Workspace
             self._userFolder = sessionWorkspace.absolutePath
+
+        elif mode == "hrm":
+
+            # Standard user folder
+            self._userFolder = os.path.join(self._properties['hrm_base_dir'], \
+                                            userId, self._properties['hrm_src_subdir'])
 
         else:
             raise Exception("Bad value for argument 'mode' (" + mode  +")")
@@ -218,7 +225,8 @@ class Mover():
 
 
     def getZipArchiveFullPath(self):
-        """Return the full path of the zip archive (or "" if mode was "normal").
+        """Return the full path of the zip archive (or "" if mode was "normal"
+        or "hrm").
         """
 
         if self._mode == "zip":
@@ -482,7 +490,7 @@ def parsePropertiesFile():
     """Parse properties file for custom plug-in settings."""
 
     filename = "../core-plugins/microscopy/1/dss/reporting-plugins/copy_microscopy_datasets_to_userdir/plugin.properties"
-    var_names = ['base_dir', 'export_dir']
+    var_names = ['base_dir', 'export_dir', 'hrm_base_dir', 'hrm_src_subdir']
 
     properties = {}
     try:
@@ -577,6 +585,8 @@ def aggregate(parameters, tableBuilder):
 
         if mode == "normal":
             body = snip + "successfully exported to {...}/" + relativeExpFolder + "."
+        elif mode == "hrm":
+            body = snip + "successfully exported to your HRM source folder."
         else:
             body = snip + "successfully packaged for download."
             

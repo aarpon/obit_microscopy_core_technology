@@ -175,6 +175,8 @@ DataModel.prototype.copyDatasetsToUserDir = function(experimentId, sampleId, mod
                             if (r_Mode == "normal") {
                                 status = snip + "successfully exported to " +
                                     "{...}/" + r_RelativeExpFolder + ".";
+                            } else if (r_Mode == "hrm") {
+                                status = snip + "successfully exported to your HRM source folder.";
                             } else {
                                 // Add a placeholder to store the download URL.
                                 status = snip + "successfully packaged. <span id=\"download_url_span\"></span>";
