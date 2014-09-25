@@ -120,7 +120,6 @@ class Mover():
 
         # Store the valid file extensions
         self._validExtensions = self._getValidExtensions()
-        self._regexValidExtensions = self._getRegexValidExtensions()
 
         # Store properties
         self._properties = properties
@@ -287,22 +286,10 @@ class Mover():
         return ext
 
 
-    def _getRegexValidExtensions(self):
-        """Build a regex to use to filter dataset files by extension."""
-
-        reg = ".*\.("
-        for ext in self._validExtensions:
-            reg += ext + "|"
-        
-        reg = reg[:-1]
-        reg += ")"
-        
-        return reg
-
-
     def _copyFilesForExperiment(self):
         """
         Copies the microscopy files in the experiment to the user directory.
+        Folders are copied recursively.
 
         Returns True for success. In case of error, returns False and sets
         the error message in self._message -- to be retrieved with the
@@ -325,7 +312,10 @@ class Mover():
 
         # Copy the files to the experiment folder
         for micrFile in dataSetFiles:
-            self._copyFile(micrFile, self._experimentPath)
+            if os.path.isdir(micrFile):
+                self._copyDir(micrFile, self._experimentPath)
+            else:
+                self._copyFile(micrFile, self._experimentPath)
 
         # Return success
         return True
@@ -369,7 +359,7 @@ class Mover():
     def _getFilesForDataSets(self, dataSets):
         """
         Get the list of microscopy file paths that correspond to the input list
-        of datasets. If not files are found, returns [].
+        of datasets. If no files are found, returns [].
         """
 
         if dataSets == []:
@@ -378,15 +368,19 @@ class Mover():
         dataSetFiles = []
         for dataSet in dataSets:
             content = contentProvider.getContent(dataSet.getDataSetCode())
-            nodes = content.listMatchingNodes("original", 
-                                              self._regexValidExtensions)
+            nodes = content.listMatchingNodes("original", ".*")
+
             if nodes is not None:
                 for node in nodes:
                     fileName = node.tryGetFile()
                     if fileName is not None:
                         fileName = str(fileName)
-                        if self._isValidMicroscopyFile(fileName):
+                        if os.path.isdir(str(fileName)):
                             dataSetFiles.append(fileName)
+                        elif self._isValidMicroscopyFile(fileName):
+                            dataSetFiles.append(fileName)
+                        else:
+                            raise("Unexpected file!")
 
         if len(dataSetFiles) == 0:
             self._message = "Could not retrieve dataset files!"
@@ -415,6 +409,21 @@ class Mover():
         subprocess.call(["/bin/touch", dstFile])
         subprocess.call(["/bin/cp", source, dstDir])
         self._numCopiedFiles += 1
+
+    def _copyDir(self, source, dstDir):
+        """Copies the source directory (with full path) recursively to directory dstDir.
+        """
+        dstSubDir = os.path.join(dstDir, os.path.basename(source))
+        self._createDir(dstSubDir)
+
+        # Now copy recursively (by preserving NFSv4 ACLs)
+        files = os.listdir(source)
+        for f in files:
+            fullPath = os.path.join(source, f)
+            if os.path.isdir(fullPath):
+                self._copyDir(fullPath, dstSubDir)
+            else:
+                self._copyFile(fullPath, dstSubDir)
 
 
     def _createDir(self, dirFullPath):
