@@ -86,7 +86,7 @@ DataViewer.prototype.initView = function() {
             var link = $("<a>").text(name).attr("href", "#").click(
                 function() {
                     window.top.location.hash = "#entity=SAMPLE&permId=" + sample.permId
-                        + "&ui-subtab=webapp-section&ui-timestamp=" + (new Date().getTime());
+                        + "&ui-subtab=webapp-section_microscopy-viewer";
                     return false;
                 });
             sampleView.append($("<tr>")).append($("<td>")).append(link);
