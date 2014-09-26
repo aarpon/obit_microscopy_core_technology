@@ -433,14 +433,22 @@ class Processor:
                           "Folder " + relativeFolder + " contains " + 
                            str(num_series) + " series.")
 
+        # Get the series indices
+        seriesIndices = microscopyCompositeFileNode.attrib.get("seriesIndices")
+        seriesIndices = seriesIndices.split(",")
+
         # Register all series in the file
         image_data_set = None
         for i in range(num_series):
 
+            # Series number
+            seriesNum = seriesIndices[i]
+
             # Create a configuration object
             compositeDatasetConfig = MicroscopyCompositeDatasetConfig(allSeriesMetadata,
+                                                                      seriesIndices,
                                                                       self._logger,
-                                                                      i)
+                                                                      seriesNum)
 
             # Extract the metadata associated to this series and convert it to
             # XML to store it in the MICROSCOPY_IMG_CONTAINER_METADATA property
@@ -453,7 +461,7 @@ class Processor:
                 # Log
                 self._logger.info("PROCESSOR::processCompositeMicroscopyFile(): " + 
                                   "Creating new image dataset for folder " + 
-                                   str(fullFolder) + " and series " + str(i))
+                                   str(fullFolder) + " and series " + str(seriesNum))
 
                 # Create a dataset
                 dataset = self._transaction.createNewImageDataSet(compositeDatasetConfig,
@@ -491,7 +499,7 @@ class Processor:
                 dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_METADATA", "")
 
                 # Store the series name in the MICROSCOPY_IMG_CONTAINER_NAME property
-                dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME", "Series_" + str(i))
+                dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME", "Series_" + str(seriesNum))
 
 
             # Set the (common) sample for the series

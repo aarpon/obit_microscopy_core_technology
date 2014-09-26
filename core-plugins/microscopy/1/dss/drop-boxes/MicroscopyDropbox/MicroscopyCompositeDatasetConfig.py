@@ -28,6 +28,10 @@ class MicroscopyCompositeDatasetConfig(SimpleImageContainerDataConfig):
     # Number of the series to register (for a multi-series dataset).
     _seriesNum = 0
 
+    # Series indices (since they might not always start from zero and 
+    # grow monotonically.
+    _seriesIndices = []
+
     # Logger
     _logger = None
 
@@ -41,9 +45,9 @@ class MicroscopyCompositeDatasetConfig(SimpleImageContainerDataConfig):
     _metadata = []
 
     # Regular expression pattern
-    _pattern = re.compile("(.*?)(_s(\d.*?))?_z(\d.*?)_ch(\d.*?)\.ti(f{1,2})$", re.IGNORECASE)
+    _pattern = re.compile("(.*?)((_Series|_s)(\d.*?))?_z(\d.*?)_ch(\d.*?)\.ti(f{1,2})$", re.IGNORECASE)
 
-    def __init__(self, allSeriesMetadata, logger, seriesNum=0):
+    def __init__(self, allSeriesMetadata, seriesIndices, logger, seriesNum=0):
         """Constructor.
 
         @param allSeriesMetadata: list of metadata attributes generated either
@@ -51,10 +55,12 @@ class MicroscopyCompositeDatasetConfig(SimpleImageContainerDataConfig):
                                   settings XML file, or from BioFormatsProcessor
                                   and returned via:
                                   BioFormatsProcessor.getMetadataXML(asXML=False)
+        @param seriesIndices:     list of known series indices (do not
+                                  necessarily need to start at 0 and increase
+                                  monotonically by one; could be [22, 30, 32]
         @param seriesNum:         Int Number of the series to register. All
                                   other series in the file will be ignored.
-                                  Set to -1 to register all series to the 
-                                  same dataset.
+                                  seriesNum MUST BE CONTAINED in seriesIndices.
         @param logger:            logger object
         """
 
@@ -64,8 +70,18 @@ class MicroscopyCompositeDatasetConfig(SimpleImageContainerDataConfig):
         # Store the series metadata
         self._allSeriesMetadata = allSeriesMetadata
 
-        # Store the series number
+        # Store the seriesIndices
+        if type(seriesIndices) == str:
+             seriesIndices = seriesIndices.split(",")
+        self._seriesIndices = map(int, seriesIndices)
+
+        # Store the series number: make sure that it belongs to seriesIndices
         self._seriesNum = int(seriesNum)
+        try:
+            self._seriesIndices.index(self._seriesNum)
+        except:
+            raise("seriesNum (" + str(self._seriesNum) + ") MUST be contained " + \
+                  "in seriesIndices " + str(self._seriesIndices) + "!")
 
         # This is microscopy data
         self.setMicroscopyData(True)
@@ -140,7 +156,7 @@ class MicroscopyCompositeDatasetConfig(SimpleImageContainerDataConfig):
         # identifiers in this case do not carry any useful information.
         m = self._pattern.match(imagePath)
 
-        if m is None or len(m.groups()) != 6:
+        if m is None or len(m.groups()) != 7:
             err = "MICROSCOPYCOMPOSITEDATASETCONFIG::extractImageMetadata(): " + \
             "unexpected file name " + str(imagePath)
             self._logger.error(err)
@@ -152,7 +168,7 @@ class MicroscopyCompositeDatasetConfig(SimpleImageContainerDataConfig):
         # stored in group(3). 
         series = 0
         if m.group(2) is not None:
-            series = int(m.group(3))
+            series = int(m.group(4))
 
         # Make sure to process only the relevant series
         if series != self._seriesNum:
@@ -164,10 +180,10 @@ class MicroscopyCompositeDatasetConfig(SimpleImageContainerDataConfig):
             self._basename = basename
 
         # Get the plane number
-        plane = int(m.group(4))
+        plane = int(m.group(5))
 
         # Get the channel number
-        ch = int(m.group(5))
+        ch = int(m.group(6))
 
         # Get the timepoint
         timepoint = 1
@@ -190,10 +206,6 @@ class MicroscopyCompositeDatasetConfig(SimpleImageContainerDataConfig):
         imageMetadata.tileNumber = 1  # + self._seriesNum
         imageMetadata.well = "IGNORED"
 
-        err = "MICROSCOPYCOMPOSITEDATASETCONFIG::extractImagesMetadata(): " + \
-        "generate ImageMetadata object: " + str(imageMetadata);
-        self._logger.info(err)
-
         # Now return the image metadata object in an array
         Metadata.append(imageMetadata)
         return Metadata
@@ -204,10 +216,10 @@ class MicroscopyCompositeDatasetConfig(SimpleImageContainerDataConfig):
         a given channel in a given series."
         """
 
+        # TODO: Get the real channel name from the metadata!
+
         # Build name of the channel from series and channel indices
         name = "SERIES_" + str(seriesIndx) + "_CHANNEL_" + str(channelIndx)
-
-        self._logger.info("MICROSCOPYCOMPOSITEDATASETCONFIG::_getChannelName() called with seriesIndx = " + str(seriesIndx) + " and channelIndx = " + str(channelIndx) + ": returning channel name " + name)
 
         return name
 
@@ -217,28 +229,41 @@ class MicroscopyCompositeDatasetConfig(SimpleImageContainerDataConfig):
         a given channel in a given series."
         """
 
-        # @TODO - Extract this from metadata
-        if channelIndx == 0:
-            R = 255
-            G = 0
-            B = 0
-        elif channelIndx == 1:
-            R = 0
-            G = 255
-            B = 0
-        elif channelIndx == 2:
-            R = 0
-            G = 0
-            B = 255
+        # Get the position in the seriesIndices list
+        indx = self._seriesIndices.index(int(seriesIndx))
+
+        # Get the metadata for the requested series
+        metadata = self._allSeriesMetadata[indx]
+
+        # Get the metadata
+        key = "channelColor" + str(channelIndx)
+        color = metadata[key]
+
+        if color is not None:
+            color = color.split(",")
+            R = int(255 * float(color[0]))
+            G = int(255 * float(color[1]))
+            B = int(255 * float(color[2]))
         else:
-            R = random.random_integers(0, 255)
-            G = random.random_integers(0, 255)
-            B = random.random_integers(0, 255)
+            if channelIndx == 0:
+                R = 255
+                G = 0
+                B = 0
+            elif channelIndx == 1:
+                R = 0
+                G = 255
+                B = 0
+            elif channelIndx == 2:
+                R = 0
+                G = 0
+                B = 255
+            else:
+                R = random.random_integers(0, 255)
+                G = random.random_integers(0, 255)
+                B = random.random_integers(0, 255)
 
         # Create the ChannelColorRGB object
         colorRGB = ChannelColorRGB(R, G, B)
-
-        self._logger.info("MICROSCOPYCOMPOSITEDATASETCONFIG::_getChannelColor() called with seriesIndx = " + str(seriesIndx) + " and channelIndx = " + str(channelIndx) + ": returning color " + str(colorRGB))
 
         # Return it
         return colorRGB
@@ -264,8 +289,6 @@ class MicroscopyCompositeDatasetConfig(SimpleImageContainerDataConfig):
         # Now assign the indices
         seriesIndx = int(m.group(1))
         channelIndx = int(m.group(2))
-
-        self._logger.info("MICROSCOPYCOMPOSITEDATASETCONFIG::_getSeriesAndChannelNumbers() called with channelCode = " + str(channelCode) + ": returning seriesIndx = " + str(seriesIndx) + "; channelIndx = " + str(channelIndx))
 
         # Return them
         return seriesIndx, channelIndx
