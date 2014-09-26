@@ -203,10 +203,6 @@ DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
     var detailViewAction = $("#detailViewAction");
     detailViewAction.empty();
 
-    // Add actions
-    detailViewAction.append(
-        "<p><span class=\"label label-warning\">Actions</span></p>");
-
     // Get the experiment identifier
     var experimentId = exp.identifier;
     if (undefined === experimentId) {
@@ -224,7 +220,7 @@ DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
         var dataSet = DATAMODEL.dataSets[indx];
 
         $("#detailViewAction").append(
-                "<span><a id=\"view_metadata\" class=\"btn btn-xs btn-success\" " +
+                "<span><a id=\"view_metadata\" class=\"btn btn-sm btn-success\" " +
                 "href=\"#\">" + "<img src=\"img/edit.png\" />&nbsp;" +
                 "View/Edit metadata</a></span>&nbsp;");
 
@@ -233,7 +229,7 @@ DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
         $("#view_metadata").click(
             function () {
                 window.top.location.hash = "#entity=DATA_SET&permId=" + dataSet.code
-                    + "&ui-subtab=managed_property_section_-s   eries%20metadata&ui-timestamp=" + (new Date().getTime());
+                    + "&ui-subtab=managed_property_section_-series%20metadata&ui-timestamp=" + (new Date().getTime());
                 return false;
             });
 
@@ -246,9 +242,9 @@ DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
     if (CONFIG['enableExportToUserFolder'] == true) {
 
         $("#detailViewAction").append(
-                "<span><a class=\"btn btn-xs btn-primary\" " +
+                "<span><a class=\"btn btn-sm btn-primary\" " +
                 "href=\"#\" onclick='callAggregationPlugin(\"" +
-                experimentId + "\", \"" + sampleId + "\", \"normal\");'>" +
+                experimentId + "\", \"" + sampleId + "\", \"normal\");  return false;'>" +
                 "<img src=\"img/export.png\" />&nbsp;" +
                 "Export to your folder</a></span>&nbsp;");
     }
@@ -257,18 +253,18 @@ DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
     if (CONFIG['enableExportToHRMSourceFolder'] == true) {
 
         $("#detailViewAction").append(
-                "<span><a class=\"btn btn-xs btn-default\" " +
+                "<span><a class=\"btn btn-sm btn-default\" " +
                 "href=\"#\" onclick='callAggregationPlugin(\"" +
-                experimentId + "\", \"" + sampleId + "\", \"hrm\");'>" +
+                experimentId + "\", \"" + sampleId + "\", \"hrm\");  return false;'>" +
                 "<img src=\"img/hrm.png\" />&nbsp;" +
                 "Export to your HRM source folder</a></span>&nbsp;");
     }
 
     // Build and display the call for a zip archive
     $("#detailViewAction").append(
-            "<span><a class=\"btn btn-xs btn-primary\" " +
+            "<span><a class=\"btn btn-sm btn-primary\" " +
             "href=\"#\" onclick='callAggregationPlugin(\"" +
-            experimentId + "\", \"" + sampleId + "\", \"zip\");'>" +
+            experimentId + "\", \"" + sampleId + "\", \"zip\");  return false;'>" +
             "<img src=\"img/zip.png\" />&nbsp;" +
             "Download</a></span>&nbsp;");
 

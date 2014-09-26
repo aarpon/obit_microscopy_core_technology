@@ -1,3 +1,7 @@
+html {
+    overflow-y: scroll;
+}
+
 body {
     font-family: Sans-serif;
 }
@@ -9,8 +13,8 @@ body {
 }
 
 #detailViewAction {
-    min-height: 40px;
-    margin-bottom: 10px;
+    padding-top: 10px;
+    padding-bottom: 10px;
     vertical-align: middle;
 }
 
@@ -19,15 +23,19 @@ body {
     margin-bottom: 10px;
 }
 
+#detailViewStatus {
+    display: block;
+    margin-bottom: 10px;
+}
+
 #paramView {
     min-height: 40px;
     margin-bottom: 10px;
 }
 
-#viewer {
+#imageViewer {
     min-height: 60px;
-    border-style: dashed;
-    border-radius: 10px;
+    margin-left: 20px;
 }
 
 #paramView table {

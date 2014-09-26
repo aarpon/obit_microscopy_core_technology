@@ -10,7 +10,8 @@ body {
 
 #detailViewAction {
     min-height: 40px;
-    margin-bottom: 10px;
+    padding-top: 10px;
+    padding-bottom: 10px;
     vertical-align: middle;
 }
 
