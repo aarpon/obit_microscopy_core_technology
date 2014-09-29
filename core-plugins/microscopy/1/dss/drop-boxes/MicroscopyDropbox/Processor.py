@@ -12,6 +12,7 @@ from datetime import datetime
 from BioFormatsProcessor import BioFormatsProcessor
 from MicroscopySingleDatasetConfig import MicroscopySingleDatasetConfig
 from MicroscopyCompositeDatasetConfig import MicroscopyCompositeDatasetConfig
+from LeicaTIFFSeriesCompositeDatasetConfig import LeicaTIFFSeriesCompositeDatasetConfig
 
 class Processor:
     """The Processor class performs all steps required for registering datasets
@@ -445,10 +446,18 @@ class Processor:
             seriesNum = seriesIndices[i]
 
             # Create a configuration object
-            compositeDatasetConfig = MicroscopyCompositeDatasetConfig(allSeriesMetadata,
-                                                                      seriesIndices,
-                                                                      self._logger,
-                                                                      seriesNum)
+            if compositeFileType == "Leica TIFF Series":
+
+                compositeDatasetConfig = LeicaTIFFSeriesCompositeDatasetConfig(allSeriesMetadata,
+                                                                               seriesIndices,
+                                                                               self._logger,
+                                                                               seriesNum)
+            else:
+                
+                msg = "PROCESSOR::processMicroscopyCompositeFile(): " + \
+                "Invalid composite file type found: " + compositeFileType
+                self._logger.error(msg)
+                raise Exception(msg)
 
             # Extract the metadata associated to this series and convert it to
             # XML to store it in the MICROSCOPY_IMG_CONTAINER_METADATA property
