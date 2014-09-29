@@ -37,7 +37,7 @@ DataViewer.prototype.initView = function() {
     detailView.empty();
 
     // Get the sample view
-    sampleView = $("#sampleView");
+    var sampleView = $("#sampleView");
     sampleView.empty();
 
     // Make sure we have something to display
@@ -70,9 +70,21 @@ DataViewer.prototype.initView = function() {
 
         sampleView.append("<p>" + spOp + "Datasets (samples)" + spCl + "</p>");
 
+        var newThumbRow = null;
+        var numSample = 0;
+
         // Display samples with a link to their corresponding webapp. Later we will reorganize the layout
         // (when the thumbnails are ready to be retrieved from openBIS).
         samples.forEach(function(sample) {
+
+            // Keep track of the number of the sample
+            numSample++;
+
+            // Add a new row for the next three thumbnails
+            if (numSample % 3 == 1) {
+                newThumbRow = $("<div />", {class: "row"});
+                sampleView.append(newThumbRow);
+            }
 
             // Prepare the name to be shown
             var name;
@@ -82,18 +94,58 @@ DataViewer.prototype.initView = function() {
                 name = sample.code;
             }
 
-            // Attach a link to the dataset (sample) viewer.
-            var link = $("<a>").text(name).attr("href", "#").click(
+            // Make sure it is not too long
+            var displayName;
+            var l = name.length;
+            if (l > 40) {
+                displayName = name.substring(0, 18) + "..." + name.substring(l - 18);
+            } else {
+                displayName = name;
+            }
+
+            // A column to be added to current row that will store all
+            // elements related to current sample
+            var newThumbCol = $("<div />",
+                {
+                    class: "col-md-4",
+                    id : sample.code,
+                });
+
+            // A div element to contain the thumbnail and its info
+            var thumbnailView = $("<div />", { class: "thumbnailView" });
+
+            // Link to the dataset (sample) viewer.
+            var link = $("<a>").text(displayName).attr("href", "#").attr("title", name).click(
                 function() {
                     window.top.location.hash = "#entity=SAMPLE&permId=" + sample.permId
                         + "&ui-subtab=webapp-section_microscopy-viewer";
                     return false;
                 });
-            sampleView.append($("<tr>")).append($("<td>")).append(link);
+
+            // Actual thumbnail. Initially we display a place holder. Later,
+            // we will replace it asynchronously.
+            var thumbnailImage = $("<img />",
+                {
+                    src: "./img/wait.png",
+                    title: name
+                });
+
+            // Build the thumbnail viewer
+            thumbnailView.append(thumbnailImage);
+            thumbnailView.append($("<br />"));
+            thumbnailView.append(link);
+
+            // Add the thumbnail to the column and the row
+            newThumbCol.append(thumbnailView);
+            newThumbRow.append(newThumbCol);
+
         });
 
         // Display the export action
         this.displayActions(DATAMODEL.exp);
+
+        // Load and display the thumbnails
+        this.displayThumbnails(samples);
 
     }
 
@@ -102,7 +154,7 @@ DataViewer.prototype.initView = function() {
 /**
  * Build and display the code to trigger the server-side aggregation
  * plugin 'copy_datasets_to_userdir'
- * @param node: DataTree node
+ * @param exp: Experiment node
  */
 DataViewer.prototype.displayActions = function(exp) {
 
@@ -151,6 +203,17 @@ DataViewer.prototype.displayActions = function(exp) {
             "<img src=\"img/zip.png\" />&nbsp;" +
             "Download</a></span>&nbsp;");
 
+};
+
+/**
+ * Retrieve and display the experiment thumbnails asynchronously
+ * @param samples: list of retrieved sample objects for current experiment
+ */
+DataViewer.prototype.displayThumbnails= function(samples) {
+
+	// TODO: This function is only a stub.
+    // The corresponding <img> element has the sample.code as id.
+    return;
 };
 
 /**
