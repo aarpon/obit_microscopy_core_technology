@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 '''
 Aggregation plug-in to copy all microscopy files for a gvien experiment to the user folder.
 @author: Aaron Ponti

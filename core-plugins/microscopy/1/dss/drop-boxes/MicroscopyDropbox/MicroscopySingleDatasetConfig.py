@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 Created on Feb 20, 2014
 
@@ -121,8 +123,8 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
         # Log
         self._logger.info("MICROSCOPYSINGLEDATASETCONFIG::createChannel(): " + 
                           "channel (s = " + str(seriesIndx) + ", c = " + 
-                          str(channelIndx) + ") has code " + str(channelCode) + 
-                          ", color (" + str(colorRGB) + " and name " + str(name))
+                          str(channelIndx) + ") has code " + channelCode + 
+                          ", color (" + str(colorRGB) + " and name " + name)
 
         # Return the channel with given name and color (the code is set to
         # be the same as the channel name).
@@ -200,13 +202,15 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
 
         # Try extracting the name for the given series and channel
         try:
-            key = ("channelName" + str(channelIndx)).encode('utf-8')
-            name = (metadata[key]).encode('utf-8') 
+            key = "channelName" + str(channelIndx)
+            name = metadata[key]
 
         except KeyError:
             err = "MICROSCOPYSINGLEDATASETCONFIG::createChannel(): " + \
             "Could not create channel name for channel " + str(channelIndx) + \
-            " and series " + str(seriesIndx) + " from metadata."
+            " and series " + str(seriesIndx) + "for key = " + \
+            key + "  from metadata = " + \
+            str(metadata)
             self._logger.error(err)
             raise(err)
 

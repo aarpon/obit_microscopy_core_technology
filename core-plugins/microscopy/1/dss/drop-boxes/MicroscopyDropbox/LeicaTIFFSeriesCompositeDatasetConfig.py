@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 Created on Feb 20, 2014
 
@@ -128,9 +130,9 @@ class LeicaTIFFSeriesCompositeDatasetConfig(MicroscopyCompositeDatasetConfig):
         # Log
         self._logger.info("MICROSCOPYCOMPOSITEDATASETCONFIG::createChannel(): " + 
                           "channel (s = " + str(seriesIndx) + ", c = " + 
-                          str(channelIndx) + ") has code " + str(channelCode) + 
-                          ", color (" + str(colorRGB) + " and name " + str(name))
- 
+                          str(channelIndx) + ") has code " + channelCode + 
+                          ", color (" + str(colorRGB) + " and name " + name)
+
         # Return the channel with given name and color (the code is set to
         # be the same as the channel name).
         return Channel(channelCode, name, colorRGB)

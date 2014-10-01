@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 Created on Feb 20, 2014
 
@@ -46,12 +48,10 @@ class Processor:
 
         # Add all attributes to the XML node
         for k, v in d.iteritems():
-            key = k.encode('utf-8')
-            value = v.encode('utf-8')
-            node.set(key, value)
+            node.set(k, v)
 
         # Convert to XML string
-        xml = ET.tostring(node)
+        xml = ET.tostring(node, encoding="UTF-8")
 
         # Return the XML string
         return xml
