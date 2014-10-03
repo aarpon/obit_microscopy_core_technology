@@ -153,10 +153,10 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
         for id in imageIdentifiers:
 
             # Extract the info from the image identifier
-            ch = id.colorChannelIndex
-            plane = id.focalPlaneIndex
-            series = id.seriesIndex
-            timepoint = id.timeSeriesIndex
+            ch = int(id.colorChannelIndex)
+            plane = int(id.focalPlaneIndex)
+            series = int(id.seriesIndex)
+            timepoint = int(id.timeSeriesIndex)
 
             # Make sure to process only the relevant series
             if self._seriesNum != -1 and series != self._seriesNum:
