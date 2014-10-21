@@ -209,3 +209,75 @@ DataModel.prototype.copyDatasetsToUserDir = function(experimentId, sampleId, mod
         });
 
 };
+
+/**
+ * Get thumbnail dataset for current sample
+ * @param action
+ */
+DataModel.prototype.getDataSetsForSampleAndExperiment = function(expCode, sampleCode, action) {
+
+    // Experiment criteria
+    var experimentCriteria =
+    {
+        targetEntityKind : "EXPERIMENT",
+        criteria : {
+            matchClauses :
+                [ {"@type" : "AttributeMatchClause",
+                    "attribute" : "CODE",
+                    "fieldType" : "ATTRIBUTE",
+                    "desiredValue" : expCode
+                } ]
+        }
+    };
+
+    // Sample criteria
+    var sampleCriteria =
+    {
+        targetEntityKind : "SAMPLE",
+        criteria : {
+            matchClauses :
+                [ {"@type" : "AttributeMatchClause",
+                    "attribute" : "CODE",
+                    "fieldType" : "ATTRIBUTE",
+                    "desiredValue" : sampleCode
+                } ]
+        }
+    };
+
+    // Get the thumbnails
+    var criteria = {
+        subCriterias : [ experimentCriteria, sampleCriteria ],
+        matchClauses :
+            [ {"@type":"AttributeMatchClause",
+                attribute : "TYPE",
+                fieldType : "ATTRIBUTE",
+                desiredValue : "MICROSCOPY_IMG_CONTAINER"
+            } ],
+        operator : "MATCH_ALL_CLAUSES"
+    };
+
+    // Search
+    this.openbisServer.searchForDataSets(criteria, function(response) {
+
+        // Get the containers
+        if (response.error || response.result.length == 0) {
+            return null;
+        }
+
+        // Get the dataset with type MICROSCOPY_IMG_THUMBNAIL from the first series (container)
+        // and pass it on to the specified callback function.
+        var series = response.result[0];
+        for (var i = 0; i < series.containedDataSets.length; i++) {
+            if (series.containedDataSets[i].dataSetTypeCode == "MICROSCOPY_IMG_THUMBNAIL") {
+                action(series.containedDataSets[i]);
+                return;
+            }
+        }
+
+        // If nothing was found, pass null to the callback
+        action(null);
+
+    });
+
+};
+

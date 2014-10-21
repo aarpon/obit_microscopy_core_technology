@@ -108,7 +108,7 @@ DataViewer.prototype.initView = function() {
             var newThumbCol = $("<div />",
                 {
                     class: "col-md-4",
-                    id : sample.code,
+                    id : sample.code
                 });
 
             // A div element to contain the thumbnail and its info
@@ -127,6 +127,7 @@ DataViewer.prototype.initView = function() {
             var thumbnailImage = $("<img />",
                 {
                     src: "./img/wait.png",
+                    id: "image_" + sample.code,
                     title: name
                 });
 
@@ -139,13 +140,13 @@ DataViewer.prototype.initView = function() {
             newThumbCol.append(thumbnailView);
             newThumbRow.append(newThumbCol);
 
+            // Now retrieve the link to the thumbnail image asynchronously and update the <img>
+            DATAVIEWER.displayThumbnailForSample(sample, "image_" + sample.code);
+
         });
 
         // Display the export action
         this.displayActions(DATAMODEL.exp);
-
-        // Load and display the thumbnails
-        this.displayThumbnails(samples);
 
     }
 
@@ -207,13 +208,44 @@ DataViewer.prototype.displayActions = function(exp) {
 
 /**
  * Retrieve and display the experiment thumbnails asynchronously
- * @param samples: list of retrieved sample objects for current experiment
+ * @param sample: sample object
+ * @param img_id: id of the <img> element to update
  */
-DataViewer.prototype.displayThumbnails= function(samples) {
+DataViewer.prototype.displayThumbnailForSample= function(sample, img_id) {
 
-	// TODO: This function is only a stub.
-    // The corresponding <img> element has the sample.code as id.
-    return;
+	// Get the datasets with type "MICROSCOPY_IMG_THUMBNAIL" for current sample
+    DATAMODEL.getDataSetsForSampleAndExperiment(DATAMODEL.exp.code, sample.code, function(dataset) {
+
+        // Get the containers
+        if (dataset == null) {
+            return;
+        }
+
+        // Retrieve the file for the dataset and the associated URL
+        DATAMODEL.openbisServer.listFilesForDataSet(dataset.code, '/', true,
+            function(response) {
+
+                // Find the only fcs file and add its name and URL to the
+                // DynaTree
+                response.result.forEach(function(f) {
+
+                    if (!f.isDirectory && f.pathInDataSet.toLowerCase() == "thumbnail.png") {
+
+                        // Retrieve the file URL
+                        DATAMODEL.openbisServer.getDownloadUrlForFileForDataSetInSession(
+                            dataset.code, f.pathInDataSet, function(url){
+
+                                var eUrl = encodeURI(url);
+                                eUrl = eUrl.replace('+', '%2B');
+                                $("#" + img_id).attr("src", eUrl);
+                            });
+                    }
+                });
+
+            });
+
+    });
+
 };
 
 /**

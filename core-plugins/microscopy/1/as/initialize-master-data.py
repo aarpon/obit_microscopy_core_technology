@@ -61,6 +61,14 @@ data_set_type_MICROSCOPY_IMG_OVERVIEW.setMainDataSetPattern(None)
 data_set_type_MICROSCOPY_IMG_OVERVIEW.setMainDataSetPath(None)
 data_set_type_MICROSCOPY_IMG_OVERVIEW.setDeletionDisallowed(False)
 
+# MICROSCOPY_IMG_THUMBNAIL
+data_set_type_MICROSCOPY_IMG_THUMBNAIL = tr.getOrCreateNewDataSetType('MICROSCOPY_IMG_THUMBNAIL')
+data_set_type_MICROSCOPY_IMG_THUMBNAIL.setDescription('Representative image for the whole dataset.')
+data_set_type_MICROSCOPY_IMG_THUMBNAIL.setDataSetKind('PHYSICAL')
+data_set_type_MICROSCOPY_IMG_THUMBNAIL.setMainDataSetPattern(None)
+data_set_type_MICROSCOPY_IMG_THUMBNAIL.setMainDataSetPath(None)
+data_set_type_MICROSCOPY_IMG_THUMBNAIL.setDeletionDisallowed(False)
+
 # MICROSCOPY_SAMPLE_TYPE
 samp_type_MICROSCOPY_SAMPLE_TYPE = tr.getOrCreateNewSampleType('MICROSCOPY_SAMPLE_TYPE')
 samp_type_MICROSCOPY_SAMPLE_TYPE.setDescription('Sample type for microscopy data sets.')

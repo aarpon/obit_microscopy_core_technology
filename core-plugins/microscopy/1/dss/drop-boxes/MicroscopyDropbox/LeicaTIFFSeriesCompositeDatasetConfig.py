@@ -117,6 +117,11 @@ class LeicaTIFFSeriesCompositeDatasetConfig(MicroscopyCompositeDatasetConfig):
         # Set the dataset type
         self.setDataSetType("MICROSCOPY_IMG")
 
+        # Set representative image algorithm
+        self.setImageGenerationAlgorithm(MaximumIntensityProjectionGenerationAlgorithm(
+                                        "MICROSCOPY_IMG_THUMBNAIL", 256, 256,
+                                        "thumbnail.png"))
+
 
     def createChannel(self, channelCode):
         """Create a channel from the channelCode with the name as read from

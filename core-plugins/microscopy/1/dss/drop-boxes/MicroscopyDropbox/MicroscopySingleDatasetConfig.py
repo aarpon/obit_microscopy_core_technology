@@ -9,6 +9,7 @@ Created on Feb 20, 2014
 import re
 from ch.systemsx.cisd.openbis.dss.etl.dto.api import SimpleImageDataConfig
 from ch.systemsx.cisd.openbis.dss.etl.dto.api import SimpleImageContainerDataConfig
+from ch.systemsx.cisd.openbis.dss.etl.dto.api.impl import MaximumIntensityProjectionGenerationAlgorithm
 from ch.systemsx.cisd.openbis.dss.etl.dto.api import ChannelColor
 from ch.systemsx.cisd.openbis.dss.etl.dto.api import ImageIdentifier
 from ch.systemsx.cisd.openbis.dss.etl.dto.api import ImageMetadata
@@ -99,6 +100,11 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
 
         # Set the dataset type
         self.setDataSetType("MICROSCOPY_IMG")
+
+        # Set representative image algorithm
+        self.setImageGenerationAlgorithm(MaximumIntensityProjectionGenerationAlgorithm(
+                                        "MICROSCOPY_IMG_THUMBNAIL", 256, 256,
+                                        "thumbnail.png"))
 
 
     def createChannel(self, channelCode):
