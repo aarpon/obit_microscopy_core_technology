@@ -8,6 +8,7 @@ Created on Feb 20, 2014
 
 import re
 from MicroscopyCompositeDatasetConfig import MicroscopyCompositeDatasetConfig
+from ch.systemsx.cisd.openbis.dss.etl.dto.api.impl import MaximumIntensityProjectionGenerationAlgorithm
 from ch.systemsx.cisd.openbis.dss.etl.dto.api import ChannelColor
 from ch.systemsx.cisd.openbis.dss.etl.dto.api import ImageIdentifier
 from ch.systemsx.cisd.openbis.dss.etl.dto.api import ImageMetadata
