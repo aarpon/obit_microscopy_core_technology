@@ -222,7 +222,7 @@ DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
         $("#detailViewAction").append(
                 "<span><a id=\"view_metadata\" class=\"btn btn-sm btn-success\" " +
                 "href=\"#\">" + "<img src=\"img/edit.png\" />&nbsp;" +
-                "View/Edit metadata</a></span>&nbsp;");
+                "View metadata</a></span>&nbsp;");
 
 
         // Add link to the metadata view

@@ -235,10 +235,18 @@ DataViewer.prototype.displayThumbnailForSample= function(sample, img_id) {
                         DATAMODEL.openbisServer.getDownloadUrlForFileForDataSetInSession(
                             dataset.code, f.pathInDataSet, function(url){
 
+                                // Replace the image
                                 var eUrl = encodeURI(url);
                                 eUrl = eUrl.replace('+', '%2B');
                                 $("#" + img_id).attr("src", eUrl);
+
                             });
+                    } else {
+
+                        // Thumbnail not found!
+                        $("#" + img_id).attr("src", "./img/error.png");
+                        $("#" + img_id).attr("title", "Could not find a thumbnail for this dataset!");
+
                     }
                 });
 
