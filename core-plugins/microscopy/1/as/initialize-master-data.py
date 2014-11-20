@@ -61,6 +61,14 @@ data_set_type_MICROSCOPY_IMG_OVERVIEW.setMainDataSetPattern(None)
 data_set_type_MICROSCOPY_IMG_OVERVIEW.setMainDataSetPath(None)
 data_set_type_MICROSCOPY_IMG_OVERVIEW.setDeletionDisallowed(False)
 
+# MICROSCOPY_IMG_THUMBNAIL
+data_set_type_MICROSCOPY_IMG_THUMBNAIL = tr.getOrCreateNewDataSetType('MICROSCOPY_IMG_THUMBNAIL')
+data_set_type_MICROSCOPY_IMG_THUMBNAIL.setDescription('Representative image for the whole dataset.')
+data_set_type_MICROSCOPY_IMG_THUMBNAIL.setDataSetKind('PHYSICAL')
+data_set_type_MICROSCOPY_IMG_THUMBNAIL.setMainDataSetPattern(None)
+data_set_type_MICROSCOPY_IMG_THUMBNAIL.setMainDataSetPath(None)
+data_set_type_MICROSCOPY_IMG_THUMBNAIL.setDeletionDisallowed(False)
+
 # MICROSCOPY_SAMPLE_TYPE
 samp_type_MICROSCOPY_SAMPLE_TYPE = tr.getOrCreateNewSampleType('MICROSCOPY_SAMPLE_TYPE')
 samp_type_MICROSCOPY_SAMPLE_TYPE.setDescription('Sample type for microscopy data sets.')
@@ -107,6 +115,13 @@ prop_type_MICROSCOPY_SAMPLE_NAME = tr.getOrCreateNewPropertyType('MICROSCOPY_SAM
 prop_type_MICROSCOPY_SAMPLE_NAME.setLabel('Sample name')
 prop_type_MICROSCOPY_SAMPLE_NAME.setManagedInternally(False)
 prop_type_MICROSCOPY_SAMPLE_NAME.setInternalNamespace(False)
+
+# MICROSCOPY_SAMPLE_DESCRIPTION
+prop_type_MICROSCOPY_SAMPLE_DESCRIPTION = tr.getOrCreateNewPropertyType('MICROSCOPY_SAMPLE_DESCRIPTION', DataType.MULTILINE_VARCHAR)
+prop_type_MICROSCOPY_SAMPLE_DESCRIPTION.setLabel('Description')
+prop_type_MICROSCOPY_SAMPLE_DESCRIPTION.setManagedInternally(False)
+prop_type_MICROSCOPY_SAMPLE_DESCRIPTION.setInternalNamespace(False)
+
 
 # Scripts
 
@@ -189,5 +204,10 @@ assignment_SAMPLE_MICROSCOPY_SAMPLE_TYPE_MICROSCOPY_SAMPLE_NAME = tr.assignPrope
 assignment_SAMPLE_MICROSCOPY_SAMPLE_TYPE_MICROSCOPY_SAMPLE_NAME.setMandatory(False)
 assignment_SAMPLE_MICROSCOPY_SAMPLE_TYPE_MICROSCOPY_SAMPLE_NAME.setSection(None)
 assignment_SAMPLE_MICROSCOPY_SAMPLE_TYPE_MICROSCOPY_SAMPLE_NAME.setPositionInForms(1)
+
+assignment_SAMPLE_MICROSCOPY_SAMPLE_TYPE_MICROSCOPY_SAMPLE_DESCRIPTION = tr.assignPropertyType(samp_type_MICROSCOPY_SAMPLE_TYPE, prop_type_MICROSCOPY_SAMPLE_DESCRIPTION)
+assignment_SAMPLE_MICROSCOPY_SAMPLE_TYPE_MICROSCOPY_SAMPLE_DESCRIPTION.setMandatory(False)
+assignment_SAMPLE_MICROSCOPY_SAMPLE_TYPE_MICROSCOPY_SAMPLE_DESCRIPTION.setSection(None)
+assignment_SAMPLE_MICROSCOPY_SAMPLE_TYPE_MICROSCOPY_SAMPLE_DESCRIPTION.setPositionInForms(2)
 
 print ("Import of Master Data finished.")

@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 Created on Feb 20, 2014
 
@@ -11,6 +13,8 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 from BioFormatsProcessor import BioFormatsProcessor
 from MicroscopySingleDatasetConfig import MicroscopySingleDatasetConfig
+from MicroscopyCompositeDatasetConfig import MicroscopyCompositeDatasetConfig
+from LeicaTIFFSeriesCompositeDatasetConfig import LeicaTIFFSeriesCompositeDatasetConfig
 
 class Processor:
     """The Processor class performs all steps required for registering datasets
@@ -44,12 +48,10 @@ class Processor:
 
         # Add all attributes to the XML node
         for k, v in d.iteritems():
-            key = k.encode('utf-8')
-            value = v.encode('utf-8')
-            node.set(key, value)
+            node.set(k, v)
 
         # Convert to XML string
-        xml = ET.tostring(node)
+        xml = ET.tostring(node, encoding="UTF-8")
 
         # Return the XML string
         return xml
@@ -97,12 +99,12 @@ class Processor:
             # Create the experiment
             exp = self._transaction.createNewExperiment(expId, expType)
             if not exp:
-                msg = "PROCESSOR::createExperiment(): " + \
+                msg = "PROCESSOR::getOrCreateExperiment(): " + \
                 "Could not create experiment " + expId + "!"
                 self._logger.error(msg)
                 raise Exception(msg)
             else:
-                self._logger.info("PROCESSOR::createExperiment(): " + 
+                self._logger.info("PROCESSOR::getOrCreateExperiment(): " + 
                                   "Created experiment with ID " + expId + ".")
         else:
             # Log
@@ -202,9 +204,16 @@ class Processor:
         # openBISExperiment.setPropertyValue("MICROSCOPY_EXPERIMENT_DATE",
         #                                   expDate)
 
-        # Set the description
-        openBISExperiment.setPropertyValue("MICROSCOPY_EXPERIMENT_DESCRIPTION",
-                                           description)
+        # Set the description -- but only if is not empty. 
+        # This makes sure that the description of an already existing experiment
+        # is not overridden by an empty string.
+        if description != "":
+            openBISExperiment.setPropertyValue("MICROSCOPY_EXPERIMENT_DESCRIPTION",
+                                               description)
+        else:
+            currentDescription = openBISExperiment.getPropertyValue("MICROSCOPY_EXPERIMENT_DESCRIPTION")
+            if (currentDescription is None or currentDescription == ""):
+                openBISExperiment.setPropertyValue("MICROSCOPY_EXPERIMENT_DESCRIPTION", "")
 
         # Get the series metadata from the XML file otherwise parse the file
         
@@ -268,6 +277,7 @@ class Processor:
             # Get the number of series
             num_series = len(microscopyFileNode)
 
+        # Log
         self._logger.info("PROCESSOR::processMicroscopyFile(): " + 
                           "File " + relativeFileName + " contains " + 
                            str(num_series) + " series.")
@@ -275,15 +285,21 @@ class Processor:
         # Get the correct space where to create the sample
         identifier = openBISExperiment.getExperimentIdentifier()
         sample_space = identifier[1:identifier.find('/', 1)]
-        self._logger.info("Creating sample in space " + sample_space)
+        self._logger.info("Creating sample with auto-generated code in space " + sample_space)
 
         # Create a sample for the dataset
         sample = self._transaction.createNewSampleWithGeneratedCode(sample_space,
                                                                     "MICROSCOPY_SAMPLE_TYPE")
-        
+
         # Set the sample name
         sample.setPropertyValue("MICROSCOPY_SAMPLE_NAME",
                                 relativeFileName[relativeFileName.rfind('/') + 1:])
+        
+        # Set the sample description
+        sampleDescr = microscopyFileNode.attrib.get("description")
+        if sampleDescr is None:
+            sampleDescr = ""
+        sample.setPropertyValue("MICROSCOPY_SAMPLE_DESCRIPTION", sampleDescr)
 
         # Set the experiment
         sample.setExperiment(openBISExperiment)
@@ -300,19 +316,19 @@ class Processor:
             # XML to store it in the MICROSCOPY_IMG_CONTAINER_METADATA property
             # of the MICROSCOPY_IMG_CONTAINER_METADATA (series) dataset type
             seriesMetadataXML = self.dictToXML(allSeriesMetadata[i])
-            
+
             # Log the content of the metadata
             self._logger.info("Series metadata (XML): " + str(seriesMetadataXML))
 
             if image_data_set is None:
-                
+
                 # Register the file for the first time (for series 0)
-                
+
                 # Log
                 self._logger.info("PROCESSOR::processMicroscopyFile(): " + 
                                   "Creating new image dataset for file " + 
-                                   str(fileName))
-                
+                                   str(fileName) + " and series 0.")
+
                 # Create an image dataset
                 dataset = self._transaction.createNewImageDataSet(singleDatasetConfig,
                                                                   java.io.File(fileName))
@@ -325,7 +341,7 @@ class Processor:
 
                 # Now store a reference to the first dataset
                 image_data_set = dataset
-                
+
                 # Move the file
                 self._transaction.moveFile(fileName, image_data_set)
 
@@ -335,10 +351,10 @@ class Processor:
 
                 # Log
                 self._logger.info("PROCESSOR::processMicroscopyFile(): " + 
-                                  "Creating new image dataset for dataset " + 
+                                  "Appending series " + str(i) + " to dataset " +
                                   str(image_data_set))
-                
-                # Create an image dataset that points to an exising one
+
+                # Create an image dataset that points to an existing one
                 # (and points to its file)
                 dataset = self._transaction.createNewImageDataSetFromDataSet(singleDatasetConfig,
                                                                              image_data_set)
@@ -348,7 +364,152 @@ class Processor:
                                          seriesMetadataXML)
 
                 # Store the series name in the MICROSCOPY_IMG_CONTAINER_NAME property
-                dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME", allSeriesMetadata[i]["name"])
+                dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME",
+                                         allSeriesMetadata[i]["name"])
+
+            # Set the (common) sample for the series
+            dataset.setSample(sample)
+
+
+    def processMicroscopyCompositeFile(self, microscopyCompositeFileNode,
+                                       openBISExperiment):
+        """Register the Microscopy Composite File using the parsed properties file.
+
+        @param microscopyCompositeFileNode An XML node corresponding to a microscopy
+        file (dataset)
+        @param openBISExperiment An ISample object representing an Experiment
+        """
+
+        # Make sure to have a supported composite file type
+        compositeFileType = microscopyCompositeFileNode.attrib.get("compositeFileType")
+
+        if compositeFileType != "Leica TIFF Series":
+
+            msg = "PROCESSOR::processMicroscopyCompositeFile(): " + \
+                      "Invalid composite file type found: " + compositeFileType
+            self._logger.error(msg)
+            raise Exception(msg)
+
+        else:
+
+            self._logger.info("PROCESSOR::processMicroscopyCompositeFile(): " + \
+                              "Processing " + compositeFileType)
+
+        # Get the metadata for all series from the (processed) settings XML 
+        allSeriesMetadata = []
+        for series in microscopyCompositeFileNode:
+            allSeriesMetadata.append(series.attrib)
+
+        # Get the number of series
+        num_series = len(microscopyCompositeFileNode)
+
+        # Get the correct space where to create the sample
+        identifier = openBISExperiment.getExperimentIdentifier()
+        sample_space = identifier[1:identifier.find('/', 1)]
+        self._logger.info("Creating sample with auto-generated code in space " + sample_space)
+
+        # Create a sample for the dataset
+        sample = self._transaction.createNewSampleWithGeneratedCode(sample_space,
+                                                                    "MICROSCOPY_SAMPLE_TYPE")
+
+        # Set the sample name
+        name = microscopyCompositeFileNode.attrib.get("name")
+        sample.setPropertyValue("MICROSCOPY_SAMPLE_NAME", name)
+
+        # Set the sample description
+        sampleDescr = microscopyCompositeFileNode.attrib.get("description")
+        if sampleDescr is None:
+            sampleDescr = ""
+        sample.setPropertyValue("MICROSCOPY_SAMPLE_DESCRIPTION", sampleDescr)
+
+        # Set the experiment
+        sample.setExperiment(openBISExperiment)
+
+        # Get the relative path to the containing folder
+        relativeFolder = microscopyCompositeFileNode.attrib.get("relativeFolder")
+        fullFolder = os.path.join(self._incoming.getAbsolutePath(), relativeFolder)
+
+        # Log
+        self._logger.info("PROCESSOR::processMicroscopyFile(): " + 
+                          "Folder " + relativeFolder + " contains " + 
+                           str(num_series) + " series.")
+
+        # Get the series indices
+        seriesIndices = microscopyCompositeFileNode.attrib.get("seriesIndices")
+        seriesIndices = seriesIndices.split(",")
+
+        # Register all series in the file
+        image_data_set = None
+        for i in range(num_series):
+
+            # Series number
+            seriesNum = seriesIndices[i]
+
+            # Create a configuration object
+            if compositeFileType == "Leica TIFF Series":
+
+                compositeDatasetConfig = LeicaTIFFSeriesCompositeDatasetConfig(allSeriesMetadata,
+                                                                               seriesIndices,
+                                                                               self._logger,
+                                                                               seriesNum)
+            else:
+                
+                msg = "PROCESSOR::processMicroscopyCompositeFile(): " + \
+                "Invalid composite file type found: " + compositeFileType
+                self._logger.error(msg)
+                raise Exception(msg)
+
+            # Extract the metadata associated to this series and convert it to
+            # XML to store it in the MICROSCOPY_IMG_CONTAINER_METADATA property
+            # of the MICROSCOPY_IMG_CONTAINER_METADATA (series) dataset type
+            seriesMetadataXML = self.dictToXML(allSeriesMetadata[i])
+
+            # Register all series in the composite file (folder)
+            if image_data_set is None:
+
+                # Log
+                self._logger.info("PROCESSOR::processCompositeMicroscopyFile(): " + 
+                                  "Creating new image dataset for folder " + 
+                                   str(fullFolder) + " and series " + str(seriesNum))
+
+                # Create a dataset
+                dataset = self._transaction.createNewImageDataSet(compositeDatasetConfig,
+                                                                  java.io.File(fullFolder))
+
+                # Store the metadata in the MICROSCOPY_IMG_CONTAINER_METADATA property
+                # TODO: Get the store the metadata information
+                dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_METADATA",
+                                         seriesMetadataXML)
+
+                # Store the series name in the MICROSCOPY_IMG_CONTAINER_NAME property
+                # TODO Get and store the correct series name
+                dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME",
+                                         allSeriesMetadata[i]["name"])
+
+                # Now store a reference to the first dataset
+                image_data_set = dataset
+
+                # Move the file
+                self._transaction.moveFile(fullFolder, image_data_set)
+
+            else:
+
+                # Log
+                self._logger.info("PROCESSOR::processCompositeMicroscopyFile(): " + 
+                                  "Appending series " + str(i) + " to dataset " +
+                                  str(image_data_set))
+
+                # Create an image dataset that points to an existing one
+                # (and points to its file)
+                dataset = self._transaction.createNewImageDataSetFromDataSet(compositeDatasetConfig,
+                                                                             image_data_set)
+
+                # Store the metadata in the MICROSCOPY_IMG_CONTAINER_METADATA property
+                dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_METADATA", "")
+
+                # Store the series name in the MICROSCOPY_IMG_CONTAINER_NAME property
+                dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME", "Series_" + str(seriesNum))
+
 
             # Set the (common) sample for the series
             dataset.setSample(sample)
@@ -379,17 +540,28 @@ class Processor:
                                                        "MICROSCOPY_EXPERIMENT")
 
             # Process children of the Experiment
-            for microscopyFileNode in experimentNode:
+            for fileNode in experimentNode:
 
-                if microscopyFileNode.tag != "MicroscopyFile":
+                if fileNode.tag == "MicroscopyFile":
+
+                    # Process the MicroscopyFile node
+                    self.processMicroscopyFile(fileNode, openBISExperiment)
+
+                elif fileNode.tag == "MicroscopyCompositeFile":
+
+                    # Process the MicroscopyCompositeFile node
+                    self.processMicroscopyCompositeFile(fileNode, openBISExperiment)
+
+                    # Inform
+                    self._logger.info("Processed composite file")
+
+                else:
+
                     msg = "PROCESSOR::register(): " + \
-                    "Expected MicroscopyFile node (found " + \
-                          microscopyFileNode.tag + ")!"
+                    "Expected either MicroscopyFile or MicroscopyCompositeFile " + \
+                    "node; found instead " + fileNode.tag + ")!"
                     self._logger.error(msg)
                     raise Exception(msg)
-
-                # Process the MicroscopyFile node
-                self.processMicroscopyFile(microscopyFileNode, openBISExperiment)
 
         # Log that we are finished with the registration
         self._logger.info("PROCESSOR::register(): " + 

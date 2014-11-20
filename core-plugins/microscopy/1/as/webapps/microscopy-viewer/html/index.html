@@ -2,7 +2,7 @@
 <head>
     
     <meta charset="utf-8">
-    
+
     <!-- Required by bootstrap -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
@@ -42,7 +42,7 @@
 </head>
 <body>
 
-<div class="container">
+<div class="container-fluid">
 
     <div class="row">
         <div id="sampleNameView" class="col-md-12">Please wait...</div>
@@ -74,8 +74,8 @@
         window.CONFIG = CONFIG;
 
         /* Initialize global objects */
-        window.DATAMODEL = new DataModel();
         window.DATAVIEWER = new DataViewer();
+        window.DATAMODEL = new DataModel();
 
     });
 

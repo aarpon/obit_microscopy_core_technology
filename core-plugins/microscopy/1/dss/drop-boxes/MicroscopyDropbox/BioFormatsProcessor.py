@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 Created on Feb 6, 2014
 
@@ -64,30 +66,37 @@ class BioFormatsProcessor:
         # Instantiate metadata list
         seriesMetadataArray = []
 
-        # Important: make sure to return metadata sorted by series number!
-        keys = metadata.keySet().toArray()
-        java.util.Arrays.sort(keys)
+        # Process all series. Important, make sure to extract the metadata
+        # per series in ascending order!
+        for i in range(len(metadata)):
         
-        # Process all series
-        for key in keys:
-
             # Create an XML node
             node = ET.Element("MicroscopyFileSeries")
+
+            # Current key
+            key = "series_" + str(i)
 
             # Get metadata attributes for current series
             d = metadata.get(key)
 
+            # Assertion
+            nSeries = d.get("numSeries")
+            if nSeries is None or int(nSeries) != i:
+                err = "Series " + str(i) + ": expected numSeries = " + \
+                str(i) + "; found = " + str(nSeries)
+                self._logger.error(err)
+                raise Exception(err)
+
             # Add all attributes to the XML node (make sure to encode 
             # everything as unicode).
             metadataKeys = d.keySet()
-            for metadataKey in metadataKeys:
-                key = metadataKey.encode('utf-8')
-                value = (d.get(metadataKey)).encode('utf-8')
+            for key in metadataKeys:
+                value = d.get(key)
                 node.set(key, value)
 
             # Convert to XML string if needed or append as is
             if asXML is True:
-                seriesMetadataArray.append(ET.tostring(node))
+                seriesMetadataArray.append(ET.tostring(node, encoding="UTF-8"))
             else:
                 seriesMetadataArray.append(node.attrib)
 

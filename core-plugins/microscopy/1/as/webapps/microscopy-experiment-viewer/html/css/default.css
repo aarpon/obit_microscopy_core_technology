@@ -10,7 +10,8 @@ body {
 
 #detailViewAction {
     min-height: 40px;
-    margin-bottom: 10px;
+    padding-top: 10px;
+    padding-bottom: 10px;
     vertical-align: middle;
 }
 
@@ -25,4 +26,11 @@ body {
 
 .code {
     font-size: 12px;
+}
+
+.thumbnailView {
+    min-height: 320px;
+    text-align: center;
+    padding-top: 10px;
+    padding-bottom: 10px;
 }
