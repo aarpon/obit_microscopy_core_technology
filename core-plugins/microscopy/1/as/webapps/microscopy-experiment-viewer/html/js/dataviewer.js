@@ -225,6 +225,17 @@ DataViewer.prototype.displayThumbnailForSample= function(sample, img_id) {
         DATAMODEL.openbisServer.listFilesForDataSet(dataset.code, '/', true,
             function(response) {
 
+                // Make sure that we got some results from the DSS to process
+                if (response.error) {
+
+                    // Thumbnail not found!
+                    $("#" + img_id).attr("src", "./img/error.png");
+                    $("#" + img_id).attr("title", "Could not find any files associated to this dataset!");
+
+                    return;
+
+                }
+
                 // Find the only fcs file and add its name and URL to the
                 // DynaTree
                 response.result.forEach(function(f) {
