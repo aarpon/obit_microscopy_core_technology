@@ -15,6 +15,7 @@ import sys
 import re
 import zipfile
 import java.io.File
+import logging
 
 
 def touch(full_file):
@@ -104,7 +105,7 @@ class Mover():
     performs the actual copying.
     """
 
-    def __init__(self, experimentId, sampleId, mode, userId, properties):
+    def __init__(self, experimentId, sampleId, mode, userId, properties, logger):
         """Constructor
         
         experimentId: id of the experiment (must be specified)
@@ -121,6 +122,9 @@ class Mover():
              
         """
 
+        # Logger
+        self._logger = logger
+
         # Store the valid file extensions
         self._validExtensions = self._getValidExtensions()
 
@@ -129,20 +133,21 @@ class Mover():
 
         # Experiment identifier
         self._experimentId = experimentId
-        
+
+        # Get the experiment
+        self._experiment = searchService.getExperiment(self._experimentId)
+
         # Sample identifier
         self._sampleId = sampleId
 
-        # Experiment code
+        # Get the sample
+        self._sample = None
+        if not self._sampleId == "":
+            self._sample = searchService.getSample(self._sampleId)
+
+        # Experiment code (alias)
         # If no / is found, _experimentCode will be the same as _experimentId
         self._experimentCode = self._experimentId[self._experimentId.rfind("/") + 1:]
-
-        # Sample code
-        # If no / is found, _sampleCode will be the same as _sampleId
-        if self._sampleId is not None and self._sampleId != "":
-            self._sampleCode = self._sampleId[self._sampleId.rfind("/") + 1:]
-        else:
-            self._sampleCode = None
 
         # User folder: depending on the 'mode' settings, the user folder changes
         if mode =="normal":
@@ -176,11 +181,14 @@ class Mover():
         if not os.path.isdir(self._userFolder):
             self._createDir(self._userFolder)
 
-        # Get the experiment
-        self._experiment = searchService.getExperiment(self._experimentId)
-
         # Experiment full path in user/tmp folder
         self._experimentPath = os.path.join(self._userFolder, self._experimentCode)
+
+        # Info
+        self._logger.info("Export experiment with code " + \
+                          self._experimentCode + " to " + \
+                          str(self._userFolder))
+        self._logger.info("Export mode is " + self._mode)
 
         # Message (in case of error)
         self._message = "";
@@ -203,12 +211,14 @@ class Mover():
         if self._experiment == None:
             self._message = "Could not retrieve experiment with " \
             "identifier " + self._experimentId + "!"
+            self._logger.error(self._message)
             return False
 
         # At this stage we can create the experiment folder in the user dir
         if not self._createExperimentFolder():
             self._message = "Could not create experiment folder " + \
             self._experimentPath
+            self._logger.error(self._message)
             return False
 
         # Now point the current path to the newly created experiment folder
@@ -309,11 +319,13 @@ class Mover():
         # Get the datasets for the experiment
         dataSets = self._getDataSetsForExperiment()
         if len(dataSets) == 0:
+            self._logger.error("Experiment does not contain datasets.")
             return False
 
         # Get the files for the datasets
         dataSetFiles = self._getFilesForDataSets(dataSets)
         if len(dataSetFiles) == 0:
+            self._logger.error("Datasets do not contain files.")
             return False
 
         # Since sub-series reference the same file, we make sure to keep
@@ -345,22 +357,24 @@ class Mover():
         searchCriteria = SearchCriteria()
         searchCriteria.addMatchClause(MatchClause.createAttributeMatch(MatchClauseAttribute.TYPE, "MICROSCOPY_IMG_CONTAINER"))
         expCriteria = SearchCriteria()
-        expCriteria.addMatchClause(MatchClause.createAttributeMatch(MatchClauseAttribute.CODE, self._experimentCode))
+        expCriteria.addMatchClause(MatchClause.createAttributeMatch(MatchClauseAttribute.PERM_ID, self._experiment.permId))
         searchCriteria.addSubCriteria(SearchSubCriteria.createExperimentCriteria(expCriteria))
-        if self._sampleCode is not None:
+        if self._sample is not None:
+            self._logger.info("Filter by sample " + self._sampleId)
             sampleCriteria = SearchCriteria()
-            sampleCriteria.addMatchClause(MatchClause.createAttributeMatch(MatchClauseAttribute.CODE, self._sampleCode))
+            sampleCriteria.addMatchClause(MatchClause.createAttributeMatch(MatchClauseAttribute.PERM_ID, self._sample.permId))
             searchCriteria.addSubCriteria(SearchSubCriteria.createSampleCriteria(sampleCriteria))
 
         dataSets = searchService.searchForDataSets(searchCriteria)
-        
+
         if len(dataSets) == 0:
             dataSets = []
             self._message = "Could not retrieve datasets for experiment " \
-            "with code " + self._experimentCode
-            if self._sampleCode != "":
-                self._message = self._message + " and sample " + \
-                self._sampleCode
+            "with id " + self._experimentId
+            if self._sampleId != "":
+                self._message = self._message + " and sample with id " + \
+                self._sampleId
+            self._logger.error(self._message)
 
         # Return
         return dataSets
@@ -394,6 +408,8 @@ class Mover():
 
         if len(dataSetFiles) == 0:
             self._message = "Could not retrieve dataset files!"
+            self._logger.error(self._message)
+
 
         # Return the files
         return dataSetFiles
@@ -406,6 +422,7 @@ class Mover():
             fileName.lower().endswith("." + validExt)
             return True
 
+        self._logger.error("File " + fileName + " is not a valid microscopy file.")
         return False
 
 
@@ -418,13 +435,18 @@ class Mover():
         dstFile = os.path.join(dstDir, os.path.basename(source))
         subprocess.call(["/bin/touch", dstFile])
         subprocess.call(["/bin/cp", source, dstDir])
+        self._logger.info("Copying file " + source + " to " + dstDir)
         self._numCopiedFiles += 1
 
     def _copyDir(self, source, dstDir):
         """Copies the source directory (with full path) recursively to directory dstDir.
         """
         dstSubDir = os.path.join(dstDir, os.path.basename(source))
+        self._logger.info("Creating directory " + dstDir)
         self._createDir(dstSubDir)
+
+        # Info
+        self._logger.info("Copying directory " + source + " to " + dstDir)
 
         # Now copy recursively (by preserving NFSv4 ACLs)
         files = os.listdir(source)
@@ -439,6 +461,11 @@ class Mover():
     def _createDir(self, dirFullPath):
         """Creates the passed directory (with full path).
         """
+        
+        # Inform
+        self._logger.info("Creating directory " + dirFullPath)
+        
+        # Create dir
         os.makedirs(dirFullPath)
 
 
@@ -477,6 +504,9 @@ class Mover():
 
         # Update the experiment path
         self._experimentPath = expPath
+
+        # Inform
+        self._logger.info("Output experiment folder: " + self._experimentPath)
 
         # Create the folder
         self._createDir(self._experimentPath)
@@ -527,6 +557,24 @@ def parsePropertiesFile():
 # Plug-in entry point
 def aggregate(parameters, tableBuilder):
 
+    # Get path to containing folder
+    # __file__ does not work (reliably) in Jython
+    dbPath = "../core-plugins/microscopy/1/dss/reporting-plugins/copy_microscopy_datasets_to_userdir"
+
+    # Path to the logs subfolder
+    logPath = os.path.join(dbPath, "logs")
+
+    # Make sure the logs subforder exist
+    if not os.path.exists(logPath):
+        os.makedirs(logPath)
+
+    # Path for the log file
+    logFile = os.path.join(logPath, "reporting_log.txt")
+
+    # Set up logging
+    logging.basicConfig(filename=logFile, level=logging.DEBUG)
+    logger = logging.getLogger()
+
     # Get parameters from plugin.properties
     properties = parsePropertiesFile()
     if properties is None:
@@ -541,9 +589,18 @@ def aggregate(parameters, tableBuilder):
     # Get the mode
     mode = parameters.get("mode")
 
+    # Info
+    logger.info("Aggregation plugin called with following parameters:")
+    logger.info("experimentId = " + experimentId)
+    logger.info("sampleId     = " + sampleId)
+    logger.info("mode         = " + mode)
+    logger.info("userId       = " + userId)
+    logger.info("Aggregation plugin properties:")
+    logger.info("properties   = " + str(properties))
+
     # Instantiate the Mover object - userId is a global variable
     # made available to the aggregation plug-in
-    mover = Mover(experimentId, sampleId, mode, userId, properties)
+    mover = Mover(experimentId, sampleId, mode, userId, properties, logger)
 
     # Process
     success = mover.process()
