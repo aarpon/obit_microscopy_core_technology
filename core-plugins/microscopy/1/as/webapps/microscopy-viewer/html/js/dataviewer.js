@@ -61,7 +61,7 @@ DataViewer.prototype.initView = function() {
     sampleNameView.append("<h2>" + sample_name + "</h2>");
 
     // Display the experiment name (code) and link it to the experiment web app
-    var link = $("<a>").text(exp.code).attr("href", "#").click(function() {
+    var link = $("<a>").text(exp.properties.MICROSCOPY_EXPERIMENT_NAME).attr("href", "#").click(function() {
         window.top.location.hash = "#entity=EXPERIMENT&permId=" + exp.permId +
             "&ui-subtab=webapp-section_microscopy-experiment-viewer";
         return false;
