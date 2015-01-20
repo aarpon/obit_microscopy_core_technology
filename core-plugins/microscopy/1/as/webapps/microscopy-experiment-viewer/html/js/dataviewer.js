@@ -51,7 +51,7 @@ DataViewer.prototype.initView = function() {
     var spCl = "</span>";
 
     // Display the sample name and code
-    experimentNameView.append("<h2>" + exp.code + "</h2>");
+    experimentNameView.append("<h2>" + exp.properties.MICROSCOPY_EXPERIMENT_NAME + "</h2>");
 
     // Display the experiment description
     var exp_descr;
