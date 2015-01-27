@@ -32,8 +32,14 @@ def process(transaction):
     logFile = os.path.join(logPath, "registration_log.txt")
 
     # Set up logging
-    logging.basicConfig(filename=logFile, level=logging.DEBUG)
-    logger = logging.getLogger()
+    logger = logging.getLogger('MicroscopyDropbox')
+    logger.setLevel(logging.DEBUG)
+    fh = logging.FileHandler(logFile)
+    fh.setLevel(logging.DEBUG)
+    format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    formatter = logging.Formatter(format)
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)
 
     # Create a Processor
     processor = Processor(transaction, logger)
