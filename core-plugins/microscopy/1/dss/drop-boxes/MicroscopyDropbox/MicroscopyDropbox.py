@@ -8,6 +8,8 @@ import os
 import logging
 import re
 
+from ch.systemsx.cisd.openbis.common.hdf5 import HDF5Container
+
 from Processor import Processor
 
 
@@ -16,6 +18,9 @@ def process(transaction):
 
     @param transaction, the transaction object
     """
+
+    # Disabling HDF5 caching
+    HDF5Container.disableCaching()
 
     # Get path to containing folder
     # __file__ does not work (reliably) in Jython
