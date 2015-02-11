@@ -40,7 +40,7 @@ body {
 }
 
 .filesize {
-    font-size: 12px;
+    font-size: 11px;
 }
 
 .filesize::before {
