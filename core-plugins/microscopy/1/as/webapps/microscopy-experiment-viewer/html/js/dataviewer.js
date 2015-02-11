@@ -103,6 +103,14 @@ DataViewer.prototype.initView = function() {
                 displayName = name;
             }
 
+            // If the size property exists (this was added later), retrieve it and display it as well
+            var datasetSize;
+            if (sample.properties.MICROSCOPY_SAMPLE_SIZE_IN_BYTES) {
+                datasetSize = DATAVIEWER.formatSizeForDisplay(sample.properties.MICROSCOPY_SAMPLE_SIZE_IN_BYTES);
+            } else {
+                datasetSize = "";
+            }
+
             // A column to be added to current row that will store all
             // elements related to current sample
             var newThumbCol = $("<div />",
@@ -115,7 +123,7 @@ DataViewer.prototype.initView = function() {
             var thumbnailView = $("<div />", { class: "thumbnailView" });
 
             // Link to the dataset (sample) viewer.
-            var link = $("<a>").text(displayName).attr("href", "#").attr("title", name).click(
+            var link = $("<a>").addClass("filename").text(displayName).attr("href", "#").attr("title", name).click(
                 function() {
                     window.top.location.hash = "#entity=SAMPLE&permId=" + sample.permId
                         + "&ui-subtab=webapp-section_microscopy-viewer";
@@ -135,6 +143,11 @@ DataViewer.prototype.initView = function() {
             thumbnailView.append(thumbnailImage);
             thumbnailView.append($("<br />"));
             thumbnailView.append(link);
+            if (datasetSize != "") {
+                thumbnailView.append($("<br />"));
+                var spanSz =  $("<span>").addClass("filesize").text(datasetSize);
+                thumbnailView.append(spanSz);
+            }
 
             // Add the thumbnail to the column and the row
             newThumbCol.append(thumbnailView);
@@ -270,12 +283,9 @@ DataViewer.prototype.displayThumbnailForSample= function(sample, img_id) {
 /**
  * Display status text color-coded by level.
  * @param status: text to be displayed
- * @param level: one of "success", "info", "warning", "error". Default is
- * "info"
- *
- * @param tree DynaTree object
+ * @param level: one of "success", "info", "warning", "error". Default is "info"
  */
-DataViewer.prototype.displayStatus = function (status, level) {
+DataViewer.prototype.displayStatus = function(status, level) {
 
     // Display the status
     $("#detailViewStatus").empty();
@@ -302,4 +312,28 @@ DataViewer.prototype.displayStatus = function (status, level) {
         status + "</div>";
     $("#detailViewStatus").html(status);
 
+};
+
+/**
+ * Format dataset size for display.
+ * @param datasetSize: size in bytes
+ * @return formattedDatasetSize: formatted dataset size in the form 322.5 MiB or 3.7 GiB
+ */
+DataViewer.prototype.formatSizeForDisplay = function(datasetSize) {
+
+    // Output
+    var formattedDatasetSize = "";
+
+    // Cast datasetSize to float
+    var datasetSizeF = parseFloat(datasetSize)
+
+    var sMB = datasetSizeF / 1024.0 / 1024.0;
+    if (sMB < 1024.0) {
+        formattedDatasetSize = sMB.toFixed(2) + " MiB";
+    } else {
+        var sGB = datasetSizeF / 1024.0;
+        formattedDatasetSize = sGB.toFixed(2) + " GiB";
+    }
+
+    return formattedDatasetSize;
 };

@@ -83,7 +83,7 @@ DataViewer.prototype.initView = function() {
             "<p>" + exp_descr + "</p>");
 
 
-    // Display the sample description
+    // Display the sample (dataset) description
     var sample_descr;
     if (sample.properties.MICROSCOPY_SAMPLE_DESCRIPTION) {
         sample_descr = sample.properties.MICROSCOPY_SAMPLE_DESCRIPTION;
@@ -93,6 +93,13 @@ DataViewer.prototype.initView = function() {
     detailView.append(
             "<p>" + spOp + "Dataset description" + spCl + "</p>" +
             "<p>" + sample_descr + "</p>");
+
+    // If the size property exists (this was added later), we display it as well
+    if (sample.properties.MICROSCOPY_SAMPLE_SIZE_IN_BYTES) {
+        detailView.append(
+            "<p>" + spOp + "Dataset size" + spCl + "</p>" +
+            "<p>" + DATAVIEWER.formatSizeForDisplay(sample.properties.MICROSCOPY_SAMPLE_SIZE_IN_BYTES) + "</p>");
+    }
 
     // Display the viewer (it will take care of refreshing automatically when
     // the series cahnges, so we do no need to worry about it.
@@ -178,7 +185,7 @@ DataViewer.prototype.displayMetadata = function(dataSetCode) {
 
     // Display the metadata
     paramView.append(
-            "<p>" + spOp + "Dataset/series sizes" + spCl + "</p>" +
+            "<p>" + spOp + "Dataset basic metadata" + spCl + "</p>" +
             "<table><tbody>" +
                 "<tr>" +
                     "<th>X</th><th>Y</th><th>Z</th><th>C</th><th>T</th>" +
@@ -227,7 +234,7 @@ DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
 
         // Add link to the metadata view
         $("#view_metadata").click(
-            function () {
+            function() {
                 window.top.location.hash = "#entity=DATA_SET&permId=" + dataSet.code
                     + "&ui-subtab=managed_property_section_MICROSCOPY_IMG_CONTAINER_METADATA";
                 return false;
@@ -276,7 +283,7 @@ DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
  * @param level: one of "success", "info", "warning", "error". Default is
  * "info"
  */
-DataViewer.prototype.displayStatus = function (status, level) {
+DataViewer.prototype.displayStatus = function(status, level) {
 
     // Display the status
     $("#detailViewStatus").empty();
@@ -339,4 +346,28 @@ DataViewer.prototype.displayViewer = function(dataSetCodes) {
 
     });
 
+};
+
+/**
+ * Format dataset size for display.
+ * @param datasetSize: size in bytes
+ * @return formattedDatasetSize: formatted dataset size in the form 322.5 MiB or 3.7 GiB
+ */
+DataViewer.prototype.formatSizeForDisplay = function(datasetSize) {
+
+    // Output
+    var formattedDatasetSize = "";
+
+    // Cast datasetSize to float
+    var datasetSizeF = parseFloat(datasetSize)
+
+    var sMB = datasetSizeF / 1024.0 / 1024.0;
+    if (sMB < 1024.0) {
+        formattedDatasetSize = sMB.toFixed(2) + " MiB";
+    } else {
+        var sGB = datasetSizeF / 1024.0;
+        formattedDatasetSize = sGB.toFixed(2) + " GiB";
+    }
+
+    return formattedDatasetSize;
 };

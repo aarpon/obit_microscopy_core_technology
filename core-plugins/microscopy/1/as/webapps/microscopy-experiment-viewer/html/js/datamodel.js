@@ -122,7 +122,7 @@ DataModel.prototype.copyDatasetsToUserDir = function(experimentId, sampleId, mod
 
     // Must use global object
     DATAMODEL.openbisServer.createReportFromAggregationService(dataStoreServer,
-        "copy_microscopy_datasets_to_userdir", parameters, function (response) {
+        "copy_microscopy_datasets_to_userdir", parameters, function(response) {
 
             var status;
             var unexpected = "Sorry, unexpected feedback from server " +
@@ -200,7 +200,7 @@ DataModel.prototype.copyDatasetsToUserDir = function(experimentId, sampleId, mod
             // Retrieve the URL (asynchronously)
             if (r_Success == true && r_Mode == "zip")
                 DATAMODEL.openbisServer.createSessionWorkspaceDownloadUrl(r_ZipArchiveFileName,
-                    function (url) {
+                    function(url) {
                         var downloadString =
                             '<img src="img/download.png" />&nbsp;<a href="' + url + '">Download</a>!';
                         //'<a href="' + url + '"><img src = "img/download.png" />&nbsp;Download</a>';
