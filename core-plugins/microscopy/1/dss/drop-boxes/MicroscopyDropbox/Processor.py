@@ -294,12 +294,16 @@ class Processor:
         # Set the sample name
         sample.setPropertyValue("MICROSCOPY_SAMPLE_NAME",
                                 relativeFileName[relativeFileName.rfind('/') + 1:])
-        
+
         # Set the sample description
         sampleDescr = microscopyFileNode.attrib.get("description")
         if sampleDescr is None:
             sampleDescr = ""
         sample.setPropertyValue("MICROSCOPY_SAMPLE_DESCRIPTION", sampleDescr)
+
+        # Store the sample (file) size in bytes
+        datasetSize = microscopyFileNode.attrib.get("datasetSize")
+        sample.setPropertyValue("MICROSCOPY_SAMPLE_SIZE_IN_BYTES", datasetSize)
 
         # Set the experiment
         sample.setExperiment(openBISExperiment)
@@ -335,7 +339,7 @@ class Processor:
 
                 # Store the metadata in the MICROSCOPY_IMG_CONTAINER_METADATA property
                 dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_METADATA", seriesMetadataXML)
-                
+
                 # Store the series name in the MICROSCOPY_IMG_CONTAINER_NAME property
                 dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME", allSeriesMetadata[i]["name"])
 
@@ -421,6 +425,10 @@ class Processor:
         if sampleDescr is None:
             sampleDescr = ""
         sample.setPropertyValue("MICROSCOPY_SAMPLE_DESCRIPTION", sampleDescr)
+
+        # Store the sample (total composite file) size in bytes
+        datasetSize = microscopyCompositeFileNode.attrib.get("datasetSize")
+        sample.setPropertyValue("MICROSCOPY_SAMPLE_SIZE_IN_BYTES", datasetSize)
 
         # Set the experiment
         sample.setExperiment(openBISExperiment)
