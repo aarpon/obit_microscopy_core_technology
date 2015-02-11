@@ -7,9 +7,8 @@ body {
 }
 
 #sampleNameView {
-    min-height: 40px;
-    margin-bottom: 10px;
-    vertical-align: middle;
+    margin-bottom: 20px;
+    border-bottom: solid 1px;
 }
 
 #detailViewAction {
@@ -26,6 +25,7 @@ body {
 #detailViewStatus {
     display: block;
     margin-bottom: 10px;
+    border-bottom: solid 1px;
 }
 
 #paramView {
@@ -51,4 +51,17 @@ body {
 
 .code {
     font-size: 12px;
+}
+
+.filesize {
+    font-size: 11px;
+    margin-right: 10px;
+}
+
+.filesize::before {
+    content: "[ "
+}
+
+.filesize::after {
+    content: " ]"
 }

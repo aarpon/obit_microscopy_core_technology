@@ -48,8 +48,11 @@ DataViewer.prototype.initView = function() {
         return;
     }
 
-    var spOp = "<span class=\"label label-default\">";
-    var spCl = "</span>";
+    // If the size property exists (this was added later), retrieve it
+    var datasetSize = "";
+    if (sample.properties.MICROSCOPY_SAMPLE_SIZE_IN_BYTES) {
+        datasetSize = DATAVIEWER.formatSizeForDisplay(sample.properties.MICROSCOPY_SAMPLE_SIZE_IN_BYTES);
+    }
 
     // Display the sample name and code
     var sample_name;
@@ -58,14 +61,21 @@ DataViewer.prototype.initView = function() {
     } else {
         sample_name = sample.code;
     }
-    sampleNameView.append("<h2>" + sample_name + "</h2>");
-
+    if (datasetSize != "") {
+		sampleNameView.append("<h2><span class = \"filesize\">" + datasetSize + "</span>" + sample_name + "</h2>");
+    } else {
+		sampleNameView.append("<h2>" + sample_name + "</h2>");
+    }    
+    
     // Display the experiment name (code) and link it to the experiment web app
     var link = $("<a>").text(exp.properties.MICROSCOPY_EXPERIMENT_NAME).attr("href", "#").click(function() {
         window.top.location.hash = "#entity=EXPERIMENT&permId=" + exp.permId +
             "&ui-subtab=webapp-section_microscopy-experiment-viewer";
         return false;
     });
+
+    var spOp = "<span class=\"label label-default\">";
+    var spCl = "</span>";
 
     // Display the experiment name
     detailView.append("<p>" + spOp + "Experiment name" + spCl + "</p>");
@@ -94,12 +104,6 @@ DataViewer.prototype.initView = function() {
             "<p>" + spOp + "Dataset description" + spCl + "</p>" +
             "<p>" + sample_descr + "</p>");
 
-    // If the size property exists (this was added later), we display it as well
-    if (sample.properties.MICROSCOPY_SAMPLE_SIZE_IN_BYTES) {
-        detailView.append(
-            "<p>" + spOp + "Dataset size" + spCl + "</p>" +
-            "<p>" + DATAVIEWER.formatSizeForDisplay(sample.properties.MICROSCOPY_SAMPLE_SIZE_IN_BYTES) + "</p>");
-    }
 
     // Display the viewer (it will take care of refreshing automatically when
     // the series cahnges, so we do no need to worry about it.
