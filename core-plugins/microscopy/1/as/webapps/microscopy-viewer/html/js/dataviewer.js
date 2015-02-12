@@ -54,19 +54,28 @@ DataViewer.prototype.initView = function() {
         datasetSize = DATAVIEWER.formatSizeForDisplay(sample.properties.MICROSCOPY_SAMPLE_SIZE_IN_BYTES);
     }
 
-    // Display the sample name and code
+    // Display the sample name
     var sample_name;
     if (sample.properties.MICROSCOPY_SAMPLE_NAME) {
         sample_name = sample.properties.MICROSCOPY_SAMPLE_NAME;
     } else {
         sample_name = sample.code;
     }
-    if (datasetSize != "") {
-		sampleNameView.append("<h2><span class = \"filesize\">" + datasetSize + "</span>" + sample_name + "</h2>");
-    } else {
-		sampleNameView.append("<h2>" + sample_name + "</h2>");
-    }    
-    
+    sampleNameView.append("<h2>" + sample_name + "</h2>");
+
+    /*
+     *
+     * Link to the experiment
+     *
+     */
+
+    // Create a row to store the experiment name / link
+    var experimentNameRow = $("<div>").addClass("row");
+
+    // Experiment name title
+    var expNameTitle = $("<div>").addClass("label label-default").text("Experiment name");
+    experimentNameRow.append($("<div>").addClass("metadataTitle").append(expNameTitle));
+
     // Display the experiment name (code) and link it to the experiment web app
     var link = $("<a>").text(exp.properties.MICROSCOPY_EXPERIMENT_NAME).attr("href", "#").click(function() {
         window.top.location.hash = "#entity=EXPERIMENT&permId=" + exp.permId +
@@ -74,36 +83,92 @@ DataViewer.prototype.initView = function() {
         return false;
     });
 
-    var spOp = "<span class=\"label label-default\">";
-    var spCl = "</span>";
+    // Experiment name/link
+    experimentNameRow.append($("<div>").addClass("metadataValue").append(link));
 
-    // Display the experiment name
-    detailView.append("<p>" + spOp + "Experiment name" + spCl + "</p>");
-    detailView.append($("<p>").append(link));
+    // Display the experiment name row
+    detailView.append(experimentNameRow);
 
-    // Display the experiment description
-    var exp_descr;
+    /*
+     *
+     * Experiment description
+     *
+     */
+
+    // Create a row to store the experiment description
+    var experimentDescriptionRow = $("<div>").addClass("row");
+
+    // Experiment description title
+    var expDescrTitle = $("<div>").addClass("label label-default").text("Experiment description");
+    experimentDescriptionRow.append($("<div>").addClass("metadataTitle").append(expDescrTitle));
+
+    // Retrieve the experiment description
+    var expDescrValue;
     if (exp.properties.MICROSCOPY_EXPERIMENT_DESCRIPTION) {
-        exp_descr = exp.properties.MICROSCOPY_EXPERIMENT_DESCRIPTION;
+        expDescrValue = exp.properties.MICROSCOPY_EXPERIMENT_DESCRIPTION;
     } else {
-        exp_descr = "<i>No description provided.</i>";
+        expDescrValue = "<i>No description provided.</i>";
     }
-    detailView.append(
-            "<p>" + spOp + "Experiment description" + spCl + "</p>" +
-            "<p>" + exp_descr + "</p>");
 
+    // Experiment description
+    experimentDescriptionRow.append($("<div>").addClass("metadataValue").text(expDescrValue));
 
-    // Display the sample (dataset) description
-    var sample_descr;
+    // Display the experiment description row
+    detailView.append(experimentDescriptionRow);
+
+    /*
+     *
+     * Dataset size
+     *
+     */
+    if (datasetSize != "") {
+
+        // Create a row to store the dataset size
+        var datasetSizeRow = $("<div>").addClass("row");
+
+        // Dataset size title
+        var datasetSizeTitle = $("<div>").addClass("label label-default").text("Dataset size");
+        datasetSizeRow.append($("<div>").addClass("metadataTitle").append(datasetSizeTitle));
+
+        // Dataset size
+        datasetSizeRow.append($("<div>").addClass("metadataValue").text(datasetSize));
+
+        // Display the experiment description row
+        detailView.append(datasetSizeRow);
+    }
+
+    /*
+     *
+     * Dataset description
+     *
+     */
+
+    // Create a row to store the experiment description
+    var datasetDescriptionRow = $("<div>").addClass("row");
+
+    // Experiment description title
+    var datasetDescrTitle = $("<div>").addClass("label label-default").text("Dataset description");
+    datasetDescriptionRow.append($("<div>").addClass("metadataTitle").append(datasetDescrTitle));
+
+    // Retrieve the dataset (sample) description
+    var sampleDescrValue;
     if (sample.properties.MICROSCOPY_SAMPLE_DESCRIPTION) {
-        sample_descr = sample.properties.MICROSCOPY_SAMPLE_DESCRIPTION;
+        sampleDescrValue = sample.properties.MICROSCOPY_SAMPLE_DESCRIPTION;
     } else {
-        sample_descr = "<i>No description provided.</i>";
+        sampleDescrValue = "<i>No description provided.</i>";
     }
-    detailView.append(
-            "<p>" + spOp + "Dataset description" + spCl + "</p>" +
-            "<p>" + sample_descr + "</p>");
 
+    // Experiment description
+    datasetDescriptionRow.append($("<div>").addClass("metadataValue").text(sampleDescrValue));
+
+    // Display the experiment description row
+    detailView.append(datasetDescriptionRow);
+
+    /*
+     *
+     * Render additional views
+     *
+     */
 
     // Display the viewer (it will take care of refreshing automatically when
     // the series cahnges, so we do no need to worry about it.
@@ -135,9 +200,6 @@ DataViewer.prototype.refreshView = function(dataSetCode) {
  * @param dataSetCode Data set code for which to display the metadata.
  */
 DataViewer.prototype.displayMetadata = function(dataSetCode) {
-
-    var spOp = "<span class=\"label label-default\">";
-    var spCl = "</span>";
 
     // Find data set object with given code
     var dataSet = [];
@@ -187,20 +249,64 @@ DataViewer.prototype.displayMetadata = function(dataSetCode) {
     var sVoxelY = (new Number(voxelY)).toPrecision(2);
     var sVoxelZ = (new Number(voxelZ)).toPrecision(2);
 
-    // Display the metadata
-    paramView.append(
-            "<p>" + spOp + "Dataset basic metadata" + spCl + "</p>" +
-            "<table><tbody>" +
-                "<tr>" +
-                    "<th>X</th><th>Y</th><th>Z</th><th>C</th><th>T</th>" +
-                    "<th>vX [&micro;m]</th><th>vY [&micro;m]</th><th>vZ [&micro;m]</th>" +
-                "</tr>" +
-                "<tr>" +
-                    "<td>" + sizeX + "</td><td>" + sizeY + "</td><td>" + sizeZ + "</td>" +
-                    "<td>" + sizeC + "</td><td>" + sizeT + "</td>" +
-                    "<td>" + sVoxelX + "</td><td>" + sVoxelY + "</td><td>" + sVoxelZ + "</td>" +
-                "</tr>" +
-            "</tbody></table>");
+    /*
+     *
+     *  Metadata for current series
+     *
+     */
+
+    // Display the metadata for current series
+    var metadataTitleRow = $("<div>").addClass("row");
+
+    // Title
+    var expDescrTitle = $("<div>").addClass("label label-info").text("Current series");
+    metadataTitleRow.append($("<div>").addClass("metadataTitle").append(expDescrTitle));
+    paramView.append(metadataTitleRow);
+
+    /*
+     *
+     *  Dataset geometry
+     *
+     */
+
+    // Create a row to store the dataset geometry
+    var datasetGeometryRow = $("<div>").addClass("row");
+
+    // Dataset geometry title
+    var datasetGeometryTitle = $("<div>").addClass("label label-default").text("Geometry [XYZ]");
+    datasetGeometryRow.append($("<div>").addClass("metadataTitle").append(datasetGeometryTitle));
+
+    // Dataset geometry
+    var datasetGeometryValue = "" + sizeX + "x" + sizeY + "x" + sizeZ + ", " + sizeC + " channel" +
+        ((sizeC > 1) ? "s" : "") + ", " + sizeT + " timepoint" + ((sizeT > 1) ? "s" : "");
+    datasetGeometryRow.append($("<div>").addClass("metadataValue").text(datasetGeometryValue));
+
+    // Display the experiment description row
+    paramView.append(datasetGeometryRow);
+
+    /*
+     *
+     *  Voxel size
+     *
+     */
+
+    // Create a row to store the voxel size
+    var voxelSizeRow = $("<div>").addClass("row");
+
+    // Voxel size title
+    var voxelSizeTitle = $("<div>").addClass("label label-default").html("Voxel size (&micro;m)");
+    voxelSizeRow.append($("<div>").addClass("metadataTitle").append(voxelSizeTitle));
+
+    // Voxel size
+    var voxelSizeValue = "" + sVoxelX + "x" + sVoxelY;
+    if (sVoxelZ != "NaN") {
+        voxelSizeValue += "x" + sVoxelZ;
+    }
+    voxelSizeRow.append($("<div>").addClass("metadataValue").text(voxelSizeValue));
+
+    // Display the experiment description row
+    paramView.append(voxelSizeRow);
+
 }
 
 /**

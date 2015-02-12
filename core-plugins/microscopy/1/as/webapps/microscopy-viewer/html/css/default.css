@@ -15,22 +15,23 @@ body {
     padding-top: 10px;
     padding-bottom: 10px;
     vertical-align: middle;
+    text-align: center;
 }
 
 #detailView {
-    min-height: 40px;
-    margin-bottom: 10px;
+
 }
 
 #detailViewStatus {
-    display: block;
+    text-align: center;
     margin-bottom: 10px;
-    border-bottom: solid 1px;
+    max-height: 60px;
+    border-bottom: dashed 1px;
 }
 
 #paramView {
-    min-height: 40px;
-    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: dashed 1px;
 }
 
 #imageViewer {
@@ -64,4 +65,21 @@ body {
 
 .filesize::after {
     content: " ]"
+}
+
+.metadataTitle {
+    margin-left: 20px;
+    margin-right: 20px;
+    height: 20px;
+    text-align: right;
+    vertical-align: middle;
+    width: 140px;
+    float: left;
+    clear: both;
+}
+
+.metadataValue {
+    font-size: 0.8em;
+    height: 20px;
+    vertical-align: middle;
 }
