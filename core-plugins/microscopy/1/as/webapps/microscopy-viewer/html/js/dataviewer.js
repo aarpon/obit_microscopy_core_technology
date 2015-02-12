@@ -111,7 +111,7 @@ DataViewer.prototype.initView = function() {
     }
 
     // Experiment description
-    experimentDescriptionRow.append($("<div>").addClass("metadataValue").text(expDescrValue));
+    experimentDescriptionRow.append($("<div>").addClass("metadataValue").html(expDescrValue));
 
     // Display the experiment description row
     detailView.append(experimentDescriptionRow);
@@ -159,7 +159,7 @@ DataViewer.prototype.initView = function() {
     }
 
     // Experiment description
-    datasetDescriptionRow.append($("<div>").addClass("metadataValue").text(sampleDescrValue));
+    datasetDescriptionRow.append($("<div>").addClass("metadataValue").html(sampleDescrValue));
 
     // Display the experiment description row
     detailView.append(datasetDescriptionRow);
@@ -294,7 +294,7 @@ DataViewer.prototype.displayMetadata = function(dataSetCode) {
     var voxelSizeRow = $("<div>").addClass("row");
 
     // Voxel size title
-    var voxelSizeTitle = $("<div>").addClass("label label-default").html("Voxel size (&micro;m)");
+    var voxelSizeTitle = $("<div>").addClass("label label-default").html("Voxel size [XYZ] (&micro;m)");
     voxelSizeRow.append($("<div>").addClass("metadataTitle").append(voxelSizeTitle));
 
     // Voxel size
