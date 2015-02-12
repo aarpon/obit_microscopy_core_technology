@@ -303,7 +303,8 @@ class Processor:
 
         # Store the sample (file) size in bytes
         datasetSize = microscopyFileNode.attrib.get("datasetSize")
-        sample.setPropertyValue("MICROSCOPY_SAMPLE_SIZE_IN_BYTES", datasetSize)
+        if datasetSize is not None:
+            sample.setPropertyValue("MICROSCOPY_SAMPLE_SIZE_IN_BYTES", datasetSize)
 
         # Set the experiment
         sample.setExperiment(openBISExperiment)
@@ -428,7 +429,8 @@ class Processor:
 
         # Store the sample (total composite file) size in bytes
         datasetSize = microscopyCompositeFileNode.attrib.get("datasetSize")
-        sample.setPropertyValue("MICROSCOPY_SAMPLE_SIZE_IN_BYTES", datasetSize)
+        if datasetSize is not None:
+            sample.setPropertyValue("MICROSCOPY_SAMPLE_SIZE_IN_BYTES", datasetSize)
 
         # Set the experiment
         sample.setExperiment(openBISExperiment)
