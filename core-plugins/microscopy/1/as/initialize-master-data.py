@@ -123,7 +123,7 @@ prop_type_MICROSCOPY_SAMPLE_DESCRIPTION.setManagedInternally(False)
 prop_type_MICROSCOPY_SAMPLE_DESCRIPTION.setInternalNamespace(False)
 
 # MICROSCOPY_SAMPLE_SIZE_IN_BYTES
-prop_type_MICROSCOPY_SAMPLE_SIZE_IN_BYTES = tr.getOrCreateNewPropertyType('MICROSCOPY_SAMPLE_SIZE_IN_BYTES', DataType.VARCHAR)
+prop_type_MICROSCOPY_SAMPLE_SIZE_IN_BYTES = tr.getOrCreateNewPropertyType('MICROSCOPY_SAMPLE_SIZE_IN_BYTES',  DataType.INTEGER)
 prop_type_MICROSCOPY_SAMPLE_SIZE_IN_BYTES.setLabel('Size')
 prop_type_MICROSCOPY_SAMPLE_SIZE_IN_BYTES.setManagedInternally(False)
 prop_type_MICROSCOPY_SAMPLE_SIZE_IN_BYTES.setInternalNamespace(False)
