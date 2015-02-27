@@ -15,7 +15,8 @@ body {
     padding-top: 10px;
     padding-bottom: 10px;
     vertical-align: middle;
-    text-align: center;
+    text-align: left;
+    margin-left: 20px;
 }
 
 #detailView {
@@ -31,7 +32,6 @@ body {
 
 #paramView {
     padding-bottom: 10px;
-    border-bottom: dashed 1px;
 }
 
 #imageViewer {
