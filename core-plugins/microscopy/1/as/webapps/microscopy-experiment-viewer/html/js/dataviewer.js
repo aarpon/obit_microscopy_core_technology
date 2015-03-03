@@ -47,8 +47,32 @@ DataViewer.prototype.initView = function() {
         return;
     }
 
-    var spOp = "<span class=\"label label-default\">";
+    var spOp = "<span class=\"label label-info\">";
     var spCl = "</span>";
+
+    // Get metaprojects (tags)
+    var metaprojects = "";
+    if (exp.metaprojects) {
+        if (exp.metaprojects.length == 0) {
+            metaprojects = "<i>None</i>";
+        } else if (exp.metaprojects.length == 1) {
+            metaprojects = exp.metaprojects[0].name;
+        } else {
+            for (var i = 0; i < exp.metaprojects.length; i++) {
+                if (i < (exp.metaprojects.length - 1)) {
+                    metaprojects = metaprojects.concat(exp.metaprojects[i].name + ", ");
+                } else {
+                    metaprojects = metaprojects.concat(exp.metaprojects[i].name);
+                }
+            }
+        }
+    }
+    detailView.append(
+        "<p>" + spOp + "Tags" + spCl + "</p>" +
+        "<p>" + metaprojects + "</p>");
+
+    // Change the color
+    spOp = "<span class=\"label label-default\">";
 
     // Display the sample name and code
     experimentNameView.append("<h2>" + exp.properties.MICROSCOPY_EXPERIMENT_NAME + "</h2>");
