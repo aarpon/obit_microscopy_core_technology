@@ -5,10 +5,6 @@
 """
 
 import os
-import logging
-import re
-
-from ch.systemsx.cisd.openbis.common.hdf5 import HDF5Container
 
 from Processor import Processor
 
@@ -33,18 +29,8 @@ def process(transaction):
     # Path for the log file
     logFile = os.path.join(logPath, "registration_log.txt")
 
-    # Set up logging
-    logger = logging.getLogger('MicroscopyDropbox')
-    logger.setLevel(logging.DEBUG)
-    fh = logging.FileHandler(logFile)
-    fh.setLevel(logging.DEBUG)
-    format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    formatter = logging.Formatter(format)
-    fh.setFormatter(formatter)
-    logger.addHandler(fh)
-
     # Create a Processor
-    processor = Processor(transaction, logger)
+    processor = Processor(transaction, logFile)
 
     # Run
     processor.run()

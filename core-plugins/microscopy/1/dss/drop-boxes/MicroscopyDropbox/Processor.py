@@ -7,6 +7,7 @@ Created on Feb 20, 2014
 """
 
 import java.io.File
+import logging
 import os
 import re
 import xml.etree.ElementTree as ET
@@ -26,18 +27,29 @@ class Processor:
     # The incoming folder to process (a java.io.File object)
     _incoming = ""
 
+    # The user name
+    _username = ""
+
     # The logger
     _logger = None
 
     # Constructor
-    def __init__(self, transaction, logger):
+    def __init__(self, transaction, logFile):
 
         # Store arguments
         self._transaction = transaction
         self._incoming = transaction.getIncoming()
+        self._username = ""
 
-        # Set up logger
-        self._logger = logger
+        # Set up logging
+        self._logger = logging.getLogger('MicroscopyDropbox')
+        self._logger.setLevel(logging.DEBUG)
+        fh = logging.FileHandler(logFile)
+        fh.setLevel(logging.DEBUG)
+        format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        formatter = logging.Formatter(format)
+        fh.setFormatter(formatter)
+        self._logger.addHandler(fh)
 
 
     def dictToXML(self, d):
@@ -198,6 +210,17 @@ class Processor:
             "Could not create experiment " + openBISIdentifier
             self._logger.error(msg)
             raise Exception(msg)
+
+        # Get comma-separated tag list
+        tagList = experimentNode.attrib.get("tags")
+        if tagList != "":
+
+            # Retrieve or create the tags
+            openBISTags = self.retrieveOrCreateTags(tagList)
+
+            # Set the metaprojects (tags)
+            for openBISTag in openBISTags:
+                openBISTag.addEntity(openBISExperiment)
 
         # Set the date
         # TODO: Add this
@@ -534,6 +557,9 @@ class Processor:
         # Get the root node (obitXML)
         root = tree.getroot()
 
+        # Store the username
+        self._username = root.attrib.get("userName")
+
         # Iterate over the children (Experiments)
         for experimentNode in root:
 
@@ -576,6 +602,44 @@ class Processor:
         # Log that we are finished with the registration
         self._logger.info("PROCESSOR::register(): " + 
                           "Registration completed")
+
+
+    def retrieveOrCreateTags(self, tagList):
+        """Retrieve or create the tags (metaprojects) with specified names."""
+
+        # Initialize openBISTags list
+        openBISTags = []
+
+        # Get the individual tag names (with no blank spaces)
+        tags = ["".join(t.strip()) for t in tagList.split(",")]
+
+        # Process all tags (metaprojects)
+        for tag in tags:
+            if len(tag) == 0:
+                continue
+
+            # Retrieve the tag (metaproject)
+            metaproject = self._transaction.getMetaproject(tag, self._username)
+            if metaproject is None:
+
+                # Create the tag (metaproject)
+                self._logger("Creating metaproject " + tag)
+
+                metaproject = self._transaction.createNewMetaproject(tag,
+                                                                     "",
+                                                                     self._username)
+
+                # Check that creation was succcessful
+                if metaproject is None:
+                    msg = "Could not create metaproject " + tag + \
+                    "for user " + self._username
+                    self._logger.error(msg)
+                    raise Exception(msg)
+
+            # Add the created metaproject to the list
+            openBISTags.append(metaproject)
+
+        return openBISTags
 
 
     def run(self):
