@@ -19,9 +19,6 @@ def process(transaction):
     @param transaction, the transaction object
     """
 
-    # Disabling HDF5 caching
-    HDF5Container.disableCaching()
-
     # Get path to containing folder
     # __file__ does not work (reliably) in Jython
     dbPath = "../core-plugins/microscopy/1/dss/drop-boxes/MicroscopyDropbox"
