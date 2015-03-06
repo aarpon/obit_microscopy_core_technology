@@ -216,20 +216,77 @@ DataViewer.prototype.displayMetadata = function(dataSetCode) {
         return;
     }
 
-    // Get the metadata
-    var metadata = dataSet.properties.MICROSCOPY_IMG_CONTAINER_METADATA;
-
     // Get the parameter view
     var paramView = $("#paramView");
     paramView.empty();
 
+    // Prepare the divs to display the information
+    var metadataTitleRow = $("<div>").addClass("row");
+
+    // Title
+    var expDescrTitle = $("<div>").addClass("label label-info").text("Current series");
+    metadataTitleRow.append($("<div>").addClass("metadataTitle").append(expDescrTitle));
+    paramView.append(metadataTitleRow);
+
+    /*
+     *
+     *  Metadata for current series
+     *
+     */
+
+    // Get the metadata
+    var metadata = dataSet.properties.MICROSCOPY_IMG_CONTAINER_METADATA;
+
     // Use JQuery to parse the metadata XML into an object
-    var metadataObj = $.parseXML(metadata);
+    try {
+
+        // Try parsing
+        var metadataObj = $.parseXML(metadata);
+
+    } catch (err) {
+
+        // Create a row to display the error
+        var errorRow = $("<div>").addClass("row");
+
+        // Error title
+        var errorTitle = $("<div>").addClass("label label-danger").text("Error");
+        errorRow.append($("<div>").addClass("metadataTitle").append(errorTitle));
+
+        // Error value
+        var errorMsg = "Error retrieving metadata information for current series!";
+        errorRow.append($("<div>").addClass("metadataValue").text(errorMsg));
+
+        // Display the error row
+        paramView.append(errorRow);
+
+        // Also display standard error
+        this.displayStatus(errorMsg, "error");
+
+
+        return;
+
+    }
 
     // Check whether we found metadata information
     if (! metadataObj.hasChildNodes()) {
-        paramView.empty();
-        paramView.append("No metadata information found.");
+
+        // Create a row to display the error
+        var errorRow = $("<div>").addClass("row");
+
+        // Error title
+        var errorTitle = $("<div>").addClass("label label-danger").text("Error");
+        errorRow.append($("<div>").addClass("metadataTitle").append(errorTitle));
+
+        // Error value
+        var errorMsg = "Error retrieving metadata information for current series!";
+        errorRow.append($("<div>").addClass("metadataValue").text(errorMsg));
+
+        // Display the error row
+        paramView.append(errorRow);
+
+        // Also display standard error
+        this.displayStatus(errorMsg, "error");
+
         return;
     }
 
@@ -249,19 +306,6 @@ DataViewer.prototype.displayMetadata = function(dataSetCode) {
     var sVoxelY = (new Number(voxelY)).toPrecision(2);
     var sVoxelZ = (new Number(voxelZ)).toPrecision(2);
 
-    /*
-     *
-     *  Metadata for current series
-     *
-     */
-
-    // Display the metadata for current series
-    var metadataTitleRow = $("<div>").addClass("row");
-
-    // Title
-    var expDescrTitle = $("<div>").addClass("label label-info").text("Current series");
-    metadataTitleRow.append($("<div>").addClass("metadataTitle").append(expDescrTitle));
-    paramView.append(metadataTitleRow);
 
     /*
      *
