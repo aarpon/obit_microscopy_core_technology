@@ -538,7 +538,7 @@ class Processor:
                                                                              image_data_set)
 
                 # Store the metadata in the MICROSCOPY_IMG_CONTAINER_METADATA property
-                dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_METADATA", "")
+                dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_METADATA", seriesMetadataXML)
 
                 # Store the series name in the MICROSCOPY_IMG_CONTAINER_NAME property
                 dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME", "Series_" + str(seriesNum))
