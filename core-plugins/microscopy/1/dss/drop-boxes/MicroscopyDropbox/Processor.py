@@ -34,7 +34,7 @@ class Processor:
     _logger = None
 
     # Constructor
-    def __init__(self, transaction, logFile):
+    def __init__(self, transaction, logger):
 
         # Store arguments
         self._transaction = transaction
@@ -42,14 +42,7 @@ class Processor:
         self._username = ""
 
         # Set up logging
-        self._logger = logging.getLogger('MicroscopyDropbox')
-        self._logger.setLevel(logging.DEBUG)
-        fh = logging.FileHandler(logFile)
-        fh.setLevel(logging.DEBUG)
-        format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-        formatter = logging.Formatter(format)
-        fh.setFormatter(formatter)
-        self._logger.addHandler(fh)
+        self._logger = logger
 
 
     def dictToXML(self, d):

@@ -5,6 +5,7 @@
 """
 
 import os
+import logging
 
 from Processor import Processor
 
@@ -29,8 +30,12 @@ def process(transaction):
     # Path for the log file
     logFile = os.path.join(logPath, "registration_log.txt")
 
+    # Set up logging
+    logging.basicConfig(filename=logFile, level=logging.DEBUG)
+    logger = logging.getLogger("Microscopy")
+
     # Create a Processor
-    processor = Processor(transaction, logFile)
+    processor = Processor(transaction, logger)
 
     # Run
     processor.run()
