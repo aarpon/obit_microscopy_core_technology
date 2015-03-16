@@ -616,7 +616,7 @@ class Processor:
             if metaproject is None:
 
                 # Create the tag (metaproject)
-                self._logger("Creating metaproject " + tag)
+                self._logger.info("Creating metaproject " + tag)
 
                 metaproject = self._transaction.createNewMetaproject(tag,
                                                                      "",
