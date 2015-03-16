@@ -23,7 +23,7 @@ def process(transaction):
     # Path to the logs subfolder
     logPath = os.path.join(dbPath, "logs")
 
-    # Make sure the logs subforder exist
+    # Make sure the logs subfolder exist
     if not os.path.exists(logPath):
         os.makedirs(logPath)
 
