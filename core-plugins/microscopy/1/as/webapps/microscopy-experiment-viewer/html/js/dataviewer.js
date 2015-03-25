@@ -150,7 +150,7 @@ DataViewer.prototype.initView = function() {
             var link = $("<a>").addClass("filename").text(displayName).attr("href", "#").attr("title", name).click(
                 function() {
                     window.top.location.hash = "#entity=SAMPLE&permId=" + sample.permId
-                        + "&ui-subtab=webapp-section_microscopy-viewer";
+                        + "&ui-subtab=webapp-section_microscopy-viewer&ui-timestamp=" + (new Date().getTime());
                     return false;
                 });
 

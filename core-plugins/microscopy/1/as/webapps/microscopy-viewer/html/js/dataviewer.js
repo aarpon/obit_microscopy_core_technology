@@ -79,7 +79,7 @@ DataViewer.prototype.initView = function() {
     // Display the experiment name (code) and link it to the experiment web app
     var link = $("<a>").text(exp.properties.MICROSCOPY_EXPERIMENT_NAME).attr("href", "#").click(function() {
         window.top.location.hash = "#entity=EXPERIMENT&permId=" + exp.permId +
-            "&ui-subtab=webapp-section_microscopy-experiment-viewer";
+            "&ui-subtab=webapp-section_microscopy-experiment-viewer&ui-timestamp=" + (new Date().getTime());
         return false;
     });
 
@@ -390,7 +390,8 @@ DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
         $("#view_metadata").click(
             function() {
                 window.top.location.hash = "#entity=DATA_SET&permId=" + dataSet.code
-                    + "&ui-subtab=managed_property_section_MICROSCOPY_IMG_CONTAINER_METADATA";
+                    + "&ui-subtab=managed_property_section_MICROSCOPY_IMG_CONTAINER_METADATA&ui-timestamp="
+                    + (new Date().getTime());
                 return false;
             });
 
