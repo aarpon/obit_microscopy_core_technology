@@ -572,7 +572,8 @@ def aggregate(parameters, tableBuilder):
     logFile = os.path.join(logPath, "reporting_log.txt")
 
     # Set up logging
-    logging.basicConfig(filename=logFile, level=logging.DEBUG)
+    logging.basicConfig(filename=logFile, level=logging.DEBUG, 
+                        format='%(asctime)-15s %(levelname)s: %(message)s')
     logger = logging.getLogger()
 
     # Get parameters from plugin.properties
