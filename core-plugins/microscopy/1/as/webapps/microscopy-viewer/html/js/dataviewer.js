@@ -15,6 +15,21 @@ function DataViewer() {
 };
 
 /**
+ * Link to the requested experiment.
+ * @param permId Permanent ID of the experiment.
+ * @returns {Function} Callback
+ */
+DataViewer.prototype.linkToExperiment = function(permId) {
+
+    return function() {
+        window.top.location.hash = "#entity=EXPERIMENT&permId=" + permId +
+            "&ui-subtab=webapp-section_microscopy-experiment-viewer&ui-timestamp=" + (new Date().getTime());
+        return false;
+    }
+
+};
+
+/**
  * Displays experiment info
  *
  * @param exp openBIS Experiment object
@@ -77,11 +92,9 @@ DataViewer.prototype.initView = function() {
     experimentNameRow.append($("<div>").addClass("metadataTitle").append(expNameTitle));
 
     // Display the experiment name (code) and link it to the experiment web app
-    var link = $("<a>").text(exp.properties.MICROSCOPY_EXPERIMENT_NAME).attr("href", "#").click(function() {
-        window.top.location.hash = "#entity=EXPERIMENT&permId=" + exp.permId +
-            "&ui-subtab=webapp-section_microscopy-experiment-viewer&ui-timestamp=" + (new Date().getTime());
-        return false;
-    });
+    var link = $("<a>").text(exp.properties.MICROSCOPY_EXPERIMENT_NAME).attr("href", "#").click(
+        DATAVIEWER.linkToExperiment(exp.permId)
+    );
 
     // Experiment name/link
     experimentNameRow.append($("<div>").addClass("metadataValue").append(link));
