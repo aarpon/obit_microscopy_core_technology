@@ -569,7 +569,7 @@ def aggregate(parameters, tableBuilder):
         os.makedirs(logPath)
 
     # Path for the log file
-    logFile = os.path.join(logPath, "reporting_log.txt")
+    logFile = os.path.join(logPath, "log.txt")
 
     # Set up logging
     logging.basicConfig(filename=logFile, level=logging.DEBUG, 
