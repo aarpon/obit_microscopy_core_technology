@@ -169,6 +169,11 @@ class Processor:
         @return IExperimentUpdatable experiment
         """
 
+        # Get the experiment version
+        expVersion = experimentNode.attrib.get("version")
+        if expVersion is None:
+            expVersion = "0"
+
         # Get the openBIS identifier
         openBISIdentifier = experimentNode.attrib.get("openBISIdentifier")
 
@@ -219,6 +224,10 @@ class Processor:
         # TODO: Add this
         # openBISExperiment.setPropertyValue("MICROSCOPY_EXPERIMENT_DATE",
         #                                   expDate)
+
+        # Set the experiment version
+        openBISExperiment.setPropertyValue("MICROSCOPY_EXPERIMENT_VERSION",
+                                           expVersion)
 
         # Set the description -- but only if is not empty. 
         # This makes sure that the description of an already existing experiment
