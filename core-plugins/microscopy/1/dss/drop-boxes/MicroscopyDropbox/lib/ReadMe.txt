@@ -1,4 +1,4 @@
-Besides "MicroscopyReader.jar", also "loci_tools.jar" and "ij.jar" are required.
-These are provided by openBIS. Please mind, however, that loci_tools.javr 
+Besides "MicroscopyReader.jar", also "bioformats-package.jar" and "ij.jar" are required.
+These are provided by openBIS. Please mind, however, that bioformats-package.jar 
 version > 5.0.3 is needed!
   
