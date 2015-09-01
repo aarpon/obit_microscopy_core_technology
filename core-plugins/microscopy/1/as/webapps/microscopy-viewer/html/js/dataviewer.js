@@ -388,7 +388,7 @@ DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
     var sampleId = sample.identifier;
 
     // Display metadata action
-    indx = DATAMODEL.dataSetCodes.indexOf(dataSetCode);
+    var indx = DATAMODEL.dataSetCodes.indexOf(dataSetCode);
     if (indx != -1) {
 
         var dataSet = DATAMODEL.dataSets[indx];
@@ -533,7 +533,7 @@ DataViewer.prototype.formatSizeForDisplay = function(datasetSize) {
     if (sMB < 1024.0) {
         formattedDatasetSize = sMB.toFixed(2) + " MiB";
     } else {
-        var sGB = datasetSizeF / 1024.0;
+        var sMB = datasetSizeF / 1024.0;
         formattedDatasetSize = sGB.toFixed(2) + " GiB";
     }
 
