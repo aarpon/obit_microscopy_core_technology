@@ -533,7 +533,7 @@ DataViewer.prototype.formatSizeForDisplay = function(datasetSize) {
     if (sMB < 1024.0) {
         formattedDatasetSize = sMB.toFixed(2) + " MiB";
     } else {
-        var sMB = datasetSizeF / 1024.0;
+        var sGB = sMB / 1024.0;
         formattedDatasetSize = sGB.toFixed(2) + " GiB";
     }
 
