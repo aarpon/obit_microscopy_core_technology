@@ -494,17 +494,21 @@ DataViewer.prototype.displayViewer = function(dataSetCodes) {
 
         // Do the customization once the component is loaded
         widget.addLoadListener(function() {
-            var view = widget.getDataSetChooserWidget().getView();
 
-            // Example of how to customize a widget
-            view.getDataSetText = function(dataSetCode) {
-                indx = DATAMODEL.dataSetCodes.indexOf(dataSetCode)
-                return DATAMODEL.dataSets[indx].properties.MICROSCOPY_IMG_CONTAINER_NAME;
-            };
+            widget.getDataSetChooserWidget().then(function(chooser) {
 
-            // Example of how to add a change listener to a widget
-            widget.getDataSetChooserWidget().addChangeListener(function(event) {
-                DATAVIEWER.refreshView(event.getNewValue());
+                var view = chooser.getView();
+
+                // Example of how to customize a widget
+                view.getDataSetText = function(dataSetCode) {
+                    var indx = DATAMODEL.dataSetCodes.indexOf(dataSetCode);
+                    return DATAMODEL.dataSets[indx].properties.MICROSCOPY_IMG_CONTAINER_NAME;
+                };
+
+            // Add a change listener to a widget
+                chooser.addChangeListener(function(event) {
+                    DATAVIEWER.refreshView(event.getNewValue());
+                });
             });
         });
 
