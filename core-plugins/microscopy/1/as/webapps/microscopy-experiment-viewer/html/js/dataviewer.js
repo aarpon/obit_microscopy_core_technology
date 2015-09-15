@@ -246,9 +246,6 @@ DataViewer.prototype.displayActions = function(exp) {
         return;
     }
 
-    // Build and display the call
-    callAggregationPlugin = DATAMODEL.copyDatasetsToUserDir;
-
     // Display the "Export to your folder" button only if enabled in the configuration file
     if (CONFIG['enableExportToUserFolder'] == true) {
 

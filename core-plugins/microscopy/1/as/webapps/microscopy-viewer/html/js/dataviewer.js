@@ -387,26 +387,32 @@ DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
     // Get the sample identifier
     var sampleId = sample.identifier;
 
+    // Retrieve action div
+    var detailViewActionDiv = $("#detailViewAction");
+
     // Display metadata action
     var indx = DATAMODEL.dataSetCodes.indexOf(dataSetCode);
     if (indx != -1) {
 
         var dataSet = DATAMODEL.dataSets[indx];
 
-        $("#detailViewAction").append(
-                "<span><a id=\"view_metadata\" class=\"btn btn-sm btn-success\" " +
-                "href=\"#\">" + "<img src=\"img/edit.png\" />&nbsp;" +
-                "View metadata</a></span>&nbsp;");
+        var img = $("<img>")
+            .attr("src", "img/edit.png");
 
-
-        // Add link to the metadata view
-        $("#view_metadata").click(
-            function() {
+        var link = $("<a>")
+            .addClass("btn btn-sm btn-success action")
+            .attr("href", "#")
+            .html("&nbsp;View metadata")
+            .click(function() {
                 window.top.location.hash = "#entity=DATA_SET&permId=" + dataSet.code
                     + "&ui-subtab=managed_property_section_MICROSCOPY_IMG_CONTAINER_METADATA&ui-timestamp="
                     + (new Date().getTime());
                 return false;
             });
+
+        link.prepend(img);
+
+        detailViewActionDiv.append(link);
 
     }
 
@@ -416,32 +422,64 @@ DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
     // Display the "Export to your folder" button only if enabled in the configuration file
     if (CONFIG['enableExportToUserFolder'] == true) {
 
-        $("#detailViewAction").append(
-                "<span><a class=\"btn btn-sm btn-primary\" " +
-                "href=\"#\" onclick='callAggregationPlugin(\"" +
-                experimentId + "\", \"" + sampleId + "\", \"normal\");  return false;'>" +
-                "<img src=\"img/export.png\" />&nbsp;" +
-                "Export to your folder</a></span>&nbsp;");
+        var img = $("<img>")
+            .attr("src", "img/export.png");
+
+        var link = $("<a>")
+            .addClass("btn btn-sm btn-primary action")
+            .attr("href", "#")
+            .html("&nbsp;Export to your folder")
+            .click(function() {
+                DATAMODEL.copyDatasetsToUserDir(
+                    experimentId, sampleId, "normal");
+                return false;
+            });
+
+        link.prepend(img);
+
+        detailViewActionDiv.append(link);
+
     }
 
     // Display the "Export to your HRM source folder" button only if enabled in the configuration file
     if (CONFIG['enableExportToHRMSourceFolder'] == true) {
 
-        $("#detailViewAction").append(
-                "<span><a class=\"btn btn-sm btn-default\" " +
-                "href=\"#\" onclick='callAggregationPlugin(\"" +
-                experimentId + "\", \"" + sampleId + "\", \"hrm\");  return false;'>" +
-                "<img src=\"img/hrm.png\" />&nbsp;" +
-                "Export to your HRM source folder</a></span>&nbsp;");
+        var img = $("<img>")
+            .attr("src", "img/export.png");
+
+        var link = $("<a>")
+            .addClass("btn btn-sm btn-default action")
+            .attr("href", "#")
+            .html("&nbsp;Export to your HRM source folder")
+            .click(function() {
+                DATAMODEL.copyDatasetsToUserDir(
+                    experimentId, sampleId, "hrm");
+                return false;
+            });
+
+        link.prepend(img);
+
+        detailViewActionDiv.append(link);
+
     }
 
     // Build and display the call for a zip archive
-    $("#detailViewAction").append(
-            "<span><a class=\"btn btn-sm btn-primary\" " +
-            "href=\"#\" onclick='callAggregationPlugin(\"" +
-            experimentId + "\", \"" + sampleId + "\", \"zip\");  return false;'>" +
-            "<img src=\"img/zip.png\" />&nbsp;" +
-            "Download</a></span>&nbsp;");
+    var img = $("<img>")
+        .attr("src", "img/zip.png");
+
+    var link = $("<a>")
+        .addClass("btn btn-sm btn-primary action")
+        .attr("href", "#")
+        .html("&nbsp;Download")
+        .click(function() {
+            DATAMODEL.copyDatasetsToUserDir(
+                experimentId, sampleId, "zip");
+            return false;
+        });
+
+    link.prepend(img);
+
+    detailViewActionDiv.append(link);
 
 };
 
@@ -453,8 +491,14 @@ DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
  */
 DataViewer.prototype.displayStatus = function(status, level) {
 
-    // Display the status
-    $("#detailViewStatus").empty();
+    // Get the the statusView div
+    var statusView_div = $("#detailViewStatus");
+
+    // Clear the status
+    statusView_div.empty();
+
+    // Make sure the status div is visible
+    statusView_div.show();
 
     switch (level) {
         case "success":
@@ -476,7 +520,7 @@ DataViewer.prototype.displayStatus = function(status, level) {
 
     status = "<div class=\"alert alert-" + cls + " alert-dismissable\">" +
         status + "</div>";
-    $("#detailViewStatus").html(status);
+    statusView_div.html(status);
 
 };
 
