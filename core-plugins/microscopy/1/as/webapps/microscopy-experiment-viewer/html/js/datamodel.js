@@ -46,6 +46,9 @@ function DataModel() {
             dataModelObj.exp = response.result[0];
             dataModelObj.expName = dataModelObj.exp.properties.MICROSCOPY_EXPERIMENT_NAME;
 
+            // Retrieve and display attachment list
+            dataModelObj.retrieveAndDisplayAttachments();
+
             // Now retrieve the list of datasets for the experiment
             dataModelObj.getSamplesForExperiment(function(response) {
 
@@ -280,4 +283,37 @@ DataModel.prototype.getDataSetsForSampleAndExperiment = function(expCode, sample
     });
 
 };
+
+/**
+ * Get, store and display the attachment info
+ */
+DataModel.prototype.retrieveAndDisplayAttachments = function() {
+
+    // Get attachments
+    var experimentId = {
+        "@type" : "ExperimentIdentifierId",
+        "identifier" : this.expId
+    }
+
+    // Alias
+    var dataModelObj = this;
+
+    // Retrieve the attachments
+    this.openbisServer.listAttachmentsForExperiment(experimentId, false, function(response) {
+        if (response.error) {
+            dataModelObj.attachments = [];
+            console.log("There was an error retrieving the attachments for current experiment!");
+        } else {
+
+            // Store the attachment array
+            dataModelObj.attachments = response.result;
+
+            // Display the info
+            DATAVIEWER.displayAttachments(dataModelObj);
+        }
+    });
+
+};
+
+
 

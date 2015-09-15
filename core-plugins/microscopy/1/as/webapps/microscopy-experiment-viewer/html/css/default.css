@@ -8,11 +8,36 @@ body {
     vertical-align: middle;
 }
 
-#detailViewAction {
-    min-height: 40px;
-    padding-top: 10px;
+#experimentNameView {
+    margin-bottom: 20px;
+}
+
+#experimentDescriptionView {
+    margin-bottom: 10px;
+}
+
+#experimentAcquisitionDetailsView {
+    margin-bottom: 10px;
+}
+
+#statusView {
+    text-align: center;
+    padding-left: 20px;
+    padding-right: 20px;
+    margin-top: 5px;
+    margin-bottom: 10px;
+    max-height: 60px;
+    display: none;
+}
+
+#actionView {
     padding-bottom: 10px;
     vertical-align: middle;
+    text-align: center;
+}
+
+.action {
+    margin: 1px;
 }
 
 #detailView {
