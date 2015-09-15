@@ -88,7 +88,7 @@ DataViewer.prototype.initView = function() {
     var experimentNameRow = $("<div>").addClass("row");
 
     // Experiment name title
-    var expNameTitle = $("<div>").addClass("label label-default").text("Experiment name");
+    var expNameTitle = $("<div>").addClass("metadataTitleText").text("Experiment name");
     experimentNameRow.append($("<div>").addClass("metadataTitle").append(expNameTitle));
 
     // Display the experiment name (code) and link it to the experiment web app
@@ -112,7 +112,7 @@ DataViewer.prototype.initView = function() {
     var experimentDescriptionRow = $("<div>").addClass("row");
 
     // Experiment description title
-    var expDescrTitle = $("<div>").addClass("label label-default").text("Experiment description");
+    var expDescrTitle = $("<div>").addClass("metadataTitleText").text("Experiment description");
     experimentDescriptionRow.append($("<div>").addClass("metadataTitle").append(expDescrTitle));
 
     // Retrieve the experiment description
@@ -140,7 +140,7 @@ DataViewer.prototype.initView = function() {
         var datasetSizeRow = $("<div>").addClass("row");
 
         // Dataset size title
-        var datasetSizeTitle = $("<div>").addClass("label label-default").text("Dataset size");
+        var datasetSizeTitle = $("<div>").addClass("metadataTitleText").text("Dataset size");
         datasetSizeRow.append($("<div>").addClass("metadataTitle").append(datasetSizeTitle));
 
         // Dataset size
@@ -160,7 +160,7 @@ DataViewer.prototype.initView = function() {
     var datasetDescriptionRow = $("<div>").addClass("row");
 
     // Experiment description title
-    var datasetDescrTitle = $("<div>").addClass("label label-default").text("Dataset description");
+    var datasetDescrTitle = $("<div>").addClass("metadataTitleText").text("Dataset description");
     datasetDescriptionRow.append($("<div>").addClass("metadataTitle").append(datasetDescrTitle));
 
     // Retrieve the dataset (sample) description
@@ -237,7 +237,7 @@ DataViewer.prototype.displayMetadata = function(dataSetCode) {
     var metadataTitleRow = $("<div>").addClass("row");
 
     // Title
-    var expDescrTitle = $("<div>").addClass("label label-info").text("Current series");
+    var expDescrTitle = $("<div>").addClass("metadataTitleSeries").text("Current series");
     metadataTitleRow.append($("<div>").addClass("metadataTitle").append(expDescrTitle));
     paramView.append(metadataTitleRow);
 
@@ -330,7 +330,7 @@ DataViewer.prototype.displayMetadata = function(dataSetCode) {
     var datasetGeometryRow = $("<div>").addClass("row");
 
     // Dataset geometry title
-    var datasetGeometryTitle = $("<div>").addClass("label label-default").text("Geometry [XYZ]");
+    var datasetGeometryTitle = $("<div>").addClass("metadataTitleText").text("Geometry [XYZ]");
     datasetGeometryRow.append($("<div>").addClass("metadataTitle").append(datasetGeometryTitle));
 
     // Dataset geometry
@@ -351,7 +351,7 @@ DataViewer.prototype.displayMetadata = function(dataSetCode) {
     var voxelSizeRow = $("<div>").addClass("row");
 
     // Voxel size title
-    var voxelSizeTitle = $("<div>").addClass("label label-default").html("Voxel size [XYZ] (&micro;m)");
+    var voxelSizeTitle = $("<div>").addClass("metadataTitleText").html("Voxel size [XYZ] (&micro;m)");
     voxelSizeRow.append($("<div>").addClass("metadataTitle").append(voxelSizeTitle));
 
     // Voxel size

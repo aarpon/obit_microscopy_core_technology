@@ -72,13 +72,26 @@ body {
 
 .metadataTitle {
     margin-left: 20px;
-    margin-right: 20px;
+    margin-right: 10px;
     height: 20px;
     text-align: right;
     vertical-align: middle;
     width: 140px;
     float: left;
     clear: both;
+}
+
+.metadataTitleText {
+    font-size: 0.8em;
+    font-weight: bold;
+    height: 20px;
+    vertical-align: middle;
+}
+
+.metadataTitleSeries {
+    font-size: 0.8em;
+    font-weight: bold;
+    text-decoration: underline;
 }
 
 .metadataValue {
