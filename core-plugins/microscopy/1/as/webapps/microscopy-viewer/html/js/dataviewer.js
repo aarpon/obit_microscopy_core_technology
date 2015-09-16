@@ -445,7 +445,7 @@ DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
     if (CONFIG['enableExportToHRMSourceFolder'] == true) {
 
         var img = $("<img>")
-            .attr("src", "img/export.png");
+            .attr("src", "img/hrm.png");
 
         var link = $("<a>")
             .addClass("btn btn-sm btn-default action")
@@ -567,7 +567,7 @@ DataViewer.prototype.displayViewer = function(dataSetCodes) {
 /**
  * Format dataset size for display.
  * @param datasetSize: size in bytes
- * @return formattedDatasetSize: formatted dataset size in the form 322.5 MiB or 3.7 GiB
+ * @return string formatted dataset size in the form 322.5 MiB or 3.7 GiB
  */
 DataViewer.prototype.formatSizeForDisplay = function(datasetSize) {
 
