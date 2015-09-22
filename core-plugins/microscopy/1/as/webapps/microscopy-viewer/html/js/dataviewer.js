@@ -88,7 +88,7 @@ DataViewer.prototype.initView = function() {
     var experimentNameRow = $("<div>").addClass("row");
 
     // Experiment name title
-    var expNameTitle = $("<div>").addClass("label label-default").text("Experiment name");
+    var expNameTitle = $("<div>").addClass("metadataTitleText").text("Experiment name");
     experimentNameRow.append($("<div>").addClass("metadataTitle").append(expNameTitle));
 
     // Display the experiment name (code) and link it to the experiment web app
@@ -112,7 +112,7 @@ DataViewer.prototype.initView = function() {
     var experimentDescriptionRow = $("<div>").addClass("row");
 
     // Experiment description title
-    var expDescrTitle = $("<div>").addClass("label label-default").text("Experiment description");
+    var expDescrTitle = $("<div>").addClass("metadataTitleText").text("Experiment description");
     experimentDescriptionRow.append($("<div>").addClass("metadataTitle").append(expDescrTitle));
 
     // Retrieve the experiment description
@@ -140,7 +140,7 @@ DataViewer.prototype.initView = function() {
         var datasetSizeRow = $("<div>").addClass("row");
 
         // Dataset size title
-        var datasetSizeTitle = $("<div>").addClass("label label-default").text("Dataset size");
+        var datasetSizeTitle = $("<div>").addClass("metadataTitleText").text("Dataset size");
         datasetSizeRow.append($("<div>").addClass("metadataTitle").append(datasetSizeTitle));
 
         // Dataset size
@@ -160,7 +160,7 @@ DataViewer.prototype.initView = function() {
     var datasetDescriptionRow = $("<div>").addClass("row");
 
     // Experiment description title
-    var datasetDescrTitle = $("<div>").addClass("label label-default").text("Dataset description");
+    var datasetDescrTitle = $("<div>").addClass("metadataTitleText").text("Dataset description");
     datasetDescriptionRow.append($("<div>").addClass("metadataTitle").append(datasetDescrTitle));
 
     // Retrieve the dataset (sample) description
@@ -237,7 +237,7 @@ DataViewer.prototype.displayMetadata = function(dataSetCode) {
     var metadataTitleRow = $("<div>").addClass("row");
 
     // Title
-    var expDescrTitle = $("<div>").addClass("label label-info").text("Current series");
+    var expDescrTitle = $("<div>").addClass("metadataTitleSeries").text("Current series");
     metadataTitleRow.append($("<div>").addClass("metadataTitle").append(expDescrTitle));
     paramView.append(metadataTitleRow);
 
@@ -330,7 +330,7 @@ DataViewer.prototype.displayMetadata = function(dataSetCode) {
     var datasetGeometryRow = $("<div>").addClass("row");
 
     // Dataset geometry title
-    var datasetGeometryTitle = $("<div>").addClass("label label-default").text("Geometry [XYZ]");
+    var datasetGeometryTitle = $("<div>").addClass("metadataTitleText").text("Geometry [XYZ]");
     datasetGeometryRow.append($("<div>").addClass("metadataTitle").append(datasetGeometryTitle));
 
     // Dataset geometry
@@ -351,7 +351,7 @@ DataViewer.prototype.displayMetadata = function(dataSetCode) {
     var voxelSizeRow = $("<div>").addClass("row");
 
     // Voxel size title
-    var voxelSizeTitle = $("<div>").addClass("label label-default").html("Voxel size [XYZ] (&micro;m)");
+    var voxelSizeTitle = $("<div>").addClass("metadataTitleText").html("Voxel size [XYZ] (&micro;m)");
     voxelSizeRow.append($("<div>").addClass("metadataTitle").append(voxelSizeTitle));
 
     // Voxel size
@@ -387,26 +387,32 @@ DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
     // Get the sample identifier
     var sampleId = sample.identifier;
 
+    // Retrieve action div
+    var detailViewActionDiv = $("#detailViewAction");
+
     // Display metadata action
-    indx = DATAMODEL.dataSetCodes.indexOf(dataSetCode);
+    var indx = DATAMODEL.dataSetCodes.indexOf(dataSetCode);
     if (indx != -1) {
 
         var dataSet = DATAMODEL.dataSets[indx];
 
-        $("#detailViewAction").append(
-                "<span><a id=\"view_metadata\" class=\"btn btn-sm btn-success\" " +
-                "href=\"#\">" + "<img src=\"img/edit.png\" />&nbsp;" +
-                "View metadata</a></span>&nbsp;");
+        var img = $("<img>")
+            .attr("src", "img/edit.png");
 
-
-        // Add link to the metadata view
-        $("#view_metadata").click(
-            function() {
+        var link = $("<a>")
+            .addClass("btn btn-sm btn-success action")
+            .attr("href", "#")
+            .html("&nbsp;View metadata")
+            .click(function() {
                 window.top.location.hash = "#entity=DATA_SET&permId=" + dataSet.code
                     + "&ui-subtab=managed_property_section_MICROSCOPY_IMG_CONTAINER_METADATA&ui-timestamp="
                     + (new Date().getTime());
                 return false;
             });
+
+        link.prepend(img);
+
+        detailViewActionDiv.append(link);
 
     }
 
@@ -416,32 +422,64 @@ DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
     // Display the "Export to your folder" button only if enabled in the configuration file
     if (CONFIG['enableExportToUserFolder'] == true) {
 
-        $("#detailViewAction").append(
-                "<span><a class=\"btn btn-sm btn-primary\" " +
-                "href=\"#\" onclick='callAggregationPlugin(\"" +
-                experimentId + "\", \"" + sampleId + "\", \"normal\");  return false;'>" +
-                "<img src=\"img/export.png\" />&nbsp;" +
-                "Export to your folder</a></span>&nbsp;");
+        var img = $("<img>")
+            .attr("src", "img/export.png");
+
+        var link = $("<a>")
+            .addClass("btn btn-sm btn-primary action")
+            .attr("href", "#")
+            .html("&nbsp;Export to your folder")
+            .click(function() {
+                DATAMODEL.copyDatasetsToUserDir(
+                    experimentId, sampleId, "normal");
+                return false;
+            });
+
+        link.prepend(img);
+
+        detailViewActionDiv.append(link);
+
     }
 
     // Display the "Export to your HRM source folder" button only if enabled in the configuration file
     if (CONFIG['enableExportToHRMSourceFolder'] == true) {
 
-        $("#detailViewAction").append(
-                "<span><a class=\"btn btn-sm btn-default\" " +
-                "href=\"#\" onclick='callAggregationPlugin(\"" +
-                experimentId + "\", \"" + sampleId + "\", \"hrm\");  return false;'>" +
-                "<img src=\"img/hrm.png\" />&nbsp;" +
-                "Export to your HRM source folder</a></span>&nbsp;");
+        var img = $("<img>")
+            .attr("src", "img/hrm.png");
+
+        var link = $("<a>")
+            .addClass("btn btn-sm btn-default action")
+            .attr("href", "#")
+            .html("&nbsp;Export to your HRM source folder")
+            .click(function() {
+                DATAMODEL.copyDatasetsToUserDir(
+                    experimentId, sampleId, "hrm");
+                return false;
+            });
+
+        link.prepend(img);
+
+        detailViewActionDiv.append(link);
+
     }
 
     // Build and display the call for a zip archive
-    $("#detailViewAction").append(
-            "<span><a class=\"btn btn-sm btn-primary\" " +
-            "href=\"#\" onclick='callAggregationPlugin(\"" +
-            experimentId + "\", \"" + sampleId + "\", \"zip\");  return false;'>" +
-            "<img src=\"img/zip.png\" />&nbsp;" +
-            "Download</a></span>&nbsp;");
+    var img = $("<img>")
+        .attr("src", "img/zip.png");
+
+    var link = $("<a>")
+        .addClass("btn btn-sm btn-primary action")
+        .attr("href", "#")
+        .html("&nbsp;Download")
+        .click(function() {
+            DATAMODEL.copyDatasetsToUserDir(
+                experimentId, sampleId, "zip");
+            return false;
+        });
+
+    link.prepend(img);
+
+    detailViewActionDiv.append(link);
 
 };
 
@@ -453,8 +491,14 @@ DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
  */
 DataViewer.prototype.displayStatus = function(status, level) {
 
-    // Display the status
-    $("#detailViewStatus").empty();
+    // Get the the statusView div
+    var statusView_div = $("#detailViewStatus");
+
+    // Clear the status
+    statusView_div.empty();
+
+    // Make sure the status div is visible
+    statusView_div.show();
 
     switch (level) {
         case "success":
@@ -476,7 +520,7 @@ DataViewer.prototype.displayStatus = function(status, level) {
 
     status = "<div class=\"alert alert-" + cls + " alert-dismissable\">" +
         status + "</div>";
-    $("#detailViewStatus").html(status);
+    statusView_div.html(status);
 
 };
 
@@ -494,17 +538,21 @@ DataViewer.prototype.displayViewer = function(dataSetCodes) {
 
         // Do the customization once the component is loaded
         widget.addLoadListener(function() {
-            var view = widget.getDataSetChooserWidget().getView();
 
-            // Example of how to customize a widget
-            view.getDataSetText = function(dataSetCode) {
-                indx = DATAMODEL.dataSetCodes.indexOf(dataSetCode)
-                return DATAMODEL.dataSets[indx].properties.MICROSCOPY_IMG_CONTAINER_NAME;
-            };
+            widget.getDataSetChooserWidget().then(function(chooser) {
 
-            // Example of how to add a change listener to a widget
-            widget.getDataSetChooserWidget().addChangeListener(function(event) {
-                DATAVIEWER.refreshView(event.getNewValue());
+                var view = chooser.getView();
+
+                // Example of how to customize a widget
+                view.getDataSetText = function(dataSetCode) {
+                    var indx = DATAMODEL.dataSetCodes.indexOf(dataSetCode);
+                    return DATAMODEL.dataSets[indx].properties.MICROSCOPY_IMG_CONTAINER_NAME;
+                };
+
+            // Add a change listener to a widget
+                chooser.addChangeListener(function(event) {
+                    DATAVIEWER.refreshView(event.getNewValue());
+                });
             });
         });
 
@@ -519,7 +567,7 @@ DataViewer.prototype.displayViewer = function(dataSetCodes) {
 /**
  * Format dataset size for display.
  * @param datasetSize: size in bytes
- * @return formattedDatasetSize: formatted dataset size in the form 322.5 MiB or 3.7 GiB
+ * @return string formatted dataset size in the form 322.5 MiB or 3.7 GiB
  */
 DataViewer.prototype.formatSizeForDisplay = function(datasetSize) {
 
@@ -533,7 +581,7 @@ DataViewer.prototype.formatSizeForDisplay = function(datasetSize) {
     if (sMB < 1024.0) {
         formattedDatasetSize = sMB.toFixed(2) + " MiB";
     } else {
-        var sGB = datasetSizeF / 1024.0;
+        var sGB = sMB / 1024.0;
         formattedDatasetSize = sGB.toFixed(2) + " GiB";
     }
 

@@ -22,33 +22,56 @@ function DataViewer() {
 DataViewer.prototype.initView = function() {
 
     // Div IDs
-    var experimentNameView, detailView;
+    var experimentNameView_div, experimentTagView_div,
+        experimentDescriptionView_div, experimentAcquisitionDetailsView_div;
 
     // Aliases
     var samples = DATAMODEL.samples;
     var exp = DATAMODEL.exp;
 
     // Get the experiment name view
-    experimentNameView = $("#experimentNameView");
-    experimentNameView.empty();
+    experimentNameView_div = $("#experimentNameView");
+    experimentNameView_div.empty();
 
-    // Get the detail view
-    detailView = $("#detailView");
-    detailView.empty();
+    // Clear the tags view
+    experimentTagView_div = $("#experimentTagView");
+    experimentTagView_div.empty();
+
+    // Clear the description view
+    experimentDescriptionView_div = $("#experimentDescriptionView");
+    experimentDescriptionView_div.empty();
+
+    // Clear the acquisition detail view
+    experimentAcquisitionDetailsView_div = $("#experimentAcquisitionDetailsView");
+    experimentAcquisitionDetailsView_div.empty();
+    experimentAcquisitionDetailsView_div.append(this.prepareTitle("Acquisition details", "default"));
+    experimentAcquisitionDetailsView_div.append($("<p>").html("This experiment was registered on " +
+        (new Date(exp.registrationDetails.registrationDate)).toDateString() + "."));
+
 
     // Get the sample view
-    var sampleView = $("#sampleView");
-    sampleView.empty();
+    var sampleView_div = $("#sampleView");
+    sampleView_div.empty();
 
     // Make sure we have something to display
     if (exp == null) {
-        experimentNameView.append("<h2>Sorry, could not retrieve information!</h2>");
-        experimentNameView.append("<p>Please contact your administrator.</p>");
+        experimentNameView_div.append("<h2>Sorry, could not retrieve information!</h2>");
+        experimentNameView_div.append("<p>Please contact your administrator.</p>");
         return;
     }
 
-    var spOp = "<span class=\"label label-info\">";
-    var spCl = "</span>";
+    // Display the sample name
+    experimentNameView_div.append("<h2>" + exp.properties.MICROSCOPY_EXPERIMENT_NAME + "</h2>");
+
+    // Display the experiment description
+    var exp_descr;
+    if (exp.properties.MICROSCOPY_EXPERIMENT_DESCRIPTION) {
+        exp_descr = exp.properties.MICROSCOPY_EXPERIMENT_DESCRIPTION;
+    } else {
+        exp_descr = "<i>No description provided.</i>";
+    }
+    experimentDescriptionView_div.append(this.prepareTitle("Description"));
+    experimentDescriptionView_div.append($("<p>").html(exp_descr));
 
     // Get metaprojects (tags)
     var metaprojects = "";
@@ -67,32 +90,11 @@ DataViewer.prototype.initView = function() {
             }
         }
     }
-    detailView.append(
-        "<p>" + spOp + "Tags" + spCl + "</p>" +
-        "<p>" + metaprojects + "</p>");
-
-    // Change the color
-    spOp = "<span class=\"label label-default\">";
-
-    // Display the sample name and code
-    experimentNameView.append("<h2>" + exp.properties.MICROSCOPY_EXPERIMENT_NAME + "</h2>");
-
-    // Display the experiment description
-    var exp_descr;
-    if (exp.properties.MICROSCOPY_EXPERIMENT_DESCRIPTION) {
-        exp_descr = exp.properties.MICROSCOPY_EXPERIMENT_DESCRIPTION;
-    } else {
-        exp_descr = "<i>No description provided.</i>";
-    }
-    detailView.append(
-            "<p>" + spOp + "Description" + spCl + "</p>" +
-            "<p>" + exp_descr + "</p>");
-
+    experimentTagView_div.append(this.prepareTitle("Tags", "info"));
+    experimentTagView_div.append($("<p>").html(metaprojects));
 
     // Display the samples
     if (samples != null) {
-
-        sampleView.append("<p>" + spOp + "Datasets (samples)" + spCl + "</p>");
 
         var newThumbRow = null;
         var numSample = 0;
@@ -107,7 +109,7 @@ DataViewer.prototype.initView = function() {
             // Add a new row for the next three thumbnails
             if (numSample % 3 == 1) {
                 newThumbRow = $("<div />", {class: "row"});
-                sampleView.append(newThumbRow);
+                sampleView_div.append(newThumbRow);
             }
 
             // Prepare the name to be shown
@@ -190,15 +192,52 @@ DataViewer.prototype.initView = function() {
 };
 
 /**
+ * Display attachment info and link to the Attachments tab.
+ * @param attachments: list of attachments
+ */
+DataViewer.prototype.displayAttachments = function(dataMoverObj, attachments) {
+
+    // Get the div
+    var experimentAttachmentsViewId = $("#experimentAttachmentsView");
+
+    // Clear the attachment div
+    experimentAttachmentsViewId.empty();
+
+    // Text
+    var text = "";
+    if (dataMoverObj.attachments.length == 0) {
+        text = "There are no attachments.";
+    } else if (dataMoverObj.attachments.length == 1) {
+        text = "There is one attachment."
+    } else {
+        text = "There are " + dataMoverObj.attachments.length + " attachments";
+    }
+    // Link to the attachment tab
+    var link = $("<a>").text(text).attr("href", "#").attr("title", text).click(
+        function() {
+            var url = "#entity=EXPERIMENT&permId=" + dataMoverObj.exp.permId +
+                "&ui-subtab=attachment-section&ui-timestamp=" + (new Date().getTime());
+            window.top.location.hash = url;
+            return false;
+        });
+
+    experimentAttachmentsViewId.append(this.prepareTitle("Attachments"));
+
+    // Display the link
+    experimentAttachmentsViewId.append(link);
+
+};
+
+/**
  * Build and display the code to trigger the server-side aggregation
  * plugin 'copy_datasets_to_userdir'
  * @param exp: Experiment node
  */
 DataViewer.prototype.displayActions = function(exp) {
 
-    // Get the detailViewAction div and empty it
-    var detailViewAction = $("#detailViewAction");
-    detailViewAction.empty();
+    // Get the actionView_div div and empty it
+    var actionView_div = $("#actionView");
+    actionView_div.empty();
 
     // Get the experiment identifier
     var experimentId = exp.identifier;
@@ -207,39 +246,66 @@ DataViewer.prototype.displayActions = function(exp) {
         return;
     }
 
-    // Build and display the call
-    callAggregationPlugin = DATAMODEL.copyDatasetsToUserDir;
-
     // Display the "Export to your folder" button only if enabled in the configuration file
     if (CONFIG['enableExportToUserFolder'] == true) {
 
-        $("#detailViewAction").append(
-                "<span><a class=\"btn btn-sm btn-primary\" " +
-                "href=\"#\" onclick='callAggregationPlugin(\"" +
-                experimentId + "\", \"\", \"normal\"); return false;'>" +
-                "<img src=\"img/export.png\" />&nbsp;" +
-                "Export to your folder</a></span>&nbsp;");
+        var img = $("<img>")
+            .attr("src", "img/export.png");
+
+        var link = $("<a>")
+            .addClass("btn btn-sm btn-primary action")
+            .attr("href", "#")
+            .html("&nbsp;Export to your folder")
+            .click(function() {
+                DATAMODEL.copyDatasetsToUserDir(
+                    experimentId, "", "normal");
+                return false;
+            });
+
+        link.prepend(img);
+
+        actionView_div.append(link);
     }
 
     // Display the "Export to your HRM source folder" button only if enabled in the configuration file
     if (CONFIG['enableExportToHRMSourceFolder'] == true) {
 
-        $("#detailViewAction").append(
-                "<span><a class=\"btn btn-sm btn-default\" " +
-                "href=\"#\" onclick='callAggregationPlugin(\"" +
-                experimentId + "\", \"\", \"hrm\");  return false;'>" +
-                "<img src=\"img/hrm.png\" />&nbsp;" +
-                "Export to your HRM source folder</a></span>&nbsp;");
+        var img = $("<img>")
+            .attr("src", "img/hrm.png");
+
+        var link = $("<a>")
+            .addClass("btn btn-sm btn-default action")
+            .attr("href", "#")
+            .html("&nbsp;Export to your HRM source folder")
+            .click(function() {
+                DATAMODEL.copyDatasetsToUserDir(
+                    experimentId, "", "hrm");
+                return false;
+            });
+
+        link.prepend(img);
+
+        actionView_div.append(link);
 
     }
 
     // Build and display the call for a zip archive
-    $("#detailViewAction").append(
-            "<span><a class=\"btn btn-sm btn-primary\" " +
-            "href=\"#\" onclick='callAggregationPlugin(\"" +
-            experimentId + "\", \"\", \"zip\"); return false;'>" +
-            "<img src=\"img/zip.png\" />&nbsp;" +
-            "Download</a></span>&nbsp;");
+    var img = $("<img>")
+        .attr("src", "img/zip.png");
+
+    var link = $("<a>")
+        .addClass("btn btn-sm btn-primary action")
+        .attr("href", "#")
+        .html("&nbsp;Download")
+        .click(function() {
+            DATAMODEL.copyDatasetsToUserDir(
+                experimentId, "", "zip");
+            return false;
+        });
+
+    link.prepend(img);
+
+    actionView_div.append(link);
 
 };
 
@@ -311,8 +377,14 @@ DataViewer.prototype.displayThumbnailForSample= function(sample, img_id) {
  */
 DataViewer.prototype.displayStatus = function(status, level) {
 
-    // Display the status
-    $("#detailViewStatus").empty();
+    // Get the the statusView div
+    var statusView_div = $("#statusView");
+
+    // Clear the status
+    statusView_div.empty();
+
+    // Make sure the status div is visible
+    statusView_div.show();
 
     switch (level) {
         case "success":
@@ -334,7 +406,7 @@ DataViewer.prototype.displayStatus = function(status, level) {
 
     status = "<div class=\"alert alert-" + cls + " alert-dismissable\">" +
         status + "</div>";
-    $("#detailViewStatus").html(status);
+    statusView_div.html(status);
 
 };
 
@@ -355,9 +427,26 @@ DataViewer.prototype.formatSizeForDisplay = function(datasetSize) {
     if (sMB < 1024.0) {
         formattedDatasetSize = sMB.toFixed(2) + " MiB";
     } else {
-        var sGB = datasetSizeF / 1024.0;
+        var sGB = sMB / 1024.0;
         formattedDatasetSize = sGB.toFixed(2) + " GiB";
     }
 
     return formattedDatasetSize;
+};
+
+/**
+ * Prepare a title div to be added to the page.
+ * @param title Text for the title
+ * @param level One of "default", "info", "success", "warning", "danger". Default is "default".
+ */
+DataViewer.prototype.prepareTitle = function(title, level) {
+
+
+    // Make sure the level is valid
+    if (["default", "success", "info", "warning", "danger"].indexOf(level) == -1) {
+        level = "default";
+    }
+
+    return ($("<p>").append($("<span>").addClass("label").addClass("label-" + level).text(title)));
+
 };

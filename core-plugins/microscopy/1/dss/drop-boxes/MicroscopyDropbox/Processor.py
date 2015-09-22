@@ -7,6 +7,7 @@ Created on Feb 20, 2014
 """
 
 import java.io.File
+from org.apache.commons.io import FileUtils
 import logging
 import os
 import re
@@ -200,6 +201,9 @@ class Processor:
         # TODO: Add this
         # owner = experimentNode.attrib.get("owner_name")
 
+        # Get attachments
+        attachments = experimentNode.attrib.get("attachments")
+
         # Get or create the experiment
         openBISExperiment = self.getOrCreateExperiment(openBISIdentifier,
                                                   expName, openBISExpType)
@@ -240,9 +244,6 @@ class Processor:
             if (currentDescription is None or currentDescription == ""):
                 openBISExperiment.setPropertyValue("MICROSCOPY_EXPERIMENT_DESCRIPTION", "")
 
-        # Get the series metadata from the XML file otherwise parse the file
-        
-        
         # TODO: Add this
         # openBISExperiment.setPropertyValue("MICROSCOPY_EXPERIMENT_ACQ_HARDWARE",
         #                                   acqHardware)
@@ -256,6 +257,38 @@ class Processor:
         # TODO: Add this
         # openBISExperiment.setPropertyValue("MICROSCOPY_EXPERIMENT_OWNER",
         #                                   owner)
+
+        # Add the attachments
+        if attachments is not None:
+
+            # Extract all relative file names 
+            attachmentFiles = attachments.split(";")
+
+            for f in attachmentFiles:
+
+                # This is an additional security step
+                if f == '':
+                    continue
+
+                # Inform
+                msg = "Adding file attachment " + f 
+                self._logger.info(msg)
+
+                # Build the full path
+                attachmentFilePath = os.path.join(self._incoming.getAbsolutePath(),
+                                                  f)
+
+                # Extract the file name
+                attachmentFileName = os.path.basename(attachmentFilePath)
+
+                # Read the attachment into a byte array
+                javaFile = java.io.File(attachmentFilePath)
+                byteArray = FileUtils.readFileToByteArray(javaFile)
+
+                # Add attachment
+                openBISExperiment.addAttachment(attachmentFilePath,
+                                                attachmentFileName,
+                                                "", byteArray)
 
         # Return the openBIS Experiment object
         return openBISExperiment
