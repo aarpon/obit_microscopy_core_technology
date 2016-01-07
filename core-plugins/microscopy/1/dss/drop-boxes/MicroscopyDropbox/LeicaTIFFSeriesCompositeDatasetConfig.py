@@ -106,7 +106,9 @@ class LeicaTIFFSeriesCompositeDatasetConfig(MicroscopyCompositeDatasetConfig):
 
         # Enable thumbnail generation for the first series of a file.
         if seriesNum == 0:
-            self.setGenerateThumbnails(True)
+            # Specify thumbnail resolution explicitly
+            resolutions = ['256x256']
+            self.setGenerateImageRepresentationsUsingImageResolutions(resolutions)
         else:
             self.setGenerateThumbnails(False)
 

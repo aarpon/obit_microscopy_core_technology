@@ -74,13 +74,11 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
 
         # Enable thumbnail generation for the first series of a file.
         if seriesNum == 0:
-            self.setGenerateThumbnails(True)
+            # Specify thumbnail resolution explicitly
+            resolutions = ['256x256']
+            self.setGenerateImageRepresentationsUsingImageResolutions(resolutions)
         else:
             self.setGenerateThumbnails(False)
-
-        # Specify thumbnail resolution explicitly
-        resolutions = ['256x256']
-        self.setGenerateImageRepresentationsUsingImageResolutions(resolutions)
 
         # Set the recognized extensions to match those in the Annotation Tool
         self.setRecognizedImageExtensions([\
