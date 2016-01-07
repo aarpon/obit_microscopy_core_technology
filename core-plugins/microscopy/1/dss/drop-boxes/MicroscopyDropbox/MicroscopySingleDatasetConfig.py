@@ -72,8 +72,11 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
         # Disable thumbnail generation by ImageMagick
         self.setUseImageMagicToGenerateThumbnails(False)
 
-        # Enable thumbnail generation
-        self.setGenerateThumbnails(True)
+        # Enable thumbnail generation for the first series of a file.
+        if seriesNum == 0:
+            self.setGenerateThumbnails(True)
+        else:
+            self.setGenerateThumbnails(False)
 
         # Specify thumbnail resolution explicitly
         resolutions = ['256x256']
