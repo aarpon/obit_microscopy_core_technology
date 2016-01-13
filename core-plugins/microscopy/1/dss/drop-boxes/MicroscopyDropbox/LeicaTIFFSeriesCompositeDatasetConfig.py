@@ -104,17 +104,10 @@ class LeicaTIFFSeriesCompositeDatasetConfig(MicroscopyCompositeDatasetConfig):
         # Disable thumbnail generation by ImageMagick
         self.setUseImageMagicToGenerateThumbnails(False)
 
-        # Enable thumbnail generation for the first series of a file.
-        if seriesNum == 0:
-            # Specify thumbnail resolution explicitly
-            resolutions = ['256x256']
-            self.setGenerateImageRepresentationsUsingImageResolutions(resolutions)
-        else:
-            self.setGenerateThumbnails(False)
-
-        # Specify thumbnail resolution explicitly
+        # Specify resolution of image representations explicitly
         resolutions = ['256x256']
         self.setGenerateImageRepresentationsUsingImageResolutions(resolutions)
+        self.setGenerateThumbnails(True)
 
         # Set the recognized extensions -- currently just tif(f)
         self.setRecognizedImageExtensions(["tif", "tiff"])
@@ -122,10 +115,11 @@ class LeicaTIFFSeriesCompositeDatasetConfig(MicroscopyCompositeDatasetConfig):
         # Set the dataset type
         self.setDataSetType("MICROSCOPY_IMG")
 
-        # Set representative image algorithm
-        self.setImageGenerationAlgorithm(MaximumIntensityProjectionGenerationAlgorithm(
-                                        "MICROSCOPY_IMG_THUMBNAIL", 256, 256,
-                                        "thumbnail.png"))
+        # Create representative image (MIP) for series 0 only
+        if seriesNum == 0:
+            self.setImageGenerationAlgorithm(
+                MaximumIntensityProjectionGenerationAlgorithm(
+                    "MICROSCOPY_IMG_THUMBNAIL", 256, 256, "thumbnail.png"))
 
 
     def createChannel(self, channelCode):
