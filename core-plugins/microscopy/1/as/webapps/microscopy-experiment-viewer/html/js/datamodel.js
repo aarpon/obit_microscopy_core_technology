@@ -319,13 +319,22 @@ DataModel.prototype.getDataSetsForSampleAndExperiment = function(expCode, sample
             return null;
         }
 
-        // Get the dataset with type MICROSCOPY_IMG_THUMBNAIL from the first series (container)
-        // and pass it on to the specified callback function.
-        var series = response.result[0];
-        for (var i = 0; i < series.containedDataSets.length; i++) {
-            if (series.containedDataSets[i].dataSetTypeCode == "MICROSCOPY_IMG_THUMBNAIL") {
-                action(series.containedDataSets[i]);
-                return;
+        // All MICROSCOPY_IMG_CONTAINER datasets (i.e. a file series) contain a MICROSCOPY_IMG_OVERVIEW
+        // and a MICROSCOPY_IMG dataset; one of the series will also contain a MICROSCOPY_IMG_THUMBNAIL,
+        // which is what we are looking for here.
+        // Even though the MICROSCOPY_IMG_THUMBNAIL is always created for series 0, we cannot guarantee
+        // here that series zero will be returned as the first. We quickly scan through the returned
+        // results for the MICROSCOPY_IMG_CONTAINER that has three contained datasets.
+        // From there we can then quickly retrieve the MICROSCOPY_IMG_THUMBNAIL.
+        for (var i = 0; i < response.result.length; i++) {
+            var series = response.result[i];
+            if (series.containedDataSets.length == 3) {
+                for (var j = 0; j < series.containedDataSets.length; j++) {
+                    if (series.containedDataSets[j].dataSetTypeCode == "MICROSCOPY_IMG_THUMBNAIL") {
+                        action(series.containedDataSets[j]);
+                        return;
+                    }
+                }
             }
         }
 
