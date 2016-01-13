@@ -524,7 +524,7 @@ class Mover():
 def parsePropertiesFile():
     """Parse properties file for custom plug-in settings."""
 
-    filename = "../core-plugins/microscopy/1/dss/reporting-plugins/copy_microscopy_datasets_to_userdir/plugin.properties"
+    filename = "../core-plugins/microscopy/1/dss/reporting-plugins/export_microscopy_datasets/plugin.properties"
     var_names = ['base_dir', 'export_dir', 'hrm_base_dir', 'hrm_src_subdir']
 
     properties = {}
@@ -659,7 +659,7 @@ def aggregateProcess(parameters, tableBuilder, uid):
 
     # Get path to containing folder
     # __file__ does not work (reliably) in Jython
-    dbPath = "../core-plugins/microscopy/1/dss/reporting-plugins/copy_microscopy_datasets_to_userdir"
+    dbPath = "../core-plugins/microscopy/1/dss/reporting-plugins/export_microscopy_datasets"
 
     # Path to the logs subfolder
     logPath = os.path.join(dbPath, "logs")
@@ -754,4 +754,4 @@ def aggregateProcess(parameters, tableBuilder, uid):
     try:
         mailService.createEmailSender().withSubject(subject).withBody(body).send()
     except:
-        sys.stderr.write("copy_microscopy_datasets_to_userdir: Failure sending email to user!")
+        sys.stderr.write("export_microscopy_datasets: Failure sending email to user!")

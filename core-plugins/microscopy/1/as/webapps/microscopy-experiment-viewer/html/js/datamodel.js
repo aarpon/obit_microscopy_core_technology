@@ -122,15 +122,15 @@ DataModel.prototype.copyDatasetsToUserDir = function(experimentId, sampleId, mod
 
     // Must use global object
     DATAMODEL.openbisServer.createReportFromAggregationService(CONFIG['dataStoreServer'],
-        "copy_microscopy_datasets_to_userdir", parameters,
-        DATAMODEL.processResultsFromCopyDatasetsToUserDirServerSidePlugin );
+        "export_microscopy_datasets", parameters,
+        DATAMODEL.processResultsFromExportDatasetsServerSidePlugin );
 };
 
 /**
  * Process the results returned from the copyDatasetsToUserDir() server-side plug-in
  * @param response JSON object
  */
-DataModel.prototype.processResultsFromCopyDatasetsToUserDirServerSidePlugin = function(response) {
+DataModel.prototype.processResultsFromExportDatasetsServerSidePlugin = function (response) {
 
         var status;
         var unexpected = "Sorry, unexpected feedback from server " +
@@ -189,8 +189,8 @@ DataModel.prototype.processResultsFromCopyDatasetsToUserDirServerSidePlugin = fu
                     setTimeout(function() {
                             DATAMODEL.openbisServer.createReportFromAggregationService(
                                 CONFIG['dataStoreServer'],
-                                "copy_microscopy_datasets_to_userdir", parameters,
-                                DATAMODEL.processResultsFromCopyDatasetsToUserDirServerSidePlugin)
+                                "export_microscopy_datasets", parameters,
+                                DATAMODEL.processResultsFromExportDatasetsServerSidePlugin)
                         },
                         parseInt(CONFIG['queryPluginStatusInterval']));
                     // Return here
