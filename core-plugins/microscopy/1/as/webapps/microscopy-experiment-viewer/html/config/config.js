@@ -8,6 +8,5 @@ CONFIG = {
     'enableExportToHRMSourceFolder': true,
     'dataStoreServer': "DSS1",
     'queryPluginStatusInterval': 2000
-
 }
 

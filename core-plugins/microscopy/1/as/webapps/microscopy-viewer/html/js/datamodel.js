@@ -322,12 +322,11 @@ DataModel.prototype.processResultsFromCopyDatasetsToUserDirServerSidePlugin = fu
                             DATAMODEL.processResultsFromCopyDatasetsToUserDirServerSidePlugin)
                     },
                     parseInt(CONFIG['queryPluginStatusInterval']));
+
                 // Return here
                 return;
 
             } else {
-
-                // First, check if the process is finished or whether it is still running
 
                 if (row.length != 8) {
 
@@ -387,9 +386,7 @@ DataModel.prototype.processResultsFromCopyDatasetsToUserDirServerSidePlugin = fu
             function(url) {
                 var downloadString =
                     '<img src="img/download.png" />&nbsp;<a href="' + url + '">Download</a>!';
-                //'<a href="' + url + '"><img src = "img/download.png" />&nbsp;Download</a>';
                 $("#download_url_span").html(downloadString);
             });
     }
-
 };

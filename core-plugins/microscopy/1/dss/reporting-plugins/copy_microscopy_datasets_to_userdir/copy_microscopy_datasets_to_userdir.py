@@ -640,7 +640,7 @@ def aggregate(parameters, tableBuilder):
     row.setCell("mode", resultToSend["mode"])
 
 
-# Plug-in entry point
+# Actual work process
 def aggregateProcess(parameters, tableBuilder, uid):
 
     # Make sure to initialize and store the results. We need to have them since

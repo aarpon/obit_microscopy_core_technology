@@ -44,7 +44,7 @@ DataViewer.prototype.initView = function() {
     var exp = DATAMODEL.exp;
     var dataSetCodes = DATAMODEL.dataSetCodes;
 
-    // Get the experiment name view
+    // Get the sample name view
     sampleNameView = $("#sampleNameView");
     sampleNameView.empty();
 
