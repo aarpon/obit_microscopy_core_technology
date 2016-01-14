@@ -559,7 +559,14 @@ def parsePropertiesFile():
 
 # Plug-in entry point
 #
-# This method returns a table to the client with a different set of columns
+# Input parameters:
+#
+# uid      : job unique identifier (see below)
+# expPermId: experiment identifier
+# sampleId : sample identifier
+# mode     : requested mode of operation: one of 'normal', 'hrm', zip'.
+#
+# This plug-in returns a table to the client with a different set of columns
 # depending on whether the plug-in is called for the first time and the process
 # is just started, or if it is queried for completeness at a later time.
 #
