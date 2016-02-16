@@ -117,53 +117,104 @@ DataModel.prototype.copyDatasetsToUserDir = function(experimentId, sampleId, mod
         mode: mode
     };
 
-    // Get the datastore server name from the configuration
-    var dataStoreServer = CONFIG['dataStoreServer'];
-
     // Inform the user that we are about to process the request
     DATAVIEWER.displayStatus("Please wait while processing your request. This might take a while...", "info");
 
     // Must use global object
-    DATAMODEL.openbisServer.createReportFromAggregationService(dataStoreServer,
-        "copy_microscopy_datasets_to_userdir", parameters, function(response) {
+    DATAMODEL.openbisServer.createReportFromAggregationService(CONFIG['dataStoreServer'],
+        "export_microscopy_datasets", parameters,
+        DATAMODEL.processResultsFromExportDatasetsServerSidePlugin );
+};
 
-            var status;
-            var unexpected = "Sorry, unexpected feedback from server " +
-                "obtained. Please contact your administrator.";
-            var level = "";
-            var row;
+/**
+ * Process the results returned from the copyDatasetsToUserDir() server-side plug-in
+ * @param response JSON object
+ */
+DataModel.prototype.processResultsFromExportDatasetsServerSidePlugin = function (response) {
 
-            // Returned parameters
-            var r_Success;
-            var r_ErrorMessage;
-            var r_NCopiedFiles;
-            var r_RelativeExpFolder;
-            var r_ZipArchiveFileName;
-            var r_Mode;
+        var status;
+        var unexpected = "Sorry, unexpected feedback from server " +
+            "obtained. Please contact your administrator.";
+        var level = "";
+        var row;
 
-            if (response.error) {
-                status = "Sorry, could not process request.";
+        // Returned parameters
+        var r_UID;
+        var r_Completed;
+        var r_Success;
+        var r_ErrorMessage;
+        var r_NCopiedFiles;
+        var r_RelativeExpFolder;
+        var r_ZipArchiveFileName;
+        var r_Mode;
+
+        // First check if we have an error
+        if (response.error) {
+
+            // Indeed there was an error.
+            status = "Sorry, could not process request.";
+            level = "error";
+            r_Success = false;
+
+        } else {
+
+            // No obvious error. Retrieve the results
+            status = "";
+            if (response.result.rows.length != 1) {
+
+                // Unexpected number of rows returned
+                status = unexpected;
                 level = "error";
-                r_Success = false;
+
             } else {
-                status = "";
-                if (response.result.rows.length != 1) {
-                    status = unexpected;
-                    level = "error";
+
+                // We have a (potentially) valid result
+                row = response.result.rows[0];
+
+                // Retrieve the uid
+                r_UID = row[0].value;
+
+                // Retrieve the 'completed' status
+                r_Completed = row[1].value;
+
+                // If the processing is not completed, we wait a few seconds and trigger the
+                // server-side plug-in again. The interval is defined by the admin.
+                if (r_Completed == false) {
+
+                    // We only need the UID of the job
+                    parameters = {};
+                    parameters["uid"] = r_UID;
+
+                    // Call the plug-in
+                    setTimeout(function() {
+                            DATAMODEL.openbisServer.createReportFromAggregationService(
+                                CONFIG['dataStoreServer'],
+                                "export_microscopy_datasets", parameters,
+                                DATAMODEL.processResultsFromExportDatasetsServerSidePlugin)
+                        },
+                        parseInt(CONFIG['queryPluginStatusInterval']));
+                    // Return here
+                    return;
+
                 } else {
-                    row = response.result.rows[0];
-                    if (row.length != 6) {
+
+                    // First, check if the process is finished or whether it is still running
+
+                    if (row.length != 8) {
+
+                        // Again, something is wrong with the returned results
                         status = unexpected;
                         level = "error";
+
                     } else {
 
                         // Extract returned values for clarity
-                        r_Success = row[0].value;
-                        r_ErrorMessage = row[1].value;
-                        r_NCopiedFiles = row[2].value;
-                        r_RelativeExpFolder = row[3].value;
-                        r_ZipArchiveFileName = row[4].value;
-                        r_Mode = row[5].value;
+                        r_Success = row[2].value;
+                        r_ErrorMessage = row[3].value;
+                        r_NCopiedFiles = row[4].value;
+                        r_RelativeExpFolder = row[5].value;
+                        r_ZipArchiveFileName = row[6].value;
+                        r_Mode = row[7].value;
 
                         if (r_Success == true) {
                             var snip = "<b>Congratulations!</b>&nbsp;";
@@ -198,18 +249,19 @@ DataModel.prototype.copyDatasetsToUserDir = function(experimentId, sampleId, mod
                     }
                 }
             }
-            DATAVIEWER.displayStatus(status, level);
+        }
+        DATAVIEWER.displayStatus(status, level);
 
-            // Retrieve the URL (asynchronously)
-            if (r_Success == true && r_Mode == "zip")
-                DATAMODEL.openbisServer.createSessionWorkspaceDownloadUrl(r_ZipArchiveFileName,
-                    function(url) {
-                        var downloadString =
-                            '<img src="img/download.png" />&nbsp;<a href="' + url + '">Download</a>!';
-                        //'<a href="' + url + '"><img src = "img/download.png" />&nbsp;Download</a>';
-                        $("#download_url_span").html(downloadString);
-                    });
-        });
+        // Retrieve the URL (asynchronously)
+        if (r_Success == true && r_Mode == "zip") {
+            DATAMODEL.openbisServer.createSessionWorkspaceDownloadUrl(r_ZipArchiveFileName,
+                function(url) {
+                    var downloadString =
+                        '<img src="img/download.png" />&nbsp;<a href="' + url + '">Download</a>!';
+                    //'<a href="' + url + '"><img src = "img/download.png" />&nbsp;Download</a>';
+                    $("#download_url_span").html(downloadString);
+                });
+    }
 
 };
 
@@ -267,13 +319,22 @@ DataModel.prototype.getDataSetsForSampleAndExperiment = function(expCode, sample
             return null;
         }
 
-        // Get the dataset with type MICROSCOPY_IMG_THUMBNAIL from the first series (container)
-        // and pass it on to the specified callback function.
-        var series = response.result[0];
-        for (var i = 0; i < series.containedDataSets.length; i++) {
-            if (series.containedDataSets[i].dataSetTypeCode == "MICROSCOPY_IMG_THUMBNAIL") {
-                action(series.containedDataSets[i]);
-                return;
+        // All MICROSCOPY_IMG_CONTAINER datasets (i.e. a file series) contain a MICROSCOPY_IMG_OVERVIEW
+        // and a MICROSCOPY_IMG dataset; one of the series will also contain a MICROSCOPY_IMG_THUMBNAIL,
+        // which is what we are looking for here.
+        // Even though the MICROSCOPY_IMG_THUMBNAIL is always created for series 0, we cannot guarantee
+        // here that series zero will be returned as the first. We quickly scan through the returned
+        // results for the MICROSCOPY_IMG_CONTAINER that has three contained datasets.
+        // From there we can then quickly retrieve the MICROSCOPY_IMG_THUMBNAIL.
+        for (var i = 0; i < response.result.length; i++) {
+            var series = response.result[i];
+            if (series.containedDataSets.length >= 3) {
+                for (var j = 0; j < series.containedDataSets.length; j++) {
+                    if (series.containedDataSets[j].dataSetTypeCode == "MICROSCOPY_IMG_THUMBNAIL") {
+                        action(series.containedDataSets[j]);
+                        return;
+                    }
+                }
             }
         }
 

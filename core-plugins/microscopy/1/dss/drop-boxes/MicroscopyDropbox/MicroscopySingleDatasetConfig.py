@@ -72,12 +72,10 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
         # Disable thumbnail generation by ImageMagick
         self.setUseImageMagicToGenerateThumbnails(False)
 
-        # Enable thumbnail generation
-        self.setGenerateThumbnails(True)
-
-        # Specify thumbnail resolution explicitly
+        # Specify resolution of image representations explicitly
         resolutions = ['256x256']
         self.setGenerateImageRepresentationsUsingImageResolutions(resolutions)
+        self.setGenerateThumbnails(True)
 
         # Set the recognized extensions to match those in the Annotation Tool
         self.setRecognizedImageExtensions([\
@@ -88,11 +86,11 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
         # Set the dataset type
         self.setDataSetType("MICROSCOPY_IMG")
 
-        # Set representative image algorithm
-        self.setImageGenerationAlgorithm(MaximumIntensityProjectionGenerationAlgorithm(
-                                        "MICROSCOPY_IMG_THUMBNAIL", 256, 256,
-                                        "thumbnail.png"))
-
+        # Create representative image (MIP) for series 0 only
+        if seriesNum == 0:
+            self.setImageGenerationAlgorithm(
+                MaximumIntensityProjectionGenerationAlgorithm(
+                    "MICROSCOPY_IMG_THUMBNAIL", 256, 256, "thumbnail.png"))
 
     def createChannel(self, channelCode):
         """Create a channel from the channelCode with the name as read from

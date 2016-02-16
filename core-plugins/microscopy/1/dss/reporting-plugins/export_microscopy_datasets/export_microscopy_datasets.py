@@ -16,6 +16,9 @@ import re
 import zipfile
 import java.io.File
 import logging
+from ch.ethz.scu.obit.common.server.longrunning import LRCache
+import uuid
+from threading import Thread
 
 
 def touch(full_file):
@@ -97,8 +100,8 @@ def zip_folder(folder_path, output_path):
 
     finally:
         zip_file.close()
-        
-        
+
+
 class Mover():
     """
     Takes care of organizing the files to be copied to the user folder and
@@ -521,7 +524,7 @@ class Mover():
 def parsePropertiesFile():
     """Parse properties file for custom plug-in settings."""
 
-    filename = "../core-plugins/microscopy/1/dss/reporting-plugins/copy_microscopy_datasets_to_userdir/plugin.properties"
+    filename = "../core-plugins/microscopy/1/dss/reporting-plugins/export_microscopy_datasets/plugin.properties"
     var_names = ['base_dir', 'export_dir', 'hrm_base_dir', 'hrm_src_subdir']
 
     properties = {}
@@ -555,11 +558,115 @@ def parsePropertiesFile():
 
 
 # Plug-in entry point
+#
+# Input parameters:
+#
+# uid      : job unique identifier (see below)
+# expPermId: experiment identifier
+# sampleId : sample identifier
+# mode     : requested mode of operation: one of 'normal', 'hrm', zip'.
+#
+# This plug-in returns a table to the client with a different set of columns
+# depending on whether the plug-in is called for the first time and the process
+# is just started, or if it is queried for completeness at a later time.
+#
+# At the end of the first call, a table with following columns is returned:
+#
+# uid      : unique identifier of the running plug-in
+# completed: indicated if the plug-in has finished. This is set to False in the 
+#            first call.
+#
+# Later calls return a table with the following columns:
+#
+# uid      : unique identifier of the running plug-in. This was returned to
+#            the client in the first call and was passed on again as a parameter.
+#            Here it is returned again to make sure that client and server
+#            always know which task they are talking about. 
+# completed: True if the process has completed in the meanwhile, False if it 
+#            is still running.
+# success  : True if the process completed successfully, False otherwise.
+# message  : error message in case success was False.
+# nCopiedFiles: total number of copied files.
+# relativeExpFolder: folder to the copied folder relative to the root of the
+#            export folder.
+# zipArchiveFileName: file name of the zip in case compression was requested.
+# mode     : requested mode of operation.
 def aggregate(parameters, tableBuilder):
+
+    # Get the ID of the call if it already exists
+    uid = parameters.get("uid");
+
+    if uid is None or uid == "":
+
+        # Create a unique id
+        uid = str(uuid.uuid4())
+
+        # Add the table headers
+        tableBuilder.addHeader("uid")
+        tableBuilder.addHeader("completed")
+
+        # Fill in relevant information
+        row = tableBuilder.addRow()
+        row.setCell("uid", uid)
+        row.setCell("completed", False)
+
+        # Launch the actual process in a separate thread
+        thread = Thread(target = aggregateProcess,
+                        args = (parameters, tableBuilder, uid))
+        thread.start()
+
+        # Return immediately
+        return
+
+    # The process is already running in a separate thread. We get current
+    # results and return them 
+    resultToSend = LRCache.get(uid);
+    if resultToSend is None:
+        # This should not happen
+        raise Exception("Could not retrieve results from result cache!")
+
+    # Add the table headers
+    tableBuilder.addHeader("uid")
+    tableBuilder.addHeader("completed")
+    tableBuilder.addHeader("success")
+    tableBuilder.addHeader("message")
+    tableBuilder.addHeader("nCopiedFiles")
+    tableBuilder.addHeader("relativeExpFolder")
+    tableBuilder.addHeader("zipArchiveFileName")
+    tableBuilder.addHeader("mode")
+
+    # Store current results in the table
+    row = tableBuilder.addRow()
+    row.setCell("uid", resultToSend["uid"])
+    row.setCell("completed", resultToSend["completed"])
+    row.setCell("success", resultToSend["success"])
+    row.setCell("message", resultToSend["message"])
+    row.setCell("nCopiedFiles", resultToSend["nCopiedFiles"]) 
+    row.setCell("relativeExpFolder", resultToSend["relativeExpFolder"])
+    row.setCell("zipArchiveFileName", resultToSend["zipArchiveFileName"])
+    row.setCell("mode", resultToSend["mode"])
+
+
+# Actual work process
+def aggregateProcess(parameters, tableBuilder, uid):
+
+    # Make sure to initialize and store the results. We need to have them since
+    # most likely the client will try to retrieve them again before the process
+    # is finished.
+    resultToStore = {}
+    resultToStore["uid"] = uid
+    resultToStore["success"] = True
+    resultToStore["completed"] = False
+    resultToStore["message"] = ""
+    resultToStore["nCopiedFiles"] = ""
+    resultToStore["relativeExpFolder"] = ""
+    resultToStore["zipArchiveFileName"] = ""
+    resultToStore["mode"] = ""
+    LRCache.set(uid, resultToStore)
 
     # Get path to containing folder
     # __file__ does not work (reliably) in Jython
-    dbPath = "../core-plugins/microscopy/1/dss/reporting-plugins/copy_microscopy_datasets_to_userdir"
+    dbPath = "../core-plugins/microscopy/1/dss/reporting-plugins/export_microscopy_datasets"
 
     # Path to the logs subfolder
     logPath = os.path.join(dbPath, "logs")
@@ -591,7 +698,7 @@ def aggregate(parameters, tableBuilder):
     mode = parameters.get("mode")
 
     # Info
-    logger.info("Aggregation plugin called with following parameters:")
+    logger.info("Aggregation plug-in called with following parameters:")
     logger.info("experimentId = " + experimentId)
     logger.info("sampleId     = " + sampleId)
     logger.info("mode         = " + mode)
@@ -605,33 +712,27 @@ def aggregate(parameters, tableBuilder):
 
     # Process
     success = mover.process()
-    
+
     # Compress
     if mode == "zip":
         mover.compressIfNeeded()
-        
+
     # Get some results info
     nCopiedFiles = mover.getNumberOfCopiedFiles()
     errorMessage = mover.getErrorMessage();
     relativeExpFolder = mover.getRelativeExperimentPath()
     zipFileName = mover.getZipArchiveFileName()
 
-    # Add the table headers
-    tableBuilder.addHeader("Success")
-    tableBuilder.addHeader("Message")
-    tableBuilder.addHeader("nCopiedFiles")
-    tableBuilder.addHeader("relativeExpFolder")
-    tableBuilder.addHeader("zipArchiveFileName")
-    tableBuilder.addHeader("Mode")
-
-    # Store the results in the table
-    row = tableBuilder.addRow()
-    row.setCell("Success", success)
-    row.setCell("Message", errorMessage)
-    row.setCell("nCopiedFiles", nCopiedFiles)
-    row.setCell("relativeExpFolder", relativeExpFolder)
-    row.setCell("zipArchiveFileName", zipFileName)
-    row.setCell("Mode", mode)
+    # Update results and store them
+    resultToStore["uid"] = uid
+    resultToStore["completed"] = True
+    resultToStore["success"] = success
+    resultToStore["message"] = errorMessage
+    resultToStore["nCopiedFiles"] = nCopiedFiles
+    resultToStore["relativeExpFolder"] = relativeExpFolder
+    resultToStore["zipArchiveFileName"] = zipFileName
+    resultToStore["mode"] = mode
+    LRCache.set(uid, resultToStore)
 
     # Email result to the user
     if success == True:
@@ -648,7 +749,7 @@ def aggregate(parameters, tableBuilder):
         elif mode == "hrm":
             body = snip + "successfully exported to your HRM source folder."
         else:
-            body = snip + "successfully packaged for download."
+            body = snip + "successfully packaged for download: " + zipFileName
             
     else:
         subject = "Microscopy: error processing request!"
@@ -660,4 +761,4 @@ def aggregate(parameters, tableBuilder):
     try:
         mailService.createEmailSender().withSubject(subject).withBody(body).send()
     except:
-        sys.stderr.write("copy_microscopy_datasets_to_userdir: Failure sending email to user!")
+        sys.stderr.write("export_microscopy_datasets: Failure sending email to user!")
