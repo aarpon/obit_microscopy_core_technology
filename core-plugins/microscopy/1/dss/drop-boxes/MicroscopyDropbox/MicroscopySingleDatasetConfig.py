@@ -172,7 +172,7 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
             # Append metadata for current image
             metaData.append(imageMetadata)
 
-            # Log image geometry information
+        # Log image geometry information
         if self._DEBUG:
             self._logger.info("MICROSCOPYSINGLEDATASETCONFIG::extractImagesMetadata(): " +
                               "Current image: series = " + str(series) + 
