@@ -115,8 +115,8 @@ class LeicaTIFFSeriesCompositeDatasetConfig(MicroscopyCompositeDatasetConfig):
         # Set the dataset type
         self.setDataSetType("MICROSCOPY_IMG")
 
-        # Create representative image (MIP) for series 0 only
-        if seriesNum == 0:
+        # Create representative image (MIP) for the first series only
+        if self._seriesIndices.index(self._seriesNum) == 0:
             self.setImageGenerationAlgorithm(
                 MaximumIntensityProjectionGenerationAlgorithm(
                     "MICROSCOPY_IMG_THUMBNAIL", 256, 256, "thumbnail.png"))

@@ -4,7 +4,7 @@
 <pydev_property name="org.python.pydev.PYTHON_PROJECT_VERSION">jython 2.7</pydev_property>
 <pydev_pathproperty name="org.python.pydev.PROJECT_SOURCE_PATH">
 <path>/obit_microscopy_core_technology</path>
-<path>/obit_microscopy_core_technology/core-plugins/microscopy/1/dss/drop-boxes/MicroscopyDropbox/lib/MicroscopyReader_20160211100710.jar</path>
+<path>/obit_microscopy_core_technology/core-plugins/microscopy/1/dss/drop-boxes/MicroscopyDropbox/lib/MicroscopyReader_20160415093120.jar</path>
 </pydev_pathproperty>
 
 </pydev_project>

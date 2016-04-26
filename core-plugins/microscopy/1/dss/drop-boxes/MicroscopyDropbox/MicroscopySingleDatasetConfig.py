@@ -87,7 +87,7 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
         self.setDataSetType("MICROSCOPY_IMG")
 
         # Create representative image (MIP) for series 0 only
-        if seriesNum == 0:
+        if int(seriesNum) == 0:
             self.setImageGenerationAlgorithm(
                 MaximumIntensityProjectionGenerationAlgorithm(
                     "MICROSCOPY_IMG_THUMBNAIL", 256, 256, "thumbnail.png"))
