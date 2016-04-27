@@ -8,7 +8,7 @@ Created on Feb 20, 2014
 
 import re
 from MicroscopyCompositeDatasetConfig import MicroscopyCompositeDatasetConfig
-from ch.systemsx.cisd.openbis.dss.etl.dto.api.impl import MaximumIntensityProjectionGenerationAlgorithm
+from LeicaTIFFSeriesMaximumIntensityProjectionGenerationAlgorithm import LeicaTIFFSeriesMaximumIntensityProjectionGenerationAlgorithm
 from ch.systemsx.cisd.openbis.dss.etl.dto.api import ChannelColor
 from ch.systemsx.cisd.openbis.dss.etl.dto.api import ImageIdentifier
 from ch.systemsx.cisd.openbis.dss.etl.dto.api import ImageMetadata
@@ -118,7 +118,7 @@ class LeicaTIFFSeriesCompositeDatasetConfig(MicroscopyCompositeDatasetConfig):
         # Create representative image (MIP) for the first series only
         if self._seriesIndices.index(self._seriesNum) == 0:
             self.setImageGenerationAlgorithm(
-                MaximumIntensityProjectionGenerationAlgorithm(
+                LeicaTIFFSeriesMaximumIntensityProjectionGenerationAlgorithm(
                     "MICROSCOPY_IMG_THUMBNAIL", 256, 256, "thumbnail.png"))
 
 
