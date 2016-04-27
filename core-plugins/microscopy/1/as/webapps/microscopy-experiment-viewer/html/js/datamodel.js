@@ -328,12 +328,10 @@ DataModel.prototype.getDataSetsForSampleAndExperiment = function(expCode, sample
         // From there we can then quickly retrieve the MICROSCOPY_IMG_THUMBNAIL.
         for (var i = 0; i < response.result.length; i++) {
             var series = response.result[i];
-            if (series.containedDataSets.length >= 3) {
-                for (var j = 0; j < series.containedDataSets.length; j++) {
-                    if (series.containedDataSets[j].dataSetTypeCode == "MICROSCOPY_IMG_THUMBNAIL") {
-                        action(series.containedDataSets[j]);
-                        return;
-                    }
+            for (var j = 0; j < series.containedDataSets.length; j++) {
+                if (series.containedDataSets[j].dataSetTypeCode == "MICROSCOPY_IMG_THUMBNAIL") {
+                    action(series.containedDataSets[j]);
+                    return;
                 }
             }
         }
