@@ -17,6 +17,7 @@ from ch.systemsx.cisd.openbis.dss.etl.dto.api import OriginalDataStorageFormat
 from ch.systemsx.cisd.openbis.dss.etl.dto.api import ChannelColorRGB
 from ch.systemsx.cisd.openbis.dss.etl.dto.api import Channel
 import xml.etree.ElementTree as ET
+from GlobalSettings import GlobalSettings
 
 class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
     """Image data configuration class for single image files (with
@@ -73,9 +74,14 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
         self.setUseImageMagicToGenerateThumbnails(False)
 
         # Specify resolution of image representations explicitly
-        resolutions = ['256x256']
-        self.setGenerateImageRepresentationsUsingImageResolutions(resolutions)
-        self.setGenerateThumbnails(True)
+        resolutions = GlobalSettings.ImageResolutions
+        if not resolutions:
+            self._logger.info("Skipping thumbnails generation.")
+            self.setGenerateThumbnails(False)
+        else:
+            self._logger.info("Creating thumbnails at resolutions: " + str(resolutions))
+            self.setGenerateImageRepresentationsUsingImageResolutions(resolutions)
+            self.setGenerateThumbnails(True)
 
         # Set the recognized extensions to match those in the Annotation Tool
         self.setRecognizedImageExtensions([\
