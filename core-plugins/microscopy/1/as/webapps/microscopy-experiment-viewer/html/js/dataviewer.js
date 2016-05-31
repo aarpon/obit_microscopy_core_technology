@@ -45,9 +45,15 @@ DataViewer.prototype.initView = function() {
     experimentAcquisitionDetailsView_div = $("#experimentAcquisitionDetailsView");
     experimentAcquisitionDetailsView_div.empty();
     experimentAcquisitionDetailsView_div.append(this.prepareTitle("Acquisition details", "default"));
-    experimentAcquisitionDetailsView_div.append($("<p>").html("This experiment was registered on " +
-        (new Date(exp.registrationDetails.registrationDate)).toDateString() + "."));
+    if (exp.properties["MICROSCOPY_EXPERIMENT_ACQ_HARDWARE_FRIENDLY_NAME"]) {
+        experimentAcquisitionDetailsView_div.append($("<p>").html("This experiment was performed on <b>" +
+            exp.properties["MICROSCOPY_EXPERIMENT_ACQ_HARDWARE_FRIENDLY_NAME"] + "</b> and registered on " +
+            (new Date(exp.registrationDetails.registrationDate)).toDateString() + "."));
 
+    } else {
+        experimentAcquisitionDetailsView_div.append($("<p>").html("This experiment was registered on " +
+            (new Date(exp.registrationDetails.registrationDate)).toDateString() + "."));
+    }
 
     // Get the sample view
     var sampleView_div = $("#sampleView");
