@@ -1,7 +1,7 @@
 obit_microscopy_core_technology
 ===============================
 
-openBIS microscopy core technology requires `openBIS 16.05.0` or newer, but version `16.05.1` is recommended. To enable the microscopy core technology in `openBIS 16.05.1` , add the following line to `openbis/servers/core-plugins/core-plugins.properties`:
+openBIS microscopy core technology requires `openBIS 16.05.0` or newer, but version `16.05.2` is recommended. To enable the microscopy core technology in `openBIS 16.05.2` , add the following line to `openbis/servers/core-plugins/core-plugins.properties`:
 
 ```bash
 enabled-modules = microscopy
