@@ -184,7 +184,7 @@ DataViewer.prototype.initView = function() {
      */
 
     // Display the viewer (it will take care of refreshing automatically when
-    // the series cahnges, so we do no need to worry about it.
+    // the series changes, so we do no need to worry about it.
     this.displayViewer(dataSetCodes);
 
     // Refresh the series-dependent part of the UI. The same function will be attached
