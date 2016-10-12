@@ -4,8 +4,8 @@
 
 CONFIG = {
 
-    'enableExportToUserFolder': true,
-    'enableExportToHRMSourceFolder': true,
+    'enableExportToUserFolder': false,
+    'enableExportToHRMSourceFolder': false,
     'dataStoreServer': "DSS1",
     'queryPluginStatusInterval': 2000
 }
