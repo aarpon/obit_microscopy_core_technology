@@ -12,7 +12,7 @@ function DataViewer() {
 
     "use strict";
 
-};
+}
 
 /**
  * Link to the requested experiment.
@@ -31,8 +31,6 @@ DataViewer.prototype.linkToExperiment = function(permId) {
 
 /**
  * Displays experiment info
- *
- * @param exp openBIS Experiment object
  */
 DataViewer.prototype.initView = function() {
 
@@ -196,7 +194,7 @@ DataViewer.prototype.initView = function() {
 
 /**
  * Update the view in response to a change in the selected series.
- * @param selectedSeries Index of the selected series.
+ * @param dataSetCode Dataset code.
  */
 DataViewer.prototype.refreshView = function(dataSetCode) {
 

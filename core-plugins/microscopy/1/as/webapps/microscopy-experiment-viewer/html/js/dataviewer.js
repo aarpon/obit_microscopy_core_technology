@@ -12,12 +12,10 @@ function DataViewer() {
 
     "use strict";
 
-};
+}
 
 /**
- * Displays experiment info
- *
- * @param exp openBIS Experiment object
+ * Displays experiment info.
  */
 DataViewer.prototype.initView = function() {
 
@@ -199,9 +197,10 @@ DataViewer.prototype.initView = function() {
 
 /**
  * Display attachment info and link to the Attachments tab.
+ * @param dataModelObj DataMover object.
  * @param attachments: list of attachments
  */
-DataViewer.prototype.displayAttachments = function(dataMoverObj, attachments) {
+DataViewer.prototype.displayAttachments = function(dataModelObj, attachments) {
 
     // Get the div
     var experimentAttachmentsViewId = $("#experimentAttachmentsView");
@@ -211,17 +210,17 @@ DataViewer.prototype.displayAttachments = function(dataMoverObj, attachments) {
 
     // Text
     var text = "";
-    if (dataMoverObj.attachments.length == 0) {
+    if (dataModelObj.attachments.length == 0) {
         text = "There are no attachments.";
-    } else if (dataMoverObj.attachments.length == 1) {
+    } else if (dataModelObj.attachments.length == 1) {
         text = "There is one attachment."
     } else {
-        text = "There are " + dataMoverObj.attachments.length + " attachments.";
+        text = "There are " + dataModelObj.attachments.length + " attachments.";
     }
     // Link to the attachment tab
     var link = $("<a>").text(text).attr("href", "#").attr("title", text).click(
         function() {
-            var url = "#entity=EXPERIMENT&permId=" + dataMoverObj.exp.permId +
+            var url = "#entity=EXPERIMENT&permId=" + dataModelObj.exp.permId +
                 "&ui-subtab=attachment-section&ui-timestamp=" + (new Date().getTime());
             window.top.location.hash = url;
             return false;
@@ -252,13 +251,16 @@ DataViewer.prototype.displayActions = function(exp) {
         return;
     }
 
+    var img;
+    var link;
+
     // Display the "Export to your folder" button only if enabled in the configuration file
     if (CONFIG['enableExportToUserFolder'] == true) {
 
-        var img = $("<img>")
+        img = $("<img>")
             .attr("src", "img/export.png");
 
-        var link = $("<a>")
+        link = $("<a>")
             .addClass("btn btn-sm btn-primary action")
             .attr("href", "#")
             .html("&nbsp;Export to your folder")
@@ -276,10 +278,10 @@ DataViewer.prototype.displayActions = function(exp) {
     // Display the "Export to your HRM source folder" button only if enabled in the configuration file
     if (CONFIG['enableExportToHRMSourceFolder'] == true) {
 
-        var img = $("<img>")
+        img = $("<img>")
             .attr("src", "img/hrm.png");
 
-        var link = $("<a>")
+        link = $("<a>")
             .addClass("btn btn-sm btn-default action")
             .attr("href", "#")
             .html("&nbsp;Export to your HRM source folder")
@@ -296,10 +298,10 @@ DataViewer.prototype.displayActions = function(exp) {
     }
 
     // Build and display the call for a zip archive
-    var img = $("<img>")
+    img = $("<img>")
         .attr("src", "img/zip.png");
 
-    var link = $("<a>")
+    link = $("<a>")
         .addClass("btn btn-sm btn-primary action")
         .attr("href", "#")
         .html("&nbsp;Download")
@@ -338,8 +340,9 @@ DataViewer.prototype.displayThumbnailForSample= function(sample, img_id) {
                 if (response.error) {
 
                     // Thumbnail not found!
-                    $("#" + img_id).attr("src", "./img/error.png");
-                    $("#" + img_id).attr("title", "Could not find any files associated to this dataset!");
+                    var imD = $("#" + img_id);
+                    imD.attr("src", "./img/error.png");
+                    imD.attr("title", "Could not find any files associated to this dataset!");
 
                     return;
 
@@ -364,8 +367,9 @@ DataViewer.prototype.displayThumbnailForSample= function(sample, img_id) {
                     } else {
 
                         // Thumbnail not found!
-                        $("#" + img_id).attr("src", "./img/error.png");
-                        $("#" + img_id).attr("title", "Could not find a thumbnail for this dataset!");
+                        var imD = $("#" + img_id);
+                        imD.attr("src", "./img/error.png");
+                        imD.attr("title", "Could not find a thumbnail for this dataset!");
 
                     }
                 });
@@ -392,6 +396,7 @@ DataViewer.prototype.displayStatus = function(status, level) {
     // Make sure the status div is visible
     statusView_div.show();
 
+    var cls;
     switch (level) {
         case "success":
             cls = "success";
@@ -419,7 +424,7 @@ DataViewer.prototype.displayStatus = function(status, level) {
 /**
  * Format dataset size for display.
  * @param datasetSize: size in bytes
- * @return formattedDatasetSize: formatted dataset size in the form 322.5 MiB or 3.7 GiB
+ * @return string: formatted dataset size in the form 322.5 MiB or 3.7 GiB
  */
 DataViewer.prototype.formatSizeForDisplay = function(datasetSize) {
 
@@ -427,7 +432,7 @@ DataViewer.prototype.formatSizeForDisplay = function(datasetSize) {
     var formattedDatasetSize = "";
 
     // Cast datasetSize to float
-    var datasetSizeF = parseFloat(datasetSize)
+    var datasetSizeF = parseFloat(datasetSize);
 
     var sMB = datasetSizeF / 1024.0 / 1024.0;
     if (sMB < 1024.0) {
