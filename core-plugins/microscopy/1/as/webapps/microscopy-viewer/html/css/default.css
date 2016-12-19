@@ -2,8 +2,8 @@ html {
     overflow-y: scroll;
 }
 
-body {
-    font-family: Sans-serif;
+#webapp {
+    font-family: 'Roboto', sans-serif;
 }
 
 #sampleNameView {
