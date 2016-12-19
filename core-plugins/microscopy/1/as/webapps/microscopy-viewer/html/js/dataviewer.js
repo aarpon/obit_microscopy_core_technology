@@ -372,8 +372,9 @@ DataViewer.prototype.displayMetadata = function(dataSetCode) {
 DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
 
     // Get the detailViewAction div and empty it
-    var detailViewAction = $("#detailViewAction");
+    var detailViewAction = $("#actionView");
     detailViewAction.empty();
+    $("#actionViewExpl").empty();
 
     // Get the experiment identifier
     var experimentId = exp.identifier;
@@ -386,7 +387,7 @@ DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
     var sampleId = sample.identifier;
 
     // Retrieve action div
-    var detailViewActionDiv = $("#detailViewAction");
+    var detailViewActionDiv = $("#actionView");
 
     // Display metadata action
     var indx = DATAMODEL.dataSetCodes.indexOf(dataSetCode);
@@ -395,12 +396,19 @@ DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
         var dataSet = DATAMODEL.dataSets[indx];
 
         var img = $("<img>")
-            .attr("src", "img/edit.png");
+            .attr("src", "img/view.png");
 
         var link = $("<a>")
-            .addClass("btn btn-sm btn-success action")
+            .addClass("action")
             .attr("href", "#")
-            .html("&nbsp;View metadata")
+            .attr("title", "")
+            .hover(function () {
+                    $("#actionViewExpl").html("View metadata.");
+                },
+                function () {
+                    $("#actionViewExpl").html("");
+                })
+            .html("")
             .click(function() {
                 window.top.location.hash = "#entity=DATA_SET&permId=" + dataSet.code
                     + "&ui-subtab=managed_property_section_MICROSCOPY_IMG_CONTAINER_METADATA&ui-timestamp="
@@ -424,9 +432,16 @@ DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
             .attr("src", "img/export.png");
 
         var link = $("<a>")
-            .addClass("btn btn-sm btn-primary action")
+            .addClass("action")
             .attr("href", "#")
-            .html("&nbsp;Export to your folder")
+            .attr("title", "")
+            .hover(function () {
+                    $("#actionViewExpl").html("Export to your folder.");
+                },
+                function () {
+                    $("#actionViewExpl").html("");
+                })
+            .html("")
             .click(function() {
                 DATAMODEL.copyDatasetsToUserDir(
                     experimentId, sampleId, "normal");
@@ -446,9 +461,16 @@ DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
             .attr("src", "img/hrm.png");
 
         var link = $("<a>")
-            .addClass("btn btn-sm btn-default action")
+            .addClass("action")
             .attr("href", "#")
-            .html("&nbsp;Export to your HRM source folder")
+            .attr("title", "")
+            .hover(function () {
+                    $("#actionViewExpl").html("Export to your HRM source folder.");
+                },
+                function () {
+                    $("#actionViewExpl").html("");
+                })
+            .html("")
             .click(function() {
                 DATAMODEL.copyDatasetsToUserDir(
                     experimentId, sampleId, "hrm");
@@ -466,9 +488,16 @@ DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
         .attr("src", "img/zip.png");
 
     var link = $("<a>")
-        .addClass("btn btn-sm btn-primary action")
+        .addClass("action")
         .attr("href", "#")
-        .html("&nbsp;Download")
+        .attr("title", "")
+        .hover(function () {
+                $("#actionViewExpl").html("Download archive.");
+            },
+            function () {
+                $("#actionViewExpl").html("");
+            })
+        .html("")
         .click(function() {
             DATAMODEL.copyDatasetsToUserDir(
                 experimentId, sampleId, "zip");

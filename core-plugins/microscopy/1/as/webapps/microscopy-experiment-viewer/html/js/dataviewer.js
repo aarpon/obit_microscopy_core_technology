@@ -243,6 +243,7 @@ DataViewer.prototype.displayActions = function(exp) {
     // Get the actionView_div div and empty it
     var actionView_div = $("#actionView");
     actionView_div.empty();
+    $("#actionViewExpl").empty();
 
     // Get the experiment identifier
     var experimentId = exp.identifier;
@@ -261,9 +262,16 @@ DataViewer.prototype.displayActions = function(exp) {
             .attr("src", "img/export.png");
 
         link = $("<a>")
-            .addClass("btn btn-sm btn-primary action")
+            .addClass("action")
             .attr("href", "#")
-            .html("&nbsp;Export to your folder")
+            .attr("title", "")
+            .hover(function () {
+                    $("#actionViewExpl").html("Export to your folder.");
+                },
+                function () {
+                    $("#actionViewExpl").html("");
+                })
+            .html("")
             .click(function() {
                 DATAMODEL.copyDatasetsToUserDir(
                     experimentId, "", "normal");
@@ -282,9 +290,16 @@ DataViewer.prototype.displayActions = function(exp) {
             .attr("src", "img/hrm.png");
 
         link = $("<a>")
-            .addClass("btn btn-sm btn-default action")
+            .addClass("action")
             .attr("href", "#")
-            .html("&nbsp;Export to your HRM source folder")
+            .attr("title", "")
+            .hover(function () {
+                    $("#actionViewExpl").html("Export to your HRM source folder.");
+                },
+                function () {
+                    $("#actionViewExpl").html("");
+                })
+            .html("")
             .click(function() {
                 DATAMODEL.copyDatasetsToUserDir(
                     experimentId, "", "hrm");
@@ -302,9 +317,16 @@ DataViewer.prototype.displayActions = function(exp) {
         .attr("src", "img/zip.png");
 
     link = $("<a>")
-        .addClass("btn btn-sm btn-primary action")
+        .addClass("action")
         .attr("href", "#")
-        .html("&nbsp;Download")
+        .attr("title", "")
+        .hover(function () {
+                $("#actionViewExpl").html("Download archive.");
+            },
+            function () {
+                $("#actionViewExpl").html("");
+            })
+        .html("")
         .click(function() {
             DATAMODEL.copyDatasetsToUserDir(
                 experimentId, "", "zip");

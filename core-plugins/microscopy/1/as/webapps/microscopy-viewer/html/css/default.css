@@ -2,24 +2,31 @@ html {
     overflow-y: scroll;
 }
 
-body {
-    font-family: Sans-serif;
+#webapp {
+    font-family: 'Roboto', sans-serif;
 }
 
 #sampleNameView {
     margin-bottom: 20px;
 }
 
-#detailViewAction {
+#actionView {
     padding-top: 10px;
     padding-bottom: 10px;
     vertical-align: middle;
     text-align: center;
-    margin-left: 20px;
+}
+
+#actionViewExpl {
+    height: 20px;
+    vertical-align: middle;
+    text-align: center;
+    font-size: 10px;
 }
 
 .action {
-    margin: 1px;
+    margin-left: 5px;
+    margin-right: 5px;
 }
 
 #detailView {
