@@ -1,11 +1,11 @@
 <html>
 <head>
-    
+
     <meta charset="utf-8">
-    
+
     <!-- Required by bootstrap -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
+
     <!-- Include jquery -->
     <script src="./third-party/jquery/js/jquery.min.js"></script>
     <script src="./third-party/jquery/js/jquery.cookie.js"></script>
@@ -25,12 +25,13 @@
     <link rel="stylesheet" media="screen" href="./third-party/bootstrap/css/bootstrap-theme.min.css">
     <link rel="stylesheet" type="text/css" href="./css/default.css">
     <link rel="stylesheet" href="/openbis/resources/lib/bootstrap/css/bootstrap.min.css">
-    
+
     <!-- Include openbis library to gain access to the openbisWebAppContext and openbis objects -->
 	<script src="/openbis/resources/js/openbis.js"></script>
 	
 	<!-- Include local scripts -->
-    <script src="config/config.js"></script>
+    <script src="./js/config/config.js"></script>
+    <script src="./etc/config.js"></script>
     <script src="./js/dataviewer.js"></script>
 	<script src="./js/datamodel.js"></script>
 
@@ -69,12 +70,16 @@
 
 <script>
 
-    /* Set the configuration */
-    window.CONFIG = CONFIG;
+    $(document).ready(function () {
 
-    /* Initialize global objects */
-    window.DATAVIEWER = new DataViewer();
-    window.DATAMODEL = new DataModel();
+        /* Merge default and custom configuration */
+        window.CONFIG = $.extend({}, DEFAULT_CONFIG, CONFIG);
+
+        /* Initialize global objects */
+        window.DATAVIEWER = new DataViewer();
+        window.DATAMODEL = new DataModel();
+
+    });
 
 </script>
 </body>
