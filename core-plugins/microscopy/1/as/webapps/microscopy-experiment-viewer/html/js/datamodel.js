@@ -257,8 +257,7 @@ DataModel.prototype.processResultsFromExportDatasetsServerSidePlugin = function 
             DATAMODEL.openbisServer.createSessionWorkspaceDownloadUrl(r_ZipArchiveFileName,
                 function(url) {
                     var downloadString =
-                        '<img src="img/download.png" />&nbsp;<a href="' + url + '">Download</a>!';
-                    //'<a href="' + url + '"><img src = "img/download.png" />&nbsp;Download</a>';
+                        '<img src="img/download.png" height="32" width="32" />&nbsp;<a href="' + url + '">Download</a>!';
                     $("#download_url_span").html(downloadString);
                 });
     }
