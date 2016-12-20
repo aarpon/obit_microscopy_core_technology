@@ -396,7 +396,9 @@ DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
         var dataSet = DATAMODEL.dataSets[indx];
 
         var img = $("<img>")
-            .attr("src", "img/view.png");
+            .attr("src", "img/view.png")
+            .attr("width", 32)
+            .attr("height", 32);
 
         var link = $("<a>")
             .addClass("action")
@@ -429,7 +431,9 @@ DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
     if (CONFIG['enableExportToUserFolder'] == true) {
 
         var img = $("<img>")
-            .attr("src", "img/export.png");
+            .attr("src", "img/export.png")
+            .attr("width", 32)
+            .attr("height", 32);
 
         var link = $("<a>")
             .addClass("action")
@@ -458,7 +462,9 @@ DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
     if (CONFIG['enableExportToHRMSourceFolder'] == true) {
 
         var img = $("<img>")
-            .attr("src", "img/hrm.png");
+            .attr("src", "img/hrm.png")
+            .attr("width", 32)
+            .attr("height", 32);
 
         var link = $("<a>")
             .addClass("action")
@@ -485,7 +491,9 @@ DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
 
     // Build and display the call for a zip archive
     var img = $("<img>")
-        .attr("src", "img/zip.png");
+        .attr("src", "img/zip.png")
+        .attr("width", 32)
+        .attr("height", 32);
 
     var link = $("<a>")
         .addClass("action")

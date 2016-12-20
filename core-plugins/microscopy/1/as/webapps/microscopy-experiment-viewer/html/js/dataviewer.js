@@ -259,7 +259,9 @@ DataViewer.prototype.displayActions = function(exp) {
     if (CONFIG['enableExportToUserFolder'] == true) {
 
         img = $("<img>")
-            .attr("src", "img/export.png");
+            .attr("src", "img/export.png")
+            .attr("width", 32)
+            .attr("height", 32);
 
         link = $("<a>")
             .addClass("action")
@@ -287,7 +289,9 @@ DataViewer.prototype.displayActions = function(exp) {
     if (CONFIG['enableExportToHRMSourceFolder'] == true) {
 
         img = $("<img>")
-            .attr("src", "img/hrm.png");
+            .attr("src", "img/hrm.png")
+            .attr("width", 32)
+            .attr("height", 32);
 
         link = $("<a>")
             .addClass("action")
@@ -314,7 +318,9 @@ DataViewer.prototype.displayActions = function(exp) {
 
     // Build and display the call for a zip archive
     img = $("<img>")
-        .attr("src", "img/zip.png");
+        .attr("src", "img/zip.png")
+        .attr("width", 32)
+        .attr("height", 32);
 
     link = $("<a>")
         .addClass("action")
