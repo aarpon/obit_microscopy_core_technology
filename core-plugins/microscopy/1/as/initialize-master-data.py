@@ -36,6 +36,8 @@ exp_type_MICROSCOPY_EXPERIMENT.setDescription('Generic microscopy experiment.')
 # MICROSCOPY_IMG
 data_set_type_MICROSCOPY_IMG = tr.getOrCreateNewDataSetType('MICROSCOPY_IMG')
 data_set_type_MICROSCOPY_IMG.setDescription('Generic Microscopy Image.')
+if "setDataSetKind" in dir(data_set_type_MICROSCOPY_IMG):
+    data_set_type_MICROSCOPY_IMG.setDataSetKind("PHYSICAL")
 data_set_type_MICROSCOPY_IMG.setMainDataSetPattern(None)
 data_set_type_MICROSCOPY_IMG.setMainDataSetPath(None)
 data_set_type_MICROSCOPY_IMG.setDeletionDisallowed(False)
