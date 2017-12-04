@@ -45,6 +45,8 @@ data_set_type_MICROSCOPY_IMG.setDeletionDisallowed(False)
 # MICROSCOPY_IMG_CONTAINER
 data_set_type_MICROSCOPY_IMG_CONTAINER = tr.getOrCreateNewDataSetType('MICROSCOPY_IMG_CONTAINER')
 data_set_type_MICROSCOPY_IMG_CONTAINER.setDescription('Generic Microscopy Image Container.')
+if "setDataSetKind" in dir(data_set_type_MICROSCOPY_IMG_CONTAINER):
+    data_set_type_MICROSCOPY_IMG_CONTAINER.setDataSetKind("CONTAINER")
 data_set_type_MICROSCOPY_IMG_CONTAINER.setMainDataSetPattern(None)
 data_set_type_MICROSCOPY_IMG_CONTAINER.setMainDataSetPath(None)
 data_set_type_MICROSCOPY_IMG_CONTAINER.setDeletionDisallowed(False)
@@ -52,6 +54,8 @@ data_set_type_MICROSCOPY_IMG_CONTAINER.setDeletionDisallowed(False)
 # MICROSCOPY_IMG_OVERVIEW
 data_set_type_MICROSCOPY_IMG_OVERVIEW = tr.getOrCreateNewDataSetType('MICROSCOPY_IMG_OVERVIEW')
 data_set_type_MICROSCOPY_IMG_OVERVIEW.setDescription('Overview Microscopy Images. Generated from raw images.')
+if "setDataSetKind" in dir(data_set_type_MICROSCOPY_IMG_OVERVIEW):
+    data_set_type_MICROSCOPY_IMG_OVERVIEW.setDataSetKind("CONTAINER")
 data_set_type_MICROSCOPY_IMG_OVERVIEW.setMainDataSetPattern(None)
 data_set_type_MICROSCOPY_IMG_OVERVIEW.setMainDataSetPath(None)
 data_set_type_MICROSCOPY_IMG_OVERVIEW.setDeletionDisallowed(False)
@@ -59,6 +63,8 @@ data_set_type_MICROSCOPY_IMG_OVERVIEW.setDeletionDisallowed(False)
 # MICROSCOPY_IMG_THUMBNAIL
 data_set_type_MICROSCOPY_IMG_THUMBNAIL = tr.getOrCreateNewDataSetType('MICROSCOPY_IMG_THUMBNAIL')
 data_set_type_MICROSCOPY_IMG_THUMBNAIL.setDescription('Representative image for the whole dataset.')
+if "setDataSetKind" in dir(data_set_type_MICROSCOPY_IMG_THUMBNAIL):
+    data_set_type_MICROSCOPY_IMG_THUMBNAIL.setDataSetKind("PHYSICAL")
 data_set_type_MICROSCOPY_IMG_THUMBNAIL.setMainDataSetPattern(None)
 data_set_type_MICROSCOPY_IMG_THUMBNAIL.setMainDataSetPath(None)
 data_set_type_MICROSCOPY_IMG_THUMBNAIL.setDeletionDisallowed(False)
