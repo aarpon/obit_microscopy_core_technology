@@ -16,7 +16,7 @@ from datetime import datetime
 from BioFormatsProcessor import BioFormatsProcessor
 from MicroscopySingleDatasetConfig import MicroscopySingleDatasetConfig
 from MicroscopyCompositeDatasetConfig import MicroscopyCompositeDatasetConfig
-from LeicaTIFFSeriesCompositeDatasetConfig import LeicaTIFFSeriesCompositeDatasetConfig
+
 
 class Processor:
     """The Processor class performs all steps required for registering datasets
@@ -79,50 +79,6 @@ class Processor:
         return [name for name in os.listdir(incomingStr)
                 if os.path.isdir(os.path.join(incomingStr, name))]
 
-    def getOrCreateExperiment(self, expId, expName,
-                         expType="MICROSCOPY_EXPERIMENT"):
-        """Get the experiment with given ID if it exists, or creates it.
-
-        @param expID, the experiment ID
-        @param expName, the experiment name
-        @param expType, the experiment type that must already exist; optional,
-        default is "MICROSCOPY_EXPERIMENT"
-        """
-
-        # Make sure to keep the code length within the limits imposed by
-        # openBIS for codes
-        if len(expId) > 60:
-            expId = expId[0:60]
-
-        # Try getting the experiment
-        exp = self._transaction.getExperimentForUpdate(expId)
-        if not exp:
-            # Log
-            msg = "PROCESSOR::getOrCreateExperiment(): " + \
-            "The experiment with ID " + expId + " does not exist. Create."
-            self._logger.info(msg)
-
-            # Create the experiment
-            exp = self._transaction.createNewExperiment(expId, expType)
-            if not exp:
-                msg = "PROCESSOR::getOrCreateExperiment(): " + \
-                "Could not create experiment " + expId + "!"
-                self._logger.error(msg)
-                raise Exception(msg)
-            else:
-                self._logger.info("PROCESSOR::getOrCreateExperiment(): " + 
-                                  "Created experiment with ID " + expId + ".")
-        else:
-            # Log
-            msg = "PROCESSOR::getOrCreateExperiment(): " + \
-            "Registering to already existing experiment with ID " + expId + "."
-            self._logger.info(msg)
-
-        # Store the name
-        exp.setPropertyValue("MICROSCOPY_EXPERIMENT_NAME", expName)
-
-        return exp
-
     def createExperiment(self, expId, expName, expType="MICROSCOPY_EXPERIMENT"):
         """Create an experiment with given Experiment ID extended with the addition
         of a string composed from current date and time.
@@ -163,11 +119,11 @@ class Processor:
 
     def processExperiment(self, experimentNode,
                           openBISExpType="MICROSCOPY_EXPERIMENT"):
-        """Register an IExperimentUpdatable based on the Experiment XML node.
+        """Register an IExperiment based on the Experiment XML node.
 
         @param experimentNode An XML node corresponding to an Experiment
         @param openBISExpType The experiment type
-        @return IExperimentUpdatable experiment
+        @return IExperiment experiment
         """
 
         # Get the experiment version
@@ -204,9 +160,18 @@ class Processor:
         # Get attachments
         attachments = experimentNode.attrib.get("attachments")
 
-        # Get or create the experiment
-        openBISExperiment = self.getOrCreateExperiment(openBISIdentifier,
-                                                  expName, openBISExpType)
+        # Make sure to keep the code length within the limits imposed by
+        # openBIS for codes
+        if len(openBISIdentifier) > 41:
+            openBISIdentifier = openBISIdentifier[0:41]
+
+        # Create univocal ID
+        openBISIdentifier = openBISIdentifier + "_" + self.getCustomTimeStamp()
+
+        # Make sure to create a new Experiment
+        openBISExperiment = self._transaction.createNewExperiment(openBISIdentifier, openBISExpType)
+        print(type(openBISExperiment))
+
         if not openBISExperiment:
             msg = "PROCESSOR::processExperiment(): " + \
             "Could not create experiment " + openBISIdentifier
@@ -228,6 +193,9 @@ class Processor:
         # TODO: Add this
         # openBISExperiment.setPropertyValue("MICROSCOPY_EXPERIMENT_DATE",
         #                                   expDate)
+
+        # Store the name
+        openBISExperiment.setPropertyValue("MICROSCOPY_EXPERIMENT_NAME", expName)
 
         # Set the experiment version
         openBISExperiment.setPropertyValue("MICROSCOPY_EXPERIMENT_VERSION",
@@ -251,7 +219,7 @@ class Processor:
         # Set the acquisition hardware friendly name
         openBISExperiment.setPropertyValue("MICROSCOPY_EXPERIMENT_ACQ_HARDWARE_FRIENDLY_NAME",
                                            self._machinename)
-        
+
         # Set the acquisition software
         # TODO: Add this
         # openBISExperiment.setPropertyValue("MICROSCOPY_EXPERIMENT_ACQ_SOFTWARE",
@@ -313,7 +281,7 @@ class Processor:
         # the microscopyFileNode has at least one child), otherwise
         # process it
         if len(microscopyFileNode) == 0:
-            
+
             # Instantiate a BioFormatsProcessor
             bioFormatsProcessor = BioFormatsProcessor(fileName, self._logger)
 
@@ -525,7 +493,7 @@ class Processor:
                                                                                self._logger,
                                                                                seriesNum)
             else:
-                
+
                 msg = "PROCESSOR::processMicroscopyCompositeFile(): " + \
                 "Invalid composite file type found: " + compositeFileType
                 self._logger.error(msg)
