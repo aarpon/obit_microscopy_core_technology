@@ -16,7 +16,7 @@ from datetime import datetime
 from BioFormatsProcessor import BioFormatsProcessor
 from MicroscopySingleDatasetConfig import MicroscopySingleDatasetConfig
 from MicroscopyCompositeDatasetConfig import MicroscopyCompositeDatasetConfig
-
+from LeicaTIFFSeriesCompositeDatasetConfig import LeicaTIFFSeriesCompositeDatasetConfig
 
 class Processor:
     """The Processor class performs all steps required for registering datasets
