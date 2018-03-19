@@ -155,11 +155,11 @@ class Mover():
 
         # User folder: depending on the 'mode' settings, the user folder changes
         if mode =="normal":
-            
+
             # Standard user folder
             self._userFolder = os.path.join(self._properties['base_dir'], \
                                             userId, self._properties['export_dir'])
-            
+
         elif mode == "zip":
 
             # Get the path to the user's Session Workspace
@@ -185,8 +185,16 @@ class Mover():
         if not os.path.isdir(self._userFolder):
             self._createDir(self._userFolder)
 
-        # Experiment full path in user/tmp folder
-        self._experimentPath = os.path.join(self._userFolder, self._experimentCode)
+        # Export full path in user/tmp folder
+        self._rootExportPath = os.path.join(self._userFolder,
+                                            self._experimentCode)
+        
+        # Get the experiment name
+        self._experimentName = self._experiment.getPropertyValue("MICROSCOPY_EXPERIMENT_NAME")
+        
+        # Experiment full path within the export path
+        self._experimentPath = os.path.join(self._rootExportPath,
+                                            self._experimentName)
 
         # Info
         self._logger.info("Export experiment with code " + \
@@ -219,14 +227,14 @@ class Mover():
             return False
 
         # At this stage we can create the experiment folder in the user dir
-        if not self._createExperimentFolder():
+        # (and export root)
+        if not self._createRootAndExperimentFolder():
             self._message = "Could not create experiment folder " + \
-            self._experimentPath
-            self._logger.error(self._message)
+            self._rootExportPath
             return False
 
         # Now point the current path to the newly created experiment folder
-        
+
         # And we copy the files contained in the Experiment
         return self._copyFilesForExperiment()
 
@@ -237,16 +245,15 @@ class Mover():
         """
 
         if self._mode == "zip":
-            zip_folder(self._experimentPath, self.getZipArchiveFullPath())
+            zip_folder(self._rootExportPath, self.getZipArchiveFullPath())
 
 
     def getZipArchiveFullPath(self):
-        """Return the full path of the zip archive (or "" if mode was "normal"
-        or "hrm").
+        """Return the full path of the zip archive (or "" if mode was "normal").
         """
 
         if self._mode == "zip":
-            return self._experimentPath + ".zip"
+            return self._rootExportPath + ".zip"
 
         return ""
 
@@ -275,12 +282,12 @@ class Mover():
         return self._numCopiedFiles
 
 
-    def getRelativeExperimentPath(self):
+    def getRelativeRootExperimentPath(self):
         """
         Return the experiment path relative to the user folder.
         """
         return userId + "/" + \
-            self._experimentPath[self._experimentPath.rfind(self._properties['export_dir']):]
+            self._rootExportPath[self._rootExportPath.rfind(self._properties['export_dir']):]
 
 
     # Private methods
@@ -474,7 +481,7 @@ class Mover():
         os.makedirs(dirFullPath)
 
 
-    def _createExperimentFolder(self):
+    def _createRootAndExperimentFolder(self):
         """
         Create the experiment folder. Notice that it uses information already
         stored in the object, but this info is filled in in the constructor, so
@@ -484,16 +491,17 @@ class Mover():
 
         Please notice that if the experiment folder already exists, _{digit}
         will be appended to the folder name, to ensure that the folder is
-        unique. The updated folder name will be stored in the _experimentPath
+        unique. The updated folder name will be stored in the _rootExportPath
         property.
         """
 
         # This should not happen
-        if self._experimentPath == "":
+        if self._rootExportPath == "":
+            self._logger.info("Root path is " + self._rootExportPath)
             return False
 
         # Make sure that the experiment folder does not already exist
-        expPath = self._experimentPath
+        expPath = self._rootExportPath
 
         # Does the folder already exist?
         if os.path.exists(expPath):
@@ -507,13 +515,15 @@ class Mover():
                 else:
                     counter += 1
 
-        # Update the experiment path
-        self._experimentPath = expPath
+        # Update the root and experiment paths
+        self._rootExportPath = expPath
+        self._experimentPath = os.path.join(self._rootExportPath,
+                                            self._experimentName)
 
-        # Inform
-        self._logger.info("Output experiment folder: " + self._experimentPath)
+        # Create the root folder
+        self._createDir(self._rootExportPath)
 
-        # Create the folder
+        # And now create the experiment folder (in the root folder)
         self._createDir(self._experimentPath)
 
         # Return success
@@ -721,8 +731,8 @@ def aggregateProcess(parameters, tableBuilder, uid):
 
     # Get some results info
     nCopiedFiles = mover.getNumberOfCopiedFiles()
-    errorMessage = mover.getErrorMessage();
-    relativeExpFolder = mover.getRelativeExperimentPath()
+    errorMessage = mover.getErrorMessage()
+    relativeExpFolder = mover.getRelativeRootExperimentPath()
     zipFileName = mover.getZipArchiveFileName()
 
     # Update results and store them
