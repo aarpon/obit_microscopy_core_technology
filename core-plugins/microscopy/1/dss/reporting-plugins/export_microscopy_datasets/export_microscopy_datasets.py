@@ -565,6 +565,10 @@ def parsePropertiesFile():
         if var_name not in found_vars:
             return None
 
+    # Make sure that there are no Windows line endings
+    for var_name in var_names:
+        properties[var_name] = properties[var_name].replace('\r', '')
+
     # Everything found
     return properties
 
