@@ -7,6 +7,7 @@ Created on Feb 20, 2014
 """
 
 import re
+import random
 from MicroscopyCompositeDatasetConfig import MicroscopyCompositeDatasetConfig
 from LeicaTIFFSeriesMaximumIntensityProjectionGenerationAlgorithm import LeicaTIFFSeriesMaximumIntensityProjectionGenerationAlgorithm
 from ch.systemsx.cisd.openbis.dss.etl.dto.api import ChannelColor
@@ -292,9 +293,9 @@ class LeicaTIFFSeriesCompositeDatasetConfig(MicroscopyCompositeDatasetConfig):
                 G = 0
                 B = 255
             else:
-                R = random.random_integers(0, 255)
-                G = random.random_integers(0, 255)
-                B = random.random_integers(0, 255)
+                R = random.randint(0, 255)
+                G = random.randint(0, 255)
+                B = random.randint(0, 255)
 
         # Create the ChannelColorRGB object
         colorRGB = ChannelColorRGB(R, G, B)
@@ -315,7 +316,7 @@ class LeicaTIFFSeriesCompositeDatasetConfig(MicroscopyCompositeDatasetConfig):
         p = re.compile("SERIES-(\d+)_CHANNEL-(\d+)")
         m = p.match(channelCode)
         if m is None or len(m.groups()) != 2:
-            err = "MICROSCOPYCOMPOSITEDATASETCONFIG::_getSeriesAndChannelNumbers(): " + \
+            err = "LEICATIFFSERIESCOMPOSITEDATASETCONFIG::_getSeriesAndChannelNumbers(): " + \
             "Could not extract series and channel number!"
             self._logger.error(err)
             raise Exception(err)

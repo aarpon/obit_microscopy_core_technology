@@ -233,7 +233,7 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
             color = metadata["channelColor" + str(channelIndx)]
 
         except KeyError:
-            err = "MICROSCOPYSINGLEDATASETCONFIG::createChannel(): " + \
+            err = "MICROSCOPYSINGLEDATASETCONFIG::_getChannelColor(): " + \
             "Could not extract channel color for channel " + \
              str(channelIndex) + " and series " + str(seriesIndx) + \
             " from metadata."
@@ -248,7 +248,7 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
             G = int(float(colorComponents[1]))
             B = int(float(colorComponents[2]))
         except:
-            err = "MICROSCOPYSINGLEDATASETCONFIG::createChannel(): " + \
+            err = "MICROSCOPYSINGLEDATASETCONFIG::_getChannelColor(): " + \
             "Could not extract color with index " + str(channelIndx)
             self._logger.error(err)
             raise(err)
