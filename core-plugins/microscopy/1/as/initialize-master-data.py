@@ -1,5 +1,34 @@
 # -*- coding: utf-8 -*-
 import ch.systemsx.cisd.openbis.generic.server.jython.api.v1.DataType as DataType
+import ch.systemsx.cisd.openbis.generic.server.CommonServiceProvider as CommonServiceProvider
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.experiment.search.ExperimentTypeSearchCriteria as ExperimentTypeSearchCriteria
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.experiment.fetchoptions.ExperimentTypeFetchOptions as ExperimentTypeFetchOptions
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.experiment.update.ExperimentTypeUpdate as ExperimentTypeUpdate
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.entitytype.id.EntityTypePermId as EntityTypePermId
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.entitytype.EntityKind as EntityKind
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.property.create.PropertyAssignmentCreation as PropertyAssignmentCreation
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.property.id.PropertyTypePermId as PropertyTypePermId
+import ch.ethz.sis.openbis.generic.asapi.v3.dto.property.id.PropertyAssignmentPermId as PropertyAssignmentPermId
+
+
+sessionToken = CommonServiceProvider.getCommonServer().tryToAuthenticateAsSystem().getSessionToken()
+v3api = CommonServiceProvider.getApplicationServerApi()
+
+searchCriteria = ExperimentTypeSearchCriteria()
+searchCriteria.withCode().thatEquals("MICROSCOPY_EXPERIMENT")
+fetchOptions = ExperimentTypeFetchOptions()
+if v3api.searchExperimentTypes(sessionToken, searchCriteria, fetchOptions).getTotalCount() > 0:
+    print ("Update: Allowing editing of microscopy experiment names...")
+    update = ExperimentTypeUpdate()
+    typeId = EntityTypePermId("MICROSCOPY_EXPERIMENT", EntityKind.EXPERIMENT)
+    update.setTypeId(typeId)
+    assignmentCreation = PropertyAssignmentCreation()
+    propertyTypeId = PropertyTypePermId("MICROSCOPY_EXPERIMENT_NAME")
+    assignmentCreation.setPropertyTypeId(propertyTypeId)
+    assignmentCreation.setShowInEditView(True)
+    update.getPropertyAssignments().remove(PropertyAssignmentPermId(typeId, propertyTypeId));
+    update.getPropertyAssignments().add(assignmentCreation)
+    v3api.updateExperimentTypes(sessionToken, [update])
 
 print ("Importing Microscopy Core Technology Master Data...")
 
@@ -191,7 +220,7 @@ assignment_EXPERIMENT_MICROSCOPY_EXPERIMENT_MICROSCOPY_EXPERIMENT_NAME = tr.assi
 assignment_EXPERIMENT_MICROSCOPY_EXPERIMENT_MICROSCOPY_EXPERIMENT_NAME.setMandatory(False)
 assignment_EXPERIMENT_MICROSCOPY_EXPERIMENT_MICROSCOPY_EXPERIMENT_NAME.setSection(None)
 assignment_EXPERIMENT_MICROSCOPY_EXPERIMENT_MICROSCOPY_EXPERIMENT_NAME.setPositionInForms(1)
-assignment_EXPERIMENT_MICROSCOPY_EXPERIMENT_MICROSCOPY_EXPERIMENT_NAME.setShownEdit(True)
+assignment_EXPERIMENT_MICROSCOPY_EXPERIMENT_MICROSCOPY_EXPERIMENT_NAME.setShownEdit(False)
 
 assignment_EXPERIMENT_MICROSCOPY_EXPERIMENT_MICROSCOPY_EXPERIMENT_DESCRIPTION = tr.assignPropertyType(exp_type_MICROSCOPY_EXPERIMENT, prop_type_MICROSCOPY_EXPERIMENT_DESCRIPTION)
 assignment_EXPERIMENT_MICROSCOPY_EXPERIMENT_MICROSCOPY_EXPERIMENT_DESCRIPTION.setMandatory(False)
