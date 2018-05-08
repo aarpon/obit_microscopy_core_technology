@@ -17,6 +17,8 @@ from BioFormatsProcessor import BioFormatsProcessor
 from MicroscopySingleDatasetConfig import MicroscopySingleDatasetConfig
 from MicroscopyCompositeDatasetConfig import MicroscopyCompositeDatasetConfig
 from LeicaTIFFSeriesCompositeDatasetConfig import LeicaTIFFSeriesCompositeDatasetConfig
+from YouScopeExperimentCompositeDatasetConfig import YouScopeExperimentCompositeDatasetConfig
+
 
 class Processor:
     """The Processor class performs all steps required for registering datasets
@@ -418,7 +420,7 @@ class Processor:
         # Make sure to have a supported composite file type
         compositeFileType = microscopyCompositeFileNode.attrib.get("compositeFileType")
 
-        if compositeFileType != "Leica TIFF Series":
+        if compositeFileType != "Leica TIFF Series" and compositeFileType != "YouScope Experiment":
 
             msg = "PROCESSOR::processMicroscopyCompositeFile(): " + \
                       "Invalid composite file type found: " + compositeFileType
@@ -478,12 +480,18 @@ class Processor:
         seriesIndices = microscopyCompositeFileNode.attrib.get("seriesIndices")
         seriesIndices = seriesIndices.split(",")
 
+        # For YouScope experiments, process the images.csv file
+        if compositeFileType == "YouScope Experiment":
+            csvTable = YouScopeExperimentCompositeDatasetConfig.buildImagesCSVTable(fullFolder + "/images.csv", self._logger); 
+
         # Register all series in the file
         image_data_set = None
         for i in range(num_series):
 
             # Series number
             seriesNum = seriesIndices[i]
+
+            self._logger.info("Processing series " + str(seriesNum) + " of " + str(num_series))
 
             # Create a configuration object
             if compositeFileType == "Leica TIFF Series":
@@ -492,6 +500,15 @@ class Processor:
                                                                                seriesIndices,
                                                                                self._logger,
                                                                                seriesNum)
+
+            elif compositeFileType == "YouScope Experiment":
+
+                compositeDatasetConfig = YouScopeExperimentCompositeDatasetConfig(csvTable,
+                                                                                  allSeriesMetadata,
+                                                                                  seriesIndices,
+                                                                                  self._logger,
+                                                                                  seriesNum)
+
             else:
 
                 msg = "PROCESSOR::processMicroscopyCompositeFile(): " + \

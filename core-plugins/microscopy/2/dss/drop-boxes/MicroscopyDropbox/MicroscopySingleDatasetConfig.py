@@ -205,7 +205,7 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
             name = metadata[key]
 
         except KeyError:
-            err = "MICROSCOPYSINGLEDATASETCONFIG::createChannel(): " + \
+            err = "MICROSCOPYSINGLEDATASETCONFIG::getChannelName(): " + \
             "Could not create channel name for channel " + str(channelIndx) + \
             " and series " + str(seriesIndx) + "for key = " + \
             key + "  from metadata = " + \
