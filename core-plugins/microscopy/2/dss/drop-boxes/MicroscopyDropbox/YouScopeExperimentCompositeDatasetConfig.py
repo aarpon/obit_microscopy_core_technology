@@ -269,7 +269,7 @@ class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig)
                 timeNum = int(m_time.group("time"))
         else:
             # Try the fallback option
-            m_time_fb = self._pattern_time_fb.match(row[6])
+            m_time_fb = self._pattern_time_name_fb.match(row[6])
             if m_time_fb is not None:
                 if m_time_fb.group("time") is not None:
                     timeNum = int(m_time_fb.group("time"))
@@ -334,13 +334,19 @@ class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig)
         # Initialize a new ImageMetadata object
         imageMetadata = ImageMetadata();
 
+        # Build a tile number from tileX and tileY
+        tileNum = 1000 * tileX + tileY
+        if tileNum < 1:
+            tileNum = 1
+        self._logger.info("Tile number is " + str(tileNum))
+
         # Fill in all information
         imageMetadata.imageIdentifier = imageIdentifiers.get(0) 
         imageMetadata.seriesNumber = series
         imageMetadata.timepoint = timeNum
         imageMetadata.depth = planeNum
         imageMetadata.channelCode = channelCode
-        imageMetadata.tileNumber = 1000 * tileX + tileY  # + self._seriesNum
+        imageMetadata.tileNumber = tileNum
         imageMetadata.well = well
 
         # Now return the image metadata object in an array

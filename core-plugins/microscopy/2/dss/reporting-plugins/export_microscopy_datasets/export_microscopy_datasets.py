@@ -536,7 +536,7 @@ class Mover():
 def parsePropertiesFile():
     """Parse properties file for custom plug-in settings."""
 
-    filename = "../core-plugins/microscopy/1/dss/reporting-plugins/export_microscopy_datasets/plugin.properties"
+    filename = "../core-plugins/microscopy/2/dss/reporting-plugins/export_microscopy_datasets/plugin.properties"
     var_names = ['base_dir', 'export_dir', 'hrm_base_dir', 'hrm_src_subdir']
 
     properties = {}
@@ -682,7 +682,7 @@ def aggregateProcess(parameters, tableBuilder, uid):
 
     # Get path to containing folder
     # __file__ does not work (reliably) in Jython
-    dbPath = "../core-plugins/microscopy/1/dss/reporting-plugins/export_microscopy_datasets"
+    dbPath = "../core-plugins/microscopy/2/dss/reporting-plugins/export_microscopy_datasets"
 
     # Path to the logs subfolder
     logPath = os.path.join(dbPath, "logs")
