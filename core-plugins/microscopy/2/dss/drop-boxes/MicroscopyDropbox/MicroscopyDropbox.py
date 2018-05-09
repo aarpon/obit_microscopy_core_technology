@@ -18,7 +18,7 @@ def process(transaction):
 
     # Get path to containing folder
     # __file__ does not work (reliably) in Jython
-    dbPath = "../core-plugins/microscopy/1/dss/drop-boxes/MicroscopyDropbox"
+    dbPath = "../core-plugins/microscopy/2/dss/drop-boxes/MicroscopyDropbox"
 
     # Path to the logs subfolder
     logPath = os.path.join(dbPath, "logs")
