@@ -11,6 +11,7 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.property.id.PropertyTypePermId a
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.property.id.PropertyAssignmentPermId as PropertyAssignmentPermId
 
 
+# Get a session token to be used to update existing properties via the V3 API
 sessionToken = CommonServiceProvider.getCommonServer().tryToAuthenticateAsSystem().getSessionToken()
 v3api = CommonServiceProvider.getApplicationServerApi()
 
