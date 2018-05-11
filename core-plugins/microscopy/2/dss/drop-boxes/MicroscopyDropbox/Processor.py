@@ -565,8 +565,12 @@ class Processor:
                 dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_METADATA", seriesMetadataXML)
 
                 # Store the series name in the MICROSCOPY_IMG_CONTAINER_NAME property
-                dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME", "Series_" + str(seriesNum))
-
+                if "name" in allSeriesMetadata[i] and allSeriesMetadata[i]["name"] != "":
+                    self._logger.info("The series name is " + str(allSeriesMetadata[i]["name"]))
+                    dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME", allSeriesMetadata[i]["name"])
+                else:
+                    self._logger.info("Falling back to series name series_" + str(seriesNum))
+                    dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME", "series_" + str(seriesNum))
 
             # Set the (common) sample for the series
             dataset.setSample(sample)
