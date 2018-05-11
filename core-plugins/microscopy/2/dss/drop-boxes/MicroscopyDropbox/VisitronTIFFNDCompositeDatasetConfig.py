@@ -19,17 +19,15 @@ from ch.systemsx.cisd.openbis.dss.etl.dto.api import ChannelColorRGB
 from ch.systemsx.cisd.openbis.dss.etl.dto.api import Channel
 import xml.etree.ElementTree as ET
 from GlobalSettings import GlobalSettings
-from java.io import BufferedReader
-from java.io import File
-from java.io import FileReader
+from java.io import BufferedReader;
+from java.io import File;
+from java.io import FileReader;
 from java.util import HashMap
 from com.sun.rowset.internal import Row
 import string
 
-# Letters array
-LETTERS = list(string.ascii_uppercase)
 
-class VisitronSTKNDCompositeDatasetConfig(MicroscopyCompositeDatasetConfig):
+class VisitronTIFFNDCompositeDatasetConfig(MicroscopyCompositeDatasetConfig):
     """Image data configuration class for Visitron STK + ND experiments."""
 
     _DEBUG = True
@@ -65,7 +63,7 @@ class VisitronSTKNDCompositeDatasetConfig(MicroscopyCompositeDatasetConfig):
                           '(conf(?P<wavelength>\d.*?))?' +  # Wavelength
                           '(_s(?P<series>\d.*?))?' +        # Series number (optional)
                           '(_t(?P<timepoint>\d.*?))?' +     # Time index (optional)
-                          '\.stk$',                         # File extension
+                          '\.tif{1,2}$',                    # File extension
                           re.IGNORECASE|re.UNICODE)
 
 
@@ -128,7 +126,7 @@ class VisitronSTKNDCompositeDatasetConfig(MicroscopyCompositeDatasetConfig):
             self.setGenerateThumbnails(True)
 
         # Set the recognized extensions
-        self.setRecognizedImageExtensions(["stk"])
+        self.setRecognizedImageExtensions(["tif", "tiff"])
 
         # Set the dataset type
         self.setDataSetType("MICROSCOPY_IMG")
@@ -183,15 +181,15 @@ class VisitronSTKNDCompositeDatasetConfig(MicroscopyCompositeDatasetConfig):
         """
 
         # Info
-        self._logger.info("Processing file " + str(imagePath) +
-                          " with identifiers " + str(imageIdentifiers))
+        self._logger.info("Processing file " + str(imagePath) + " with identifiers " + str(imageIdentifiers))
+        self._logger.info("Processed series is number " + str(self._seriesNum))
 
         # Extract the relevant information from the file name - the image
         # identifiers in this case do not carry any useful information.
         m = self._pattern.match(imagePath)
 
         if m is None:
-            err = "VISITRONSTKNDCOMPOSITEDATASETCONFIG::extractImageMetadata(): " + \
+            err = "VISITRONTIFFNDCOMPOSITEDATASETCONFIG::extractImageMetadata(): " + \
             "unexpected file name " + str(imagePath)
             self._logger.error(err)
             raise Exception(err)
@@ -285,7 +283,7 @@ class VisitronSTKNDCompositeDatasetConfig(MicroscopyCompositeDatasetConfig):
         self._logger.info("Retrieving channel name for " + \
                           "series " + str(seriesIndx) + " and " + \
                           "channel " + str(channelIndx))
-
+       
         # Get the metadata for the requested series
         metadata = self._allSeriesMetadata[seriesIndx]
 
@@ -315,7 +313,7 @@ class VisitronSTKNDCompositeDatasetConfig(MicroscopyCompositeDatasetConfig):
         """Returns the channel color (from the parsed metadata) for
         a given channel in a given series."
         """
-
+        
         # Get the position in the seriesIndices list
         indx = self._seriesIndices.index(int(seriesIndx))
 

@@ -19,6 +19,8 @@ from MicroscopyCompositeDatasetConfig import MicroscopyCompositeDatasetConfig
 from LeicaTIFFSeriesCompositeDatasetConfig import LeicaTIFFSeriesCompositeDatasetConfig
 from YouScopeExperimentCompositeDatasetConfig import YouScopeExperimentCompositeDatasetConfig
 from VisitronSTKNDCompositeDatasetConfig import VisitronSTKNDCompositeDatasetConfig
+from VisitronTIFFNDCompositeDatasetConfig import VisitronTIFFNDCompositeDatasetConfig
+
 
 class Processor:
     """The Processor class performs all steps required for registering datasets
@@ -422,7 +424,8 @@ class Processor:
 
         if compositeFileType != "Leica TIFF Series" and \
             compositeFileType != "YouScope Experiment" and \
-            compositeFileType != "Visitron ND + STK":
+            compositeFileType != "Visitron ND + STK" and \
+            compositeFileType != "Visitron ND + TIFF":
 
             msg = "PROCESSOR::processMicroscopyCompositeFile(): " + \
                       "Invalid composite file type found: " + compositeFileType
@@ -514,6 +517,13 @@ class Processor:
             elif compositeFileType == "Visitron ND + STK":
 
                 compositeDatasetConfig = VisitronSTKNDCompositeDatasetConfig(allSeriesMetadata,
+                                                                               seriesIndices,
+                                                                               self._logger,
+                                                                               seriesNum)
+
+            elif compositeFileType == "Visitron ND + TIFF":
+
+                compositeDatasetConfig = VisitronTIFFNDCompositeDatasetConfig(allSeriesMetadata,
                                                                                seriesIndices,
                                                                                self._logger,
                                                                                seriesNum)
