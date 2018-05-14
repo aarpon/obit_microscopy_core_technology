@@ -15,7 +15,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime
 from BioFormatsProcessor import BioFormatsProcessor
 from MicroscopySingleDatasetConfig import MicroscopySingleDatasetConfig
-from MicroscopyCompositeDatasetConfig import MicroscopyCompositeDatasetConfig
+from GenericTIFFSeriesCompositeDatasetConfig import GenericTIFFSeriesCompositeDatasetConfig
 from LeicaTIFFSeriesCompositeDatasetConfig import LeicaTIFFSeriesCompositeDatasetConfig
 from YouScopeExperimentCompositeDatasetConfig import YouScopeExperimentCompositeDatasetConfig
 
@@ -420,7 +420,9 @@ class Processor:
         # Make sure to have a supported composite file type
         compositeFileType = microscopyCompositeFileNode.attrib.get("compositeFileType")
 
-        if compositeFileType != "Leica TIFF Series" and compositeFileType != "YouScope Experiment":
+        if compositeFileType != "Leica TIFF Series" and \
+            compositeFileType != "Generic TIFF Series" and \
+            compositeFileType != "YouScope Experiment":
 
             msg = "PROCESSOR::processMicroscopyCompositeFile(): " + \
                       "Invalid composite file type found: " + compositeFileType
@@ -501,6 +503,13 @@ class Processor:
                                                                                self._logger,
                                                                                seriesNum)
 
+            elif compositeFileType == "Generic TIFF Series":
+
+                compositeDatasetConfig =GenericTIFFSeriesCompositeDatasetConfig(allSeriesMetadata,
+                                                                                seriesIndices,
+                                                                                self._logger,
+                                                                                seriesNum)
+
             elif compositeFileType == "YouScope Experiment":
 
                 compositeDatasetConfig = YouScopeExperimentCompositeDatasetConfig(csvTable,
@@ -565,8 +574,12 @@ class Processor:
                 dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_METADATA", seriesMetadataXML)
 
                 # Store the series name in the MICROSCOPY_IMG_CONTAINER_NAME property
-                dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME", "Series_" + str(seriesNum))
-
+                if "name" in allSeriesMetadata[i] and allSeriesMetadata[i]["name"] != "":
+                    self._logger.info("The series name is " + str(allSeriesMetadata[i]["name"]))
+                    dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME", allSeriesMetadata[i]["name"])
+                else:
+                    self._logger.info("Falling back to series name series_" + str(seriesNum))
+                    dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME", "series_" + str(seriesNum))
 
             # Set the (common) sample for the series
             dataset.setSample(sample)

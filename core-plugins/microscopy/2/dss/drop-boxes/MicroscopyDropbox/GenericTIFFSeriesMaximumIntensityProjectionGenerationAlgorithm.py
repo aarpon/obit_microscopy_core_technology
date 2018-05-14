@@ -9,9 +9,9 @@ Created on Apr 27, 2016
 from ch.systemsx.cisd.openbis.dss.etl.dto.api.impl import MaximumIntensityProjectionGenerationAlgorithm
 
 
-class YouScopeExperimentMaximumIntensityProjectionGenerationAlgorithm(MaximumIntensityProjectionGenerationAlgorithm):
+class GenericTIFFSeriesMaximumIntensityProjectionGenerationAlgorithm(MaximumIntensityProjectionGenerationAlgorithm):
     '''
-    Custom MaximumIntensityProjectionGenerationAlgorithm for YouScope Experiment Series
+    Custom MaximumIntensityProjectionGenerationAlgorithm for Generic TIFF Series
     that makes sure that the first timepoint in a series is registered for
     creation of the representative thumbnail. 
     '''
@@ -31,9 +31,10 @@ class YouScopeExperimentMaximumIntensityProjectionGenerationAlgorithm(MaximumInt
         """
         Overrides the parent imageToBeIgnored method. The selection of which
         series should be used to create the representative thumbnail is done
-        in YouScopeExperimentCompositeDatasetConfig. Here we prevent the base 
+        in GenericTIFFSeriesCompositeDatasetConfig. Here we prevent the base 
         MaximumIntensityProjectionGenerationAlgorithm.imageToBeIgnored() method
-        to make a decision based on the timepoint (== 0).
+        to make a decision based on the timepoint (== 0), since we cannot know
+        which is the first time point in a Generic TIFF Series.
         """
 
         return False
