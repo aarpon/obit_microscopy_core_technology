@@ -32,7 +32,7 @@ LETTERS = list(string.ascii_uppercase)
 class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig):
     """Image data configuration class for YouScope experiments."""
 
-    _DEBUG = True
+    _DEBUG = False
 
     # Map of the rows from the images.csv file as processed
     # by YouScopeExperimentCompositeDatasetConfig.buildImagesCSVTable()
