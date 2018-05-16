@@ -51,6 +51,9 @@ class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig)
     # grow monotonically.
     _seriesIndices = []
 
+    # Keep track of the channel names
+    _channelNames = []
+
     # Logger
     _logger = None
 
@@ -104,6 +107,13 @@ class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig)
 
         # Store the csvTable
         self._csvTable = csvTable
+
+        # Store all channel names in the dataset
+        for key in self._csvTable:
+            row = self._csvTable[key]
+            channelName = self._buildChannelName(row)
+            if channelName not in self._channelNames:
+                self._channelNames.append(channelName) 
 
         # Store the series metadata
         self._allSeriesMetadata = allSeriesMetadata
@@ -230,9 +240,6 @@ class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig)
         # Get the well
         well = row[4]
 
-        # Get the ID
-        id = row[7]
-
         # If the positional information could not be extracted from the corresponding
         # column, try to get it from the file name
         m_pos_name = self._pattern_pos_name.match(row[6])
@@ -285,16 +292,7 @@ class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig)
             timeNum = 1
 
         # Channel name
-        if row[9] == "" and row[10] == "":
-            channelName = "undefined"
-        elif row[9] != "" and row[10] == "":
-            channelName = row[9]
-        elif row[9] == "" and row[10] != "":
-            channelName = row[10]
-        else:
-            channelName = row[9] + "_" + row[10]
-        if id != "":
-            channelName = id + "_" + channelName
+        channelName = self._buildChannelName(row)
 
         # Build series ID from row (if present, use path information to build a unique id)
         seriesID = "Well_" + well + "_Pos_" + str(tileX) + "_" + str(tileY) + "_Path_" + \
@@ -316,7 +314,7 @@ class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig)
             return []
 
         # Get channel index from channel name
-        channel = self._getChannelNuber(self._allSeriesMetadata[series], channelName) 
+        channel = self._getChannelNumber(self._allSeriesMetadata[series], channelName) 
 
         # Build the channel code
         channelCode = "SERIES-" + str(series) + "_CHANNEL-" + str(channel)
@@ -413,38 +411,48 @@ class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig)
             G = int(255 * float(color[1]))
             B = int(255 * float(color[2]))
         else:
-            if channelIndx == 0:
-                R = 255
-                G = 0
-                B = 0
-            elif channelIndx == 1:
-                R = 0
-                G = 255
-                B = 0
-            elif channelIndx == 2:
-                R = 0
-                G = 0
-                B = 255
-            elif channelIndx == 3:
-                R = 255
-                G = 255
-                B = 0
-            elif channelIndx == 4:
-                R = 255
-                G = 0
-                B = 255
-            elif channelIndx == 5:
-                R = 0
-                G = 255
-                B = 255
-            elif channelIndx == 7:
+            
+            # If there is only one channel in the whole dataset,
+            # we make it gray value
+            if len(self._channelNames) == 1:
+                # Fall back to gray
                 R = 255
                 G = 255
                 B = 255
             else:
-                R = random.randint(0, 255)
-                G = random.randint(0, 255)
-                B = random.randint(0, 255)
+                # Fall back to default colors    
+                if channelIndx == 0:
+                    R = 255
+                    G = 0
+                    B = 0
+                elif channelIndx == 1:
+                    R = 0
+                    G = 255
+                    B = 0
+                elif channelIndx == 2:
+                    R = 0
+                    G = 0
+                    B = 255
+                elif channelIndx == 3:
+                    R = 255
+                    G = 255
+                    B = 0
+                elif channelIndx == 4:
+                    R = 255
+                    G = 0
+                    B = 255
+                elif channelIndx == 5:
+                    R = 0
+                    G = 255
+                    B = 255
+                elif channelIndx == 7:
+                    R = 255
+                    G = 255
+                    B = 255
+                else:
+                    R = random.randint(0, 255)
+                    G = random.randint(0, 255)
+                    B = random.randint(0, 255)
 
         # Create the ChannelColorRGB object
         colorRGB = ChannelColorRGB(R, G, B)
@@ -482,7 +490,7 @@ class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig)
         return seriesIndx, channelIndx
 
 
-    def _getChannelNuber(self, metadata, name):
+    def _getChannelNumber(self, metadata, name):
         """
         Return the channel number from metadata and channel name.
         """
@@ -667,3 +675,23 @@ class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig)
             n_digits = n_digits - 1
 
         return R + col
+
+    def _buildChannelName(self, row):
+
+        # Get the ID
+        id = row[7]
+
+        # Get the various parts that compose the channel name
+        channelName = ""
+        if row[9] == "" and row[10] == "":
+            channelName = "undefined"
+        elif row[9] != "" and row[10] == "":
+            channelName = row[9]
+        elif row[9] == "" and row[10] != "":
+            channelName = row[10]
+        else:
+            channelName = row[9] + "_" + row[10]
+        if id != "":
+            channelName = id + "_" + channelName
+
+        return channelName
