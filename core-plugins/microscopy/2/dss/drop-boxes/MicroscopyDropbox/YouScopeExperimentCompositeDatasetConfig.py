@@ -425,11 +425,26 @@ class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig)
                 R = 0
                 G = 0
                 B = 255
+            elif channelIndx == 3:
+                R = 255
+                G = 255
+                B = 0
+            elif channelIndx == 4:
+                R = 255
+                G = 0
+                B = 255
+            elif channelIndx == 5:
+                R = 0
+                G = 255
+                B = 255
+            elif channelIndx == 7:
+                R = 255
+                G = 255
+                B = 255
             else:
                 R = random.randint(0, 255)
                 G = random.randint(0, 255)
                 B = random.randint(0, 255)
-
 
         # Create the ChannelColorRGB object
         colorRGB = ChannelColorRGB(R, G, B)
@@ -472,14 +487,13 @@ class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig)
         Return the channel number from metadata and channel name.
         """
         self._logger.info("Searching for channel '" + name + "' in metadata.")
-        sizeC = int(metadata["sizeC"])
-        c = -1
-        for c in range(sizeC):
-            if metadata["channelName" + str(c)] == name:
-                channelIndx = c
-                break
-        self._logger.info("Found at position " + str(channelIndx))
-        return channelIndx
+        for attr_name in metadata:
+            if attr_name.startswith("channelName"):
+                if metadata[attr_name] == name:
+                    channelNumber = int(attr_name[11:])
+                    self._logger.info("Found channel number " + str(channelNumber))
+                    return channelNumber
+        raise Exception("Found no channel with name " + name)
 
 
     def _pathInfoAsID(self, filename):
