@@ -37,7 +37,7 @@ function DataModel() {
     this.expName = "";
 
     // Datasets and dataset codes
-    this.dataSets = []
+    this.dataSets = [];
     this.dataSetCodes = [];
 
     // Alias
@@ -60,7 +60,7 @@ function DataModel() {
         } else {
 
             // Check that we got the sample associated with the openbisWebAppContext().getEntityIdentifier()
-            if (response.result && response.result.length == 1) {
+            if (response.result && response.result.length === 1) {
 
                 // Store the sample object
                 dataModelObj.sample = response.result[0];
@@ -86,7 +86,7 @@ function DataModel() {
                             } else {
 
                                 // Store the datasets
-                                if (response.hasOwnProperty("error") || response.result.length == 0) {
+                                if (response.hasOwnProperty("error") || response.result.length === 0) {
 
                                     var msg = "No datasets found for experiment with code " +
                                         dataModelObj.exp.code;
@@ -95,23 +95,23 @@ function DataModel() {
                                 } else {
 
                                     // Put dataset codes into an array
-                                    var dataSetCodes = []
-                                    for (var i = 0; i < response.result.length; i++) {
+                                    var dataSetCodes = [];
+                                    for (i = 0; i < response.result.length; i++) {
                                         dataSetCodes.push(response.result[i].code)
                                     }
 
                                     // Sort by code
-                                    dataSetCodes.sort()
+                                    dataSetCodes.sort();
 
                                     // Store
                                     dataModelObj.dataSetCodes = dataSetCodes;
 
                                     // Sort and store the datasets as well
-                                    dataModelObj.dataSets = []
+                                    dataModelObj.dataSets = [];
                                     var unsortedDataSets = response.result;
                                     for (var i = 0; i < dataSetCodes.length; i++) {
                                         for (var j = 0; j < unsortedDataSets.length; j++) {
-                                            if (unsortedDataSets[j].code == dataSetCodes[i]) {
+                                            if (unsortedDataSets[j].code === dataSetCodes[i]) {
                                                 // Found. Add it to the datasets and remove it from the unsorted list
                                                 dataModelObj.dataSets.push(unsortedDataSets[j]);
                                                 unsortedDataSets.splice(j, 1);
@@ -227,15 +227,14 @@ DataModel.prototype.getDataSetsForSampleAndExperiment = function(action) {
     // Search
     this.openbisServer.searchForDataSets(criteria, action);
 
-}
+};
 
 
 /**
  * Call an aggregation plug-in to copy the datasets associated to the experiment and sample.
- * @param {type} ?
- * @param {type} ?
- * @param {type} ?
- * @returns {tubes} ?
+ * @param experimentId Experiment ID
+ * @param sampleId Sample ID
+ * @param mode Mode to be passed to the aggragation service.
  */
 DataModel.prototype.copyDatasetsToUserDir = function(experimentId, sampleId, mode) {
 
@@ -283,13 +282,13 @@ DataModel.prototype.processResultsFromExportDatasetsServerSidePlugin = function 
         // Indeed there was an error.
         status = "Sorry, could not process request.";
         level = "error";
-        r_Success = false;
+        r_Success = "0";
 
     } else {
 
         // No obvious error. Retrieve the results
         status = "";
-        if (response.result.rows.length != 1) {
+        if (response.result.rows.length !== 1) {
 
             // Unexpected number of rows returned
             status = unexpected;
@@ -308,7 +307,7 @@ DataModel.prototype.processResultsFromExportDatasetsServerSidePlugin = function 
 
             // If the processing is not completed, we wait a few seconds and trigger the
             // server-side plug-in again. The interval is defined by the admin.
-            if (r_Completed == false) {
+            if (r_Completed === "0") {
 
                 // We only need the UID of the job
                 parameters = {};
@@ -328,7 +327,7 @@ DataModel.prototype.processResultsFromExportDatasetsServerSidePlugin = function 
 
             } else {
 
-                if (row.length != 8) {
+                if (row.length !== 8) {
 
                     // Again, something is wrong with the returned results
                     status = unexpected;
@@ -344,9 +343,9 @@ DataModel.prototype.processResultsFromExportDatasetsServerSidePlugin = function 
                     r_ZipArchiveFileName = row[6].value;
                     r_Mode = row[7].value;
 
-                    if (r_Success == true) {
+                    if (r_Success === "1") {
                         var snip = "<b>Congratulations!</b>&nbsp;";
-                        if (r_NCopiedFiles == 1) {
+                        if (r_NCopiedFiles === 1) {
                             snip = snip +
                                 "<span class=\"badge\">1</span> file was ";
                         } else {
@@ -354,10 +353,10 @@ DataModel.prototype.processResultsFromExportDatasetsServerSidePlugin = function 
                                 "<span class=\"badge\">" +
                                 r_NCopiedFiles + "</span> files were ";
                         }
-                        if (r_Mode == "normal") {
+                        if (r_Mode === "normal") {
                             status = snip + "successfully exported to " +
                                 "{...}/" + r_RelativeExpFolder + ".";
-                        } else if (r_Mode == "hrm") {
+                        } else if (r_Mode === "hrm") {
                             status = snip + "successfully exported to your HRM source folder.";
                         } else {
                             // Add a placeholder to store the download URL.
@@ -365,7 +364,7 @@ DataModel.prototype.processResultsFromExportDatasetsServerSidePlugin = function 
                         }
                         level = "success";
                     } else {
-                        if (r_Mode == "normal") {
+                        if (r_Mode === "normal") {
                             status = "Sorry, there was an error exporting " +
                                 "to your user folder:<br /><br />\"" +
                                 r_ErrorMessage + "\".";
@@ -381,7 +380,7 @@ DataModel.prototype.processResultsFromExportDatasetsServerSidePlugin = function 
     DATAVIEWER.displayStatus(status, level);
 
     // Retrieve the URL (asynchronously)
-    if (r_Success == true && r_Mode == "zip") {
+    if (r_Success === "1" && r_Mode === "zip") {
         DATAMODEL.openbisServer.createSessionWorkspaceDownloadUrl(r_ZipArchiveFileName,
             function(url) {
                 var downloadString =

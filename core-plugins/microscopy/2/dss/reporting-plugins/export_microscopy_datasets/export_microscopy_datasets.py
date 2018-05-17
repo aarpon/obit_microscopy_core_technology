@@ -27,7 +27,7 @@ def touch(full_file):
     """
     f = open(full_file, 'w')
     f.close()
-    
+
 
 def c_unique(seq):
     """Implements 'unique' of a list.
@@ -77,7 +77,7 @@ def zip_folder(folder_path, output_path):
 
             # Include all files
             for file_name in files:
-                
+
                 # Full file path to add
                 full_file_path = os.path.join(root, file_name)
                 relative_file_path = os.path.join(relative_dir_path, file_name)
@@ -111,7 +111,7 @@ class Mover():
 
     def __init__(self, experimentId, sampleId, mode, userId, properties, logger):
         """Constructor
-        
+
         experimentId: id of the experiment (must be specified)
         sampleId:     id of the sample (optional, if specified, the sample id
                       will be used in the search criteria; if set to "" only
@@ -123,7 +123,7 @@ class Mover():
                       will be copied to the HRM source folder.
         userId:       user id.
         properties:   plug-in properties. 
-             
+        logger:       logger.
         """
 
         # Logger
@@ -203,7 +203,7 @@ class Mover():
         self._logger.info("Export mode is " + self._mode)
 
         # Message (in case of error)
-        self._message = "";
+        self._message = ""
 
         # Keep track of the number of copied files
         self._numCopiedFiles = 0
@@ -220,7 +220,7 @@ class Mover():
         """
 
         # Check that the experiment could be retrieved
-        if self._experiment == None:
+        if self._experiment is None:
             self._message = "Could not retrieve experiment with " \
             "identifier " + self._experimentId + "!"
             self._logger.error(self._message)
@@ -752,9 +752,9 @@ def aggregateProcess(parameters, tableBuilder, uid):
 
     # Email result to the user
     if success == True:
-        
+
         subject = "Microscopy: successfully processed requested data"
-        
+
         if nCopiedFiles == 1:
             snip = "One file was "
         else:
@@ -766,7 +766,7 @@ def aggregateProcess(parameters, tableBuilder, uid):
             body = snip + "successfully exported to your HRM source folder."
         else:
             body = snip + "successfully packaged for download: " + zipFileName
-            
+
     else:
         subject = "Microscopy: error processing request!"
         body = "Sorry, there was an error processing your request. " + \

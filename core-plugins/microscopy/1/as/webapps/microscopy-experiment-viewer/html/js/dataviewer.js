@@ -80,9 +80,9 @@ DataViewer.prototype.initView = function() {
     // Get metaprojects (tags)
     var metaprojects = "";
     if (exp.metaprojects) {
-        if (exp.metaprojects.length == 0) {
+        if (exp.metaprojects.length === 0) {
             metaprojects = "<i>None</i>";
-        } else if (exp.metaprojects.length == 1) {
+        } else if (exp.metaprojects.length === 1) {
             metaprojects = exp.metaprojects[0].name;
         } else {
             for (var i = 0; i < exp.metaprojects.length; i++) {
@@ -111,7 +111,7 @@ DataViewer.prototype.initView = function() {
             numSample++;
 
             // Add a new row for the next three thumbnails
-            if (numSample % 3 == 1) {
+            if (numSample % 3 === 1) {
                 newThumbRow = $("<div />", {class: "row"});
                 sampleView_div.append(newThumbRow);
             }
@@ -210,9 +210,9 @@ DataViewer.prototype.displayAttachments = function(dataModelObj, attachments) {
 
     // Text
     var text = "";
-    if (dataModelObj.attachments.length == 0) {
+    if (dataModelObj.attachments.length === 0) {
         text = "There are no attachments.";
-    } else if (dataModelObj.attachments.length == 1) {
+    } else if (dataModelObj.attachments.length === 1) {
         text = "There is one attachment."
     } else {
         text = "There are " + dataModelObj.attachments.length + " attachments.";
@@ -256,7 +256,7 @@ DataViewer.prototype.displayActions = function(exp) {
     var link;
 
     // Display the "Export to your folder" button only if enabled in the configuration file
-    if (CONFIG['enableExportToUserFolder'] == true) {
+    if (CONFIG['enableExportToUserFolder'] === true) {
 
         img = $("<img>")
             .attr("src", "img/export.png")
@@ -286,7 +286,7 @@ DataViewer.prototype.displayActions = function(exp) {
     }
 
     // Display the "Export to your HRM source folder" button only if enabled in the configuration file
-    if (CONFIG['enableExportToHRMSourceFolder'] == true) {
+    if (CONFIG['enableExportToHRMSourceFolder'] === true) {
 
         img = $("<img>")
             .attr("src", "img/hrm.png")
@@ -380,7 +380,7 @@ DataViewer.prototype.displayThumbnailForSample= function(sample, img_id) {
                 // DynaTree
                 response.result.forEach(function(f) {
 
-                    if (!f.isDirectory && f.pathInDataSet.toLowerCase() == "thumbnail.png") {
+                    if (!f.isDirectory && f.pathInDataSet.toLowerCase() === "thumbnail.png") {
 
                         // Retrieve the file URL
                         DATAMODEL.openbisServer.getDownloadUrlForFileForDataSetInSession(
@@ -482,7 +482,7 @@ DataViewer.prototype.prepareTitle = function(title, level) {
 
 
     // Make sure the level is valid
-    if (["default", "success", "info", "warning", "danger"].indexOf(level) == -1) {
+    if (["default", "success", "info", "warning", "danger"].indexOf(level) === -1) {
         level = "default";
     }
 
