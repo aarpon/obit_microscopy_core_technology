@@ -8,7 +8,6 @@ import ch.ethz.sis.openbis.generic.asapi.v3.dto.entitytype.id.EntityTypePermId a
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.entitytype.EntityKind as EntityKind
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.property.create.PropertyAssignmentCreation as PropertyAssignmentCreation
 import ch.ethz.sis.openbis.generic.asapi.v3.dto.property.id.PropertyTypePermId as PropertyTypePermId
-import ch.ethz.sis.openbis.generic.asapi.v3.dto.property.id.PropertyAssignmentPermId as PropertyAssignmentPermId
 
 
 # Get a session token to be used to update existing properties via the V3 API
@@ -27,8 +26,7 @@ if v3api.searchExperimentTypes(sessionToken, searchCriteria, fetchOptions).getTo
     propertyTypeId = PropertyTypePermId("MICROSCOPY_EXPERIMENT_NAME")
     assignmentCreation.setPropertyTypeId(propertyTypeId)
     assignmentCreation.setShowInEditView(True)
-    update.getPropertyAssignments().remove(PropertyAssignmentPermId(typeId, propertyTypeId));
-    update.getPropertyAssignments().add(assignmentCreation)
+    update.getPropertyAssignments().set(assignmentCreation)
     v3api.updateExperimentTypes(sessionToken, [update])
 
 print ("Importing Microscopy Core Technology Master Data...")
