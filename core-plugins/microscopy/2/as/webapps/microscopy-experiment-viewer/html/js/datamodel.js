@@ -265,7 +265,9 @@ DataModel.prototype.processResultsFromExportDatasetsServerSidePlugin = function 
 
 /**
  * Get thumbnail dataset for current sample
- * @param action
+ * @param expCode Experiment code.
+ * @param sampleCode Sample code.
+ * @param action Function callback.
  */
 DataModel.prototype.getDataSetsForSampleAndExperiment = function(expCode, sampleCode, action) {
 
@@ -350,7 +352,7 @@ DataModel.prototype.retrieveAndDisplayAttachments = function() {
     var experimentId = {
         "@type" : "ExperimentIdentifierId",
         "identifier" : this.expId
-    }
+    };
 
     // Alias
     var dataModelObj = this;

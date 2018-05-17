@@ -132,7 +132,7 @@ DataViewer.prototype.initView = function() {
      * Dataset size
      *
      */
-    if (datasetSize != "") {
+    if (datasetSize !== "") {
 
         // Create a row to store the dataset size
         var datasetSizeRow = $("<div>").addClass("row");
@@ -215,14 +215,14 @@ DataViewer.prototype.displayMetadata = function(dataSetCode) {
     // Find data set object with given code
     var dataSet = [];
     for (var i = 0; i < DATAMODEL.dataSetCodes.length; i++) {
-        if (DATAMODEL.dataSets[i].code == dataSetCode) {
+        if (DATAMODEL.dataSets[i].code === dataSetCode) {
             dataSet = DATAMODEL.dataSets[i];
             break;
         }
     }
 
     // Check that the dataset was found
-    if (dataSet.length == 0) {
+    if (dataSet.length === 0) {
         this.displayStatus("Dataset with code " + dataSetCode + " not found!", "error");
         return;
     }
@@ -248,6 +248,9 @@ DataViewer.prototype.displayMetadata = function(dataSetCode) {
     // Get the metadata
     var metadata = dataSet.properties.MICROSCOPY_IMG_CONTAINER_METADATA;
 
+    // Declare some variables
+    var errorRow, errorTitle, errorMsg;
+
     // Use JQuery to parse the metadata XML into an object
     try {
 
@@ -257,14 +260,14 @@ DataViewer.prototype.displayMetadata = function(dataSetCode) {
     } catch (err) {
 
         // Create a row to display the error
-        var errorRow = $("<div>").addClass("row");
+        errorRow = $("<div>").addClass("row");
 
         // Error title
-        var errorTitle = $("<div>").addClass("label label-danger").text("Error");
+        errorTitle = $("<div>").addClass("label label-danger").text("Error");
         errorRow.append($("<div>").addClass("metadataTitle").append(errorTitle));
 
         // Error value
-        var errorMsg = "Error retrieving metadata information for current series!";
+        errorMsg = "Error retrieving metadata information for current series!";
         errorRow.append($("<div>").addClass("metadataValue").text(errorMsg));
 
         // Display the error row
@@ -282,14 +285,14 @@ DataViewer.prototype.displayMetadata = function(dataSetCode) {
     if (! metadataObj.hasChildNodes()) {
 
         // Create a row to display the error
-        var errorRow = $("<div>").addClass("row");
+        errorRow = $("<div>").addClass("row");
 
         // Error title
-        var errorTitle = $("<div>").addClass("label label-danger").text("Error");
+        errorTitle = $("<div>").addClass("label label-danger").text("Error");
         errorRow.append($("<div>").addClass("metadataTitle").append(errorTitle));
 
         // Error value
-        var errorMsg = "Error retrieving metadata information for current series!";
+        errorMsg = "Error retrieving metadata information for current series!";
         errorRow.append($("<div>").addClass("metadataValue").text(errorMsg));
 
         // Display the error row
@@ -354,7 +357,7 @@ DataViewer.prototype.displayMetadata = function(dataSetCode) {
 
     // Voxel size
     var voxelSizeValue = "" + sVoxelX + "x" + sVoxelY;
-    if (sVoxelZ != "NaN") {
+    if (sVoxelZ !== "NaN") {
         voxelSizeValue += "x" + sVoxelZ;
     }
     voxelSizeRow.append($("<div>").addClass("metadataValue").text(voxelSizeValue));
@@ -362,12 +365,14 @@ DataViewer.prototype.displayMetadata = function(dataSetCode) {
     // Display the experiment description row
     paramView.append(voxelSizeRow);
 
-}
+};
 
 /**
  * Build and display the code to trigger the server-side aggregation
  * plugin 'copy_datasets_to_userdir'
- * @param node: DataTree node
+ * @param exp Experiment object.
+ * @param sample Sample object.
+ * @param dataSetCode Dataset Code.
  */
 DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
 
@@ -389,18 +394,21 @@ DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
     // Retrieve action div
     var detailViewActionDiv = $("#actionView");
 
+    // Declare some variables
+    var img, link;
+
     // Display metadata action
     var indx = DATAMODEL.dataSetCodes.indexOf(dataSetCode);
-    if (indx != -1) {
+    if (indx !== -1) {
 
         var dataSet = DATAMODEL.dataSets[indx];
 
-        var img = $("<img>")
+        img = $("<img>")
             .attr("src", "img/view.png")
             .attr("width", 32)
             .attr("height", 32);
 
-        var link = $("<a>")
+        link = $("<a>")
             .addClass("action")
             .attr("href", "#")
             .attr("title", "")
@@ -428,14 +436,14 @@ DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
     callAggregationPlugin = DATAMODEL.copyDatasetsToUserDir;
 
     // Display the "Export to your folder" button only if enabled in the configuration file
-    if (CONFIG['enableExportToUserFolder'] == true) {
+    if (CONFIG['enableExportToUserFolder'] === true) {
 
-        var img = $("<img>")
+        img = $("<img>")
             .attr("src", "img/export.png")
             .attr("width", 32)
             .attr("height", 32);
 
-        var link = $("<a>")
+        link = $("<a>")
             .addClass("action")
             .attr("href", "#")
             .attr("title", "")
@@ -459,14 +467,14 @@ DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
     }
 
     // Display the "Export to your HRM source folder" button only if enabled in the configuration file
-    if (CONFIG['enableExportToHRMSourceFolder'] == true) {
+    if (CONFIG['enableExportToHRMSourceFolder'] === true) {
 
-        var img = $("<img>")
+        img = $("<img>")
             .attr("src", "img/hrm.png")
             .attr("width", 32)
             .attr("height", 32);
 
-        var link = $("<a>")
+        link = $("<a>")
             .addClass("action")
             .attr("href", "#")
             .attr("title", "")
@@ -490,12 +498,12 @@ DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
     }
 
     // Build and display the call for a zip archive
-    var img = $("<img>")
+    img = $("<img>")
         .attr("src", "img/zip.png")
         .attr("width", 32)
         .attr("height", 32);
 
-    var link = $("<a>")
+    link = $("<a>")
         .addClass("action")
         .attr("href", "#")
         .attr("title", "")
@@ -592,8 +600,9 @@ DataViewer.prototype.displayViewer = function(dataSetCodes) {
         });
 
         // Render the component and add it to the page
-        $("#imageViewer").empty();
-        $("#imageViewer").append(widget.render());
+        var imageViewerDiv = $("#imageViewer");
+        imageViewerDiv.empty();
+        imageViewerDiv.append(widget.render());
 
     });
 

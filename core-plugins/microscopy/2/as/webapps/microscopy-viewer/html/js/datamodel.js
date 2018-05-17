@@ -146,10 +146,6 @@ function DataModel() {
         }
 
     });
-
-    // File URL
-    this.fileURL = [];
-
 }
 
 /**
