@@ -305,6 +305,9 @@ class VisitronNDCompositeDatasetConfig(MicroscopyCompositeDatasetConfig):
             # Build the channel code
             channelCode = "SERIES-" + str(series) + "_CHANNEL-" + str(channelNumber)
 
+            if self._DEBUG:
+                self._logger.info("Adding image to channel with channel code " + channelCode)
+
             # Initialize a new ImageMetadata object
             imageMetadata = ImageMetadata();
 
