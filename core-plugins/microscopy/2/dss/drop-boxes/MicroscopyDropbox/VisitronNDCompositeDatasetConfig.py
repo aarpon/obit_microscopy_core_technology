@@ -10,7 +10,7 @@ import re
 import random
 import math
 from MicroscopyCompositeDatasetConfig import MicroscopyCompositeDatasetConfig
-from VisitronNDMaximumIntensityProjectionGenerationAlgorithm import VisitronNDMaximumIntensityProjectionGenerationAlgorithm
+from ch.systemsx.cisd.openbis.dss.etl.dto.api.impl import MaximumIntensityProjectionGenerationAlgorithm
 from ch.systemsx.cisd.openbis.dss.etl.dto.api import ChannelColor
 from ch.systemsx.cisd.openbis.dss.etl.dto.api import ImageIdentifier
 from ch.systemsx.cisd.openbis.dss.etl.dto.api import ImageMetadata
@@ -138,7 +138,7 @@ class VisitronNDCompositeDatasetConfig(MicroscopyCompositeDatasetConfig):
         # Create representative image (MIP) for the first series only
         if self._seriesIndices.index(self._seriesNum) == 0:
             self.setImageGenerationAlgorithm(
-                VisitronNDMaximumIntensityProjectionGenerationAlgorithm(
+                MaximumIntensityProjectionGenerationAlgorithm(
                     "MICROSCOPY_IMG_THUMBNAIL", 256, 256, "thumbnail.png"))
 
 
@@ -307,6 +307,16 @@ class VisitronNDCompositeDatasetConfig(MicroscopyCompositeDatasetConfig):
 
             if self._DEBUG:
                 self._logger.info("Adding image to channel with channel code " + channelCode)
+
+            # Attempt to work around a geometry-parsing issue in imageIdentifiers
+            expectedNumPlanes = int(currentMetaData["sizeZ"])
+            expectedNumTimepoints = int(currentMetaData["sizeT"])
+            if (timepoint > (expectedNumTimepoints - 1) and expectedNumPlanes > 1) or \
+             (plane > (expectedNumPlanes - 1) and expectedNumTimepoints > 1):
+                self._logger.info("Swapping Z and T") 
+                timepoint, plane = plane, timepoint
+                # Update the ImageIdentifier
+                id = ImageIdentifier(series, timepoint, plane, channelNumber)
 
             # Initialize a new ImageMetadata object
             imageMetadata = ImageMetadata();
