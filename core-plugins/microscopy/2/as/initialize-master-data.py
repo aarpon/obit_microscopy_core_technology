@@ -228,7 +228,11 @@ assignment_EXPERIMENT_MICROSCOPY_EXPERIMENT_MICROSCOPY_EXPERIMENT_NAME = tr.assi
 assignment_EXPERIMENT_MICROSCOPY_EXPERIMENT_MICROSCOPY_EXPERIMENT_NAME.setMandatory(False)
 assignment_EXPERIMENT_MICROSCOPY_EXPERIMENT_MICROSCOPY_EXPERIMENT_NAME.setSection(None)
 assignment_EXPERIMENT_MICROSCOPY_EXPERIMENT_MICROSCOPY_EXPERIMENT_NAME.setPositionInForms(1)
-assignment_EXPERIMENT_MICROSCOPY_EXPERIMENT_MICROSCOPY_EXPERIMENT_NAME.setShownEdit(False)
+# Set .setShownEdit() to True for new installations (it was set to False in version 1).
+# openBIS version 18.x will be able to change the property on master data import, but openBIS 16.05 cannot do it.
+# At least for new openBIS 16,05 installations, the property will be set correctly with the next call. The other
+# would need to be changed manually by an openBIS instance administrator.
+assignment_EXPERIMENT_MICROSCOPY_EXPERIMENT_MICROSCOPY_EXPERIMENT_NAME.setShownEdit(True)
 
 assignment_EXPERIMENT_MICROSCOPY_EXPERIMENT_MICROSCOPY_EXPERIMENT_DESCRIPTION = tr.assignPropertyType(exp_type_MICROSCOPY_EXPERIMENT, prop_type_MICROSCOPY_EXPERIMENT_DESCRIPTION)
 assignment_EXPERIMENT_MICROSCOPY_EXPERIMENT_MICROSCOPY_EXPERIMENT_DESCRIPTION.setMandatory(False)
