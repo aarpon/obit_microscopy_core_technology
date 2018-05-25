@@ -1,33 +1,42 @@
 # -*- coding: utf-8 -*-
 import ch.systemsx.cisd.openbis.generic.server.jython.api.v1.DataType as DataType
-import ch.systemsx.cisd.openbis.generic.server.CommonServiceProvider as CommonServiceProvider
-import ch.ethz.sis.openbis.generic.asapi.v3.dto.experiment.search.ExperimentTypeSearchCriteria as ExperimentTypeSearchCriteria
-import ch.ethz.sis.openbis.generic.asapi.v3.dto.experiment.fetchoptions.ExperimentTypeFetchOptions as ExperimentTypeFetchOptions
-import ch.ethz.sis.openbis.generic.asapi.v3.dto.experiment.update.ExperimentTypeUpdate as ExperimentTypeUpdate
-import ch.ethz.sis.openbis.generic.asapi.v3.dto.entitytype.id.EntityTypePermId as EntityTypePermId
-import ch.ethz.sis.openbis.generic.asapi.v3.dto.entitytype.EntityKind as EntityKind
-import ch.ethz.sis.openbis.generic.asapi.v3.dto.property.create.PropertyAssignmentCreation as PropertyAssignmentCreation
-import ch.ethz.sis.openbis.generic.asapi.v3.dto.property.id.PropertyTypePermId as PropertyTypePermId
+
+# This code requries openBIS version 18.x and is not compatible with openBIS 16.05
+try:
+
+    import ch.systemsx.cisd.openbis.generic.server.CommonServiceProvider as CommonServiceProvider
+    import ch.ethz.sis.openbis.generic.asapi.v3.dto.experiment.search.ExperimentTypeSearchCriteria as ExperimentTypeSearchCriteria
+    import ch.ethz.sis.openbis.generic.asapi.v3.dto.experiment.fetchoptions.ExperimentTypeFetchOptions as ExperimentTypeFetchOptions
+    import ch.ethz.sis.openbis.generic.asapi.v3.dto.experiment.update.ExperimentTypeUpdate as ExperimentTypeUpdate
+    import ch.ethz.sis.openbis.generic.asapi.v3.dto.entitytype.id.EntityTypePermId as EntityTypePermId
+    import ch.ethz.sis.openbis.generic.asapi.v3.dto.entitytype.EntityKind as EntityKind
+    import ch.ethz.sis.openbis.generic.asapi.v3.dto.property.create.PropertyAssignmentCreation as PropertyAssignmentCreation
+    import ch.ethz.sis.openbis.generic.asapi.v3.dto.property.id.PropertyTypePermId as PropertyTypePermId
 
 
-# Get a session token to be used to update existing properties via the V3 API
-sessionToken = CommonServiceProvider.getCommonServer().tryToAuthenticateAsSystem().getSessionToken()
-v3api = CommonServiceProvider.getApplicationServerApi()
+    # Get a session token to be used to update existing properties via the V3 API
+    sessionToken = CommonServiceProvider.getCommonServer().tryToAuthenticateAsSystem().getSessionToken()
+    v3api = CommonServiceProvider.getApplicationServerApi()
 
-searchCriteria = ExperimentTypeSearchCriteria()
-searchCriteria.withCode().thatEquals("MICROSCOPY_EXPERIMENT")
-fetchOptions = ExperimentTypeFetchOptions()
-if v3api.searchExperimentTypes(sessionToken, searchCriteria, fetchOptions).getTotalCount() > 0:
-    print ("Update: Allowing editing of microscopy experiment names...")
-    update = ExperimentTypeUpdate()
-    typeId = EntityTypePermId("MICROSCOPY_EXPERIMENT", EntityKind.EXPERIMENT)
-    update.setTypeId(typeId)
-    assignmentCreation = PropertyAssignmentCreation()
-    propertyTypeId = PropertyTypePermId("MICROSCOPY_EXPERIMENT_NAME")
-    assignmentCreation.setPropertyTypeId(propertyTypeId)
-    assignmentCreation.setShowInEditView(True)
-    update.getPropertyAssignments().set(assignmentCreation)
-    v3api.updateExperimentTypes(sessionToken, [update])
+    searchCriteria = ExperimentTypeSearchCriteria()
+    searchCriteria.withCode().thatEquals("MICROSCOPY_EXPERIMENT")
+    fetchOptions = ExperimentTypeFetchOptions()
+    if v3api.searchExperimentTypes(sessionToken, searchCriteria, fetchOptions).getTotalCount() > 0:
+        print ("Update: Allowing editing of microscopy experiment names...")
+        update = ExperimentTypeUpdate()
+        typeId = EntityTypePermId("MICROSCOPY_EXPERIMENT", EntityKind.EXPERIMENT)
+        update.setTypeId(typeId)
+        assignmentCreation = PropertyAssignmentCreation()
+        propertyTypeId = PropertyTypePermId("MICROSCOPY_EXPERIMENT_NAME")
+        assignmentCreation.setPropertyTypeId(propertyTypeId)
+        assignmentCreation.setShowInEditView(True)
+        update.getPropertyAssignments().set(assignmentCreation)
+        v3api.updateExperimentTypes(sessionToken, [update])
+
+except:
+
+    print ("Updating the MICROSCOPY_EXPERIMENT_NAME required openBIS 18.x...")
+
 
 print ("Importing Microscopy Core Technology Master Data...")
 
