@@ -108,7 +108,7 @@ data_set_type_MICROSCOPY_IMG_THUMBNAIL.setDeletionDisallowed(False)
 
 # MICROSCOPY_ACCESSORY_FILE
 data_set_type_MICROSCOPY_ACCESSORY_FILE = tr.getOrCreateNewDataSetType('MICROSCOPY_ACCESSORY_FILE')
-data_set_type_MICROSCOPY_ACCESSORY_FILE.setDescription('An accessory dataset file associated to a microscopy experiment.')
+data_set_type_MICROSCOPY_ACCESSORY_FILE.setDescription('An accessory dataset file associated with a microscopy experiment.')
 data_set_type_MICROSCOPY_ACCESSORY_FILE.setMainDataSetPattern(None)
 data_set_type_MICROSCOPY_ACCESSORY_FILE.setMainDataSetPath(None)
 data_set_type_MICROSCOPY_ACCESSORY_FILE.setDeletionDisallowed(False)
