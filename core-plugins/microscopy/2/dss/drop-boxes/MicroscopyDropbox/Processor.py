@@ -484,9 +484,19 @@ class Processor:
         seriesIndices = microscopyCompositeFileNode.attrib.get("seriesIndices")
         seriesIndices = seriesIndices.split(",")
 
-        # For YouScope experiments, process the images.csv file
+        # For YouScope experiments, process the images.csv file and register the
+        # accessory files in the root of the experiment
         if compositeFileType == "YouScope Experiment":
-            csvTable = YouScopeExperimentCompositeDatasetConfig.buildImagesCSVTable(fullFolder + "/images.csv", self._logger); 
+
+            # Build image file table
+            csvTable = YouScopeExperimentCompositeDatasetConfig.buildImagesCSVTable(fullFolder + "/images.csv",
+                                                                                    self._logger)
+
+            # Register the accessory files
+            YouScopeExperimentCompositeDatasetConfig.registerAccessoryFilesAsDatasets(fullFolder,
+                                                                                      self._transaction,
+                                                                                      openBISExperiment,
+                                                                                      self._logger)
 
         # Register all series in the file
         image_data_set = None

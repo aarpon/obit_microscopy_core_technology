@@ -9,6 +9,9 @@ Created on Feb 20, 2014
 import re
 import random
 import math
+from os import listdir
+from os.path import isfile
+from os.path import join
 from MicroscopyCompositeDatasetConfig import MicroscopyCompositeDatasetConfig
 from YouScopeExperimentMaximumIntensityProjectionGenerationAlgorithm import YouScopeExperimentMaximumIntensityProjectionGenerationAlgorithm
 from ch.systemsx.cisd.openbis.dss.etl.dto.api import ChannelColor
@@ -19,9 +22,9 @@ from ch.systemsx.cisd.openbis.dss.etl.dto.api import ChannelColorRGB
 from ch.systemsx.cisd.openbis.dss.etl.dto.api import Channel
 import xml.etree.ElementTree as ET
 from GlobalSettings import GlobalSettings
-from java.io import BufferedReader;
-from java.io import File;
-from java.io import FileReader;
+from java.io import BufferedReader
+from java.io import File
+from java.io import FileReader
 from java.util import HashMap
 from com.sun.rowset.internal import Row
 import string
@@ -330,7 +333,7 @@ class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig)
         Metadata = []
 
         # Initialize a new ImageMetadata object
-        imageMetadata = ImageMetadata();
+        imageMetadata = ImageMetadata()
 
         # Build a tile number from tileX and tileY
         tileNum = 1000 * tileX + tileY
@@ -386,7 +389,6 @@ class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig)
         return name
 
 
-
     def _getChannelColor(self, seriesIndx, channelIndx):
         """Returns the channel color (from the parsed metadata) for
         a given channel in a given series."
@@ -411,7 +413,7 @@ class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig)
             G = int(255 * float(color[1]))
             B = int(255 * float(color[2]))
         else:
-            
+
             # If there is only one channel in the whole dataset,
             # we make it gray value
             if len(self._channelNames) == 1:
@@ -507,12 +509,12 @@ class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig)
     def _pathInfoAsID(self, filename):
 
         # Initialize output
-        pathInfo = "";
+        pathInfo = ""
 
         # We work with a relative path
         filename = filename.replace("\\\\", "\\")
-        filename = filename.replace("\\", "/");
-        pos = filename.rfind("/");
+        filename = filename.replace("\\", "/")
+        pos = filename.rfind("/")
         if pos != -1:
             pathInfo = filename[0:pos]
             pathInfo = pathInfo.replace("/", "_")
@@ -532,6 +534,7 @@ class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig)
                 return i
 
         return -1
+
 
     @staticmethod
     def buildImagesCSVTable(fileName, logger):
@@ -559,10 +562,10 @@ class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig)
                 # Read next line 
                 line = br.readLine()
 
-                continue;
+                continue
 
             # Get all values for current row
-            row = line.split(";");
+            row = line.split(";")
 
             # Remove '"' and '\' characters if needed
             for i in range(len(row)):
@@ -576,7 +579,51 @@ class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig)
             # Read next line 
             line = br.readLine()
 
-        return csvTable;
+        return csvTable
+
+
+    @staticmethod
+    def registerAccessoryFilesAsDatasets(fullpath, transaction, openBISExperiment, logger):
+        """Scan the given path for files at the root levels that are
+        not images files {.tif|.tiff} and registers them in the given
+        openBISExperiment as MICROSCOPY_ACCESSORY_FILEs."""
+
+        # Get the list of files at the root of full path that are not image files
+        files = [f for f in listdir(fullpath) if isfile(join(fullpath, f)) and
+                 not (f.lower().endswith(".tif") or f.lower().endswith(".tiff"))]
+
+        # Report
+        logger.info("Accessory files to process: " + str(files))
+
+        # Register them as datasets
+        datasetType = "MICROSCOPY_ACCESSORY_FILE"
+
+        for f in files:
+
+            # Log
+            logger.info("Registering accessory file: " + f)
+
+            # Create a new dataset
+            dataset = transaction.createNewDataSet()
+            if not dataset:
+                msg = "Could not get or create dataset"
+                logger.error(msg)
+                raise Exception(msg)
+
+            # Set the dataset type
+            dataset.setDataSetType(datasetType)
+
+            # Set the MICROSCOPY_ACCESSORY_FILE_NAME property
+            dataset.setPropertyValue("MICROSCOPY_ACCESSORY_FILE_NAME", f)
+
+            # Assign the dataset to the experiment
+            dataset.setExperiment(openBISExperiment)
+
+            # Move the file
+            transaction.moveFile(join(fullpath, f), dataset)
+
+        return True
+
 
     def _processPosFromFileName(self, pos):
         """Process position information from file name."""
@@ -622,6 +669,7 @@ class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig)
             self._logger.error("Unexpected 'pos' length!")
 
         return map
+
 
     def _wellFromPosition(self, pos):
         """
@@ -675,6 +723,7 @@ class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig)
             n_digits = n_digits - 1
 
         return R + col
+
 
     def _buildChannelName(self, row):
 
