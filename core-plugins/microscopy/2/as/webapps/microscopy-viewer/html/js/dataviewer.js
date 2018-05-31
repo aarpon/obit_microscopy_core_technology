@@ -397,6 +397,38 @@ DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
     // Declare some variables
     var img, link;
 
+    // Display the link to the dataset subtab if there are accessory files
+    // (of type MICROSCOPY_ACCESSORY_FILE)
+    if (DATAMODEL.accessoryFileDatasets.length > 0) {
+
+        img = $("<img>")
+            .attr("src", "img/files.png")
+            .attr("width", 32)
+            .attr("height", 32);
+
+        link = $("<a>")
+            .addClass("action")
+            .attr("href", "#")
+            .attr("title", "")
+            .hover(function () {
+                    $("#actionViewExpl").html("View accessory files.");
+                },
+                function () {
+                    $("#actionViewExpl").html("");
+                })
+            .html("")
+            .click(function () {
+                window.top.location.hash = "#entity=SAMPLE&permId=" + sample.permId
+                    + "&ui-subtab=data-sets-section&ui-timestamp="
+                    + (new Date().getTime());
+                return false;
+            });
+
+        link.prepend(img);
+
+        detailViewActionDiv.append(link);
+    }
+
     // Display metadata action
     var indx = DATAMODEL.dataSetCodes.indexOf(dataSetCode);
     if (indx !== -1) {

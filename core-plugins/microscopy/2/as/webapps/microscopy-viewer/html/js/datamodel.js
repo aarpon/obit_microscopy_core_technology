@@ -18,7 +18,7 @@ function DataModel() {
 
     // Create an OpenBIS facade to call JSON RPC services
     this.openbisServer = new openbis("/openbis");
-    
+
     // Reuse the current sessionId that we received in the context for
     // all the facade calls
     this.openbisServer.useSession(this.context.getSessionId());  
@@ -39,6 +39,9 @@ function DataModel() {
     // Datasets and dataset codes
     this.dataSets = [];
     this.dataSetCodes = [];
+
+    // Does the experiment contain accessory files?
+    this.accessoryFileDatasets = [];
 
     // Alias
     var dataModelObj = this;
@@ -120,8 +123,24 @@ function DataModel() {
                                         }
                                     }
 
-                                    // Initialize the experiment view
-                                    DATAVIEWER.initView();
+                                    // Does the experiment contain accessory files?
+                                    dataModelObj.experimentContainsAccessoryFiles(function(response) {
+
+                                        // Store the datasets
+                                        if (response.hasOwnProperty("error")) {
+
+                                            var msg = "Could not retrieve list of accessory files for experiment!";
+                                            DATAVIEWER.displayStatus(msg, "error");
+
+                                        } else {
+
+                                            // Store the list of accessory datasets
+                                            dataModelObj.accessoryFileDatasets = response.result;
+
+                                            // Initialize the experiment view
+                                            DATAVIEWER.initView();
+                                        }
+                                    });
 
                                 }
                             }
@@ -225,6 +244,57 @@ DataModel.prototype.getDataSetsForSampleAndExperiment = function(action) {
 
 };
 
+/**
+ * Checks whether the experiment contains accessory files.
+ * @param action
+ */
+DataModel.prototype.experimentContainsAccessoryFiles = function(action) {
+
+    // Experiment criteria
+    var experimentCriteria =
+        {
+            targetEntityKind : "EXPERIMENT",
+            criteria : {
+                matchClauses :
+                    [ {"@type" : "AttributeMatchClause",
+                        "attribute" : "CODE",
+                        "fieldType" : "ATTRIBUTE",
+                        "desiredValue" : this.exp.code
+                    } ]
+            }
+        };
+
+    // Sample criteria
+    var sampleCriteria =
+        {
+            targetEntityKind : "SAMPLE",
+            criteria : {
+                matchClauses :
+                    [ {"@type" : "AttributeMatchClause",
+                        "attribute" : "CODE",
+                        "fieldType" : "ATTRIBUTE",
+                        "desiredValue" : this.sampleCode
+                    } ]
+            }
+        };
+
+    // Dataset container criteria
+    var criteria =
+        {
+            subCriterias : [ experimentCriteria, sampleCriteria ],
+            matchClauses :
+                [ {"@type":"AttributeMatchClause",
+                    attribute : "TYPE",
+                    fieldType : "ATTRIBUTE",
+                    desiredValue : "MICROSCOPY_ACCESSORY_FILE"
+                } ],
+            operator : "MATCH_ALL_CLAUSES"
+        };
+
+    // Search
+    this.openbisServer.searchForDataSets(criteria, action);
+
+};
 
 /**
  * Call an aggregation plug-in to copy the datasets associated to the experiment and sample.
