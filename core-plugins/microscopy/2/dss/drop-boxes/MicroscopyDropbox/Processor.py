@@ -569,6 +569,7 @@ class Processor:
                 if compositeFileType == "YouScope Experiment":
                     YouScopeExperimentCompositeDatasetConfig.registerAccessoryFilesAsDatasets(
                         fullFolder,
+                        relativeFolder,
                         self._transaction,
                         openBISExperiment,
                         sample,

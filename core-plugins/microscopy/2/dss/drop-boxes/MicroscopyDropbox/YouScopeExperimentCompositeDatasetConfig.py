@@ -28,7 +28,6 @@ from java.io import FileReader
 from java.util import HashMap
 from com.sun.rowset.internal import Row
 import string
-import java.util.ArrayList as ArrayList
 
 # Letters array
 LETTERS = list(string.ascii_uppercase)
@@ -584,11 +583,23 @@ class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig)
 
 
     @staticmethod
-    def registerAccessoryFilesAsDatasets(fullpath, transaction, openBISExperiment, sample, parent_dataset, logger):
+    def registerAccessoryFilesAsDatasets(fullpath, relativePath, transaction,
+                                         openBISExperiment, sample, parent_dataset,
+                                         logger):
         """Scan the given path for files at the root levels that are
         not images files {.tif|.tiff} and associates them to the
         sample that maps to the composite dataset in the given
         openBISExperiment as MICROSCOPY_ACCESSORY_FILEs."""
+
+        # Extract the path relative to the experiment folder
+        if relativePath.endswith('/'):
+            relativePath = relativePath[0:len(relativePath) - 1]
+
+        last_index = relativePath.rfind('/')
+        if last_index != -1:
+            relativePath = relativePath[last_index + 1:]
+
+        logger.info("Relative path is: " + relativePath)
 
         # Get the list of files at the root of full path that are not image files
         files = [f for f in listdir(fullpath) if isfile(join(fullpath, f)) and
@@ -625,12 +636,11 @@ class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig)
             dataset.setExperiment(openBISExperiment)
 
             # Add to the container dataset
-            arr_list = ArrayList()
-            arr_list.add(parent_dataset.getDataSetCode())
-            dataset.setParentDatasets(arr_list)
+            dataset.setParentDatasets([parent_dataset.getDataSetCode()])
 
-            # Move the file
-            transaction.moveFile(join(fullpath, f), dataset)
+            # Move to a custom destination (to match the image datasets)
+            dstPath = join("original", relativePath, f)
+            transaction.moveFile(join(fullpath, f), dataset, dstPath)
 
         return True
 

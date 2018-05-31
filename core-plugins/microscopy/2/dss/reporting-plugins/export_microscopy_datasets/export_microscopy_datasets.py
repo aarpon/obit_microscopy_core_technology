@@ -236,7 +236,8 @@ class Mover():
         # Now point the current path to the newly created experiment folder
 
         # And we copy the files contained in the Experiment
-        return self._copyFilesForExperiment()
+        return (self._copyFilesForExperiment() and
+                self._copyAccessoryFilesForExperiment())
 
 
     def compressIfNeeded(self):
@@ -354,6 +355,42 @@ class Mover():
         return True
 
 
+    def _copyAccessoryFilesForExperiment(self):
+        """
+        Copies the microscopy files in the experiment to the user directory.
+        Folders are copied recursively.
+
+        Returns True for success. In case of error, returns False and sets
+        the error message in self._message -- to be retrieved with the
+        getErrorMessage() method.
+        """
+
+        # Get the datasets for the experiment
+        dataSets = self._getAccessoryDataSetsForExperiment()
+        if len(dataSets) == 0:
+            return True
+
+        # Get the files for the datasets
+        dataSetFiles = self._getFilesForAccessoryDataSets(dataSets)
+        if len(dataSetFiles) == 0:
+            self._logger.error("Accessory datasets do not contain files.")
+            return False
+
+        # Since sub-series reference the same file, we make sure to keep
+        # a unique version of the file list
+        dataSetFiles = c_unique(dataSetFiles)
+
+        # Copy the files to the experiment folder
+        for micrFile in dataSetFiles:
+            if os.path.isdir(micrFile):
+                self._copyDir(micrFile, self._experimentPath)
+            else:
+                self._copyFile(micrFile, self._experimentPath)
+
+        # Return success
+        return True
+
+
     def _getDataSetsForExperiment(self):
         """
         Return a list of datasets belonging to the experiment and optionally
@@ -363,8 +400,8 @@ class Mover():
 
         """
 
-        # Set search criteria to retrieve all datasets for the experiment.
-        # If the sample code is set, we also filter by it.
+        # Set search criteria to retrieve all datasets of type MICROSCOPY_IMG_CONTAINER
+        # for the experiment. If the sample code is set, we also filter by it.
         searchCriteria = SearchCriteria()
         searchCriteria.addMatchClause(MatchClause.createAttributeMatch(MatchClauseAttribute.TYPE, "MICROSCOPY_IMG_CONTAINER"))
         expCriteria = SearchCriteria()
@@ -389,6 +426,44 @@ class Mover():
 
         # Return
         return dataSets
+
+
+    def _getAccessoryDataSetsForExperiment(self):
+        """
+        Return a list of datasets belonging to the experiment and optionally
+        to the sample. If the sample ID is empty, only the experiment is used
+        in the search criteria.
+        If none are found, return [].
+
+        """
+
+        # Set search criteria to retrieve all datasets of type for the experiment.
+        # If the sample code is set, we also filter by it.
+        searchCriteria = SearchCriteria()
+        searchCriteria.addMatchClause(MatchClause.createAttributeMatch(MatchClauseAttribute.TYPE, "MICROSCOPY_ACCESSORY_FILE"))
+        expCriteria = SearchCriteria()
+        expCriteria.addMatchClause(MatchClause.createAttributeMatch(MatchClauseAttribute.PERM_ID, self._experiment.permId))
+        searchCriteria.addSubCriteria(SearchSubCriteria.createExperimentCriteria(expCriteria))
+        if self._sample is not None:
+            self._logger.info("Filter by sample " + self._sampleId)
+            sampleCriteria = SearchCriteria()
+            sampleCriteria.addMatchClause(MatchClause.createAttributeMatch(MatchClauseAttribute.PERM_ID, self._sample.permId))
+            searchCriteria.addSubCriteria(SearchSubCriteria.createSampleCriteria(sampleCriteria))
+
+        accessoryDataSets = searchService.searchForDataSets(searchCriteria)
+
+        # Append the accessory datasets
+        if len(accessoryDataSets) != 0:
+            self._message = "Found " + str(len(accessoryDataSets)) + \
+                            " accessory datasets for experiment " \
+                            "with id " + self._experimentId
+            if self._sampleId != "":
+                self._message = self._message + " and sample with id " + \
+                self._sampleId
+            self._logger.info(self._message)
+
+        # Return
+        return accessoryDataSets
 
 
     def _getFilesForDataSets(self, dataSets):
@@ -419,6 +494,40 @@ class Mover():
 
         if len(dataSetFiles) == 0:
             self._message = "Could not retrieve dataset files!"
+            self._logger.error(self._message)
+
+
+        # Return the files
+        return dataSetFiles
+
+
+    def _getFilesForAccessoryDataSets(self, dataSets):
+        """
+        Get the list of file paths that correspond to the input list
+        of accessory datasets. If no files are found, returns [].
+        """
+
+        if dataSets == []:
+            return []
+
+        dataSetFiles = []
+        for dataSet in dataSets:
+            content = contentProvider.getContent(dataSet.getDataSetCode())
+            nodes = content.listMatchingNodes("original", ".*")
+
+            # All file types are allowed
+            if nodes is not None:
+                for node in nodes:
+                    fileName = node.tryGetFile()
+                    if fileName is not None:
+                        fileName = str(fileName)
+                        if os.path.isdir(str(fileName)):
+                            dataSetFiles.append(fileName)
+                        else:
+                            dataSetFiles.append(fileName)
+
+        if len(dataSetFiles) == 0:
+            self._message = "Could not retrieve accessory dataset files!"
             self._logger.error(self._message)
 
 
@@ -473,12 +582,13 @@ class Mover():
     def _createDir(self, dirFullPath):
         """Creates the passed directory (with full path).
         """
-        
+
         # Inform
         self._logger.info("Creating directory " + dirFullPath)
-        
+
         # Create dir
-        os.makedirs(dirFullPath)
+        if not os.path.exists(dirFullPath):
+            os.makedirs(dirFullPath)
 
 
     def _createRootAndExperimentFolder(self):
