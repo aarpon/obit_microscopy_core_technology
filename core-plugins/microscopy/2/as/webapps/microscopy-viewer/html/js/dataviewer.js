@@ -316,9 +316,9 @@ DataViewer.prototype.displayMetadata = function(dataSetCode) {
     var voxelZ = seriesMetadata.attributes.getNamedItem("voxelZ").value;
 
     // Format the metadata
-    var sVoxelX = (new Number(voxelX)).toPrecision(2);
-    var sVoxelY = (new Number(voxelY)).toPrecision(2);
-    var sVoxelZ = (new Number(voxelZ)).toPrecision(2);
+    var sVoxelX = (Number(voxelX)).toPrecision(2);
+    var sVoxelY = (Number(voxelY)).toPrecision(2);
+    var sVoxelZ = (Number(voxelZ)).toPrecision(2);
 
 
     /*
