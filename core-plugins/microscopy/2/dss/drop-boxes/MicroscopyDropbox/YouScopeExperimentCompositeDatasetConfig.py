@@ -28,6 +28,7 @@ from java.io import FileReader
 from java.util import HashMap
 from com.sun.rowset.internal import Row
 import string
+import java.util.ArrayList as ArrayList
 
 # Letters array
 LETTERS = list(string.ascii_uppercase)
@@ -583,9 +584,10 @@ class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig)
 
 
     @staticmethod
-    def registerAccessoryFilesAsDatasets(fullpath, transaction, openBISExperiment, logger):
+    def registerAccessoryFilesAsDatasets(fullpath, transaction, openBISExperiment, sample, parent_dataset, logger):
         """Scan the given path for files at the root levels that are
-        not images files {.tif|.tiff} and registers them in the given
+        not images files {.tif|.tiff} and associates them to the
+        sample that maps to the composite dataset in the given
         openBISExperiment as MICROSCOPY_ACCESSORY_FILEs."""
 
         # Get the list of files at the root of full path that are not image files
@@ -616,8 +618,16 @@ class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig)
             # Set the MICROSCOPY_ACCESSORY_FILE_NAME property
             dataset.setPropertyValue("MICROSCOPY_ACCESSORY_FILE_NAME", f)
 
+            # Assign the dataset to the sample
+            dataset.setSample(sample)
+
             # Assign the dataset to the experiment
             dataset.setExperiment(openBISExperiment)
+
+            # Add to the container dataset
+            arr_list = ArrayList()
+            arr_list.add(parent_dataset.getDataSetCode())
+            dataset.setParentDatasets(arr_list)
 
             # Move the file
             transaction.moveFile(join(fullpath, f), dataset)

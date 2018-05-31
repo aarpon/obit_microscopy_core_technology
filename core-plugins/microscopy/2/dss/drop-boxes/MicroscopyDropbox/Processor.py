@@ -492,12 +492,6 @@ class Processor:
             csvTable = YouScopeExperimentCompositeDatasetConfig.buildImagesCSVTable(fullFolder + "/images.csv",
                                                                                     self._logger)
 
-            # Register the accessory files
-            YouScopeExperimentCompositeDatasetConfig.registerAccessoryFilesAsDatasets(fullFolder,
-                                                                                      self._transaction,
-                                                                                      openBISExperiment,
-                                                                                      self._logger)
-
         # Register all series in the file
         image_data_set = None
         for i in range(num_series):
@@ -570,6 +564,17 @@ class Processor:
                 # TODO Get and store the correct series name
                 dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME",
                                          allSeriesMetadata[i]["name"])
+
+                # Register the accessory files for YouScope experiments
+                if compositeFileType == "YouScope Experiment":
+                    YouScopeExperimentCompositeDatasetConfig.registerAccessoryFilesAsDatasets(
+                        fullFolder,
+                        self._transaction,
+                        openBISExperiment,
+                        sample,
+                        dataset,
+                        self._logger)
+
 
                 # Now store a reference to the first dataset
                 image_data_set = dataset
