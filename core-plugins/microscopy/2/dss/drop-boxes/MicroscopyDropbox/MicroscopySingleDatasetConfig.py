@@ -253,6 +253,17 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
             self._logger.error(err)
             raise(err)
 
+        if self._DEBUG:
+            self._logger.info("Color extracted from metadata: (R = " + str(R) +
+                              ", G = " + str(G) + ", B = " + str(B) + ")")
+
+        # Work around an issue if all color components are 0
+        if R == G == B == 0:
+            R = 255
+            G = 255
+            B = 255
+            self._logger.info("Color changed from (0, 0, 0) to (255, 255, 255)")
+
         # Create the ChannelColorRGB object
         colorRGB = ChannelColorRGB(R, G, B)
 
