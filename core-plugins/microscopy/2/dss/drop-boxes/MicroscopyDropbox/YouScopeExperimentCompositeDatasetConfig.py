@@ -70,7 +70,7 @@ class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig)
     _metadata = []
 
     # Regular expression patterns  
-    _pattern_pos = re.compile(r'(y-tile: (?P<y>\d+)*(, )?)*(x-tile: (?P<x>\d+)*(, )?)*(z-stack: (?P<z>\d+))*',
+    _pattern_pos = re.compile(r'(position: (?P<position>\d+)*(, )?)*(y-tile: (?P<y>\d+)*(, )?)*(x-tile: (?P<x>\d+)*(, )?)*(z-stack: (?P<z>\d+))*',
                               re.IGNORECASE|re.UNICODE)
 
     _pattern_time_name = re.compile(r'.*_time(?P<time>\d*)\.tif{1,2}$',
@@ -79,12 +79,9 @@ class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig)
     _pattern_time_name_fb = re.compile(r'.*_time_(.*)_\(number_(?P<time>\d*)\)\.tif{1,2}$',
                                   re.IGNORECASE|re.UNICODE)
 
-    _pattern_pos_name = re.compile(r'.*position(?P<pos>\d*)_time.*\.tif{1,2}$',
-                                   re.IGNORECASE|re.UNICODE)
-
-
     _pattern_pos_name_fb = re.compile(r'.*\(pos_(?P<pos>\d*)\).*$',
                                       re.IGNORECASE|re.UNICODE)
+
 
     def __init__(self, csvTable, allSeriesMetadata, seriesIndices, logger, seriesNum=0):
         """Constructor.
@@ -219,20 +216,25 @@ class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig)
         self._logger.info("File " + imagePath + " was found in the CSV table.")
         self._logger.info("The corresponding row is " + str(row))
 
-        # Initialize
+        # Coordinates
+        position = -1
         tileX = -1
         tileY = -1
         planeNum = -1
         timeNum = -1
         well = ""
-        id = ""
+
+        # Get the well
+        well = row[4]
 
         # Test position string
         self._logger.info("Position string is " + str(row[5]))
 
-        # First, get position information
+        # Get the positions from the Position column
         m_pos = self._pattern_pos.match(row[5])
         if m_pos is not None:
+            if m_pos.group("position") is not None:
+                position = int(m_pos.group("position"))            
             if m_pos.group("x") is not None:
                 tileX = int(m_pos.group("x"))
             if m_pos.group("y") is not None:
@@ -240,37 +242,13 @@ class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig)
             if m_pos.group("z") is not None:
                 tileZ = int(m_pos.group("z"))
 
-        # Get the well
-        well = row[4]
-
-        # If the positional information could not be extracted from the corresponding
-        # column, try to get it from the file name
-        m_pos_name = self._pattern_pos_name.match(row[6])
-        if m_pos_name is not None:
-            if m_pos_name.group("pos") is not None:
-                map = self._processPosFromFileName(m_pos_name.group("pos"))
-                if tileX == -1 and map.get("tileX") != "":
-                    tileX = int(map.get("tileX"))
-                if tileY == -1 and map.get("tileY") != "":
-                    tileY = int(map.get("tileY"))
-                if planeNum == -1 and map.get("planeNum") != "":
-                    planeNum = int(map.get("planeNum"))
-                if well == "" and map.get("well") != "":
-                    well = map.get("well")
-        else:
-            # Try the fallback option
-            m_pos_name_fb = self._pattern_pos_name_fb.match(row[6])
-            if m_pos_name_fb is not None:
-                if m_pos_name_fb.group("pos") is not None:
-                    map = self._processPosFromFileName(m_pos_name_fb.group("pos"))
-                    if tileX == -1 and map.get("tileX") != "":
-                        tileX = int(map.get("tileX"))
-                    if tileY == -1 and map.get("tileY") != "":
-                        tileY = int(map.get("tileY"))
-                    if planeNum == -1 and map.get("planeNum") != "":
-                        planeNum = int(map.get("planeNum"))
-                    if well == "" and map.get("well") != "":
-                        well = map.get("well")
+        # Try the fallback option
+        m_pos_name_fb = self._pattern_pos_name_fb.match(row[6])
+        if m_pos_name_fb is not None:
+            if m_pos_name_fb.group("pos") is not None:
+                pos = m_pos_name_fb.group("pos")
+                tileX = int(pos[0:2])
+                tileY = int(pos[2:4])
 
         # Then, get time information
         m_time = self._pattern_time_name.match(row[6])
@@ -285,6 +263,8 @@ class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig)
                     timeNum = int(m_time_fb.group("time"))
 
         # Fallback
+        if position == -1:
+            position = 1
         if tileX == -1:
             tileX = 1
         if tileY == -1:
@@ -298,7 +278,7 @@ class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig)
         channelName = self._buildChannelName(row)
 
         # Build series ID from row (if present, use path information to build a unique id)
-        seriesID = "Well_" + well + "_Pos_" + str(tileX) + "_" + str(tileY) + "_Path_" + \
+        seriesID = "Well_" + well + "_Pos_" + str(position) + "_" + str(tileX) + "_" + str(tileY) + "_Path_" + \
             self._pathInfoAsID(row[6])
 
         # Find the series number that correspond to seriesID
@@ -650,106 +630,6 @@ class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig)
             transaction.moveFile(join(fullpath, f), dataset, dstPath)
 
         return True
-
-
-    def _processPosFromFileName(self, pos):
-        """Process position information from file name."""
-
-        # Initialize positions
-        map = HashMap()
-        map.put("tileX", "")
-        map.put("tileY", "")
-        map.put("planeNum", "")
-        map.put("well", "")
-
-        if pos == "":
-            return map
-
-        # Inform
-        self._logger.info("Position string to process: " + pos)
-
-        len_pos = len(pos)
-
-        if len_pos == 4:
-            # No well, no tiles, and no Z information (2D acquisition)
-            map.put("tileX", str(int(pos[0:2])))
-            map.put("tileY", str(int(pos[2:4])))
-        elif len_pos == 6 or len_pos == 7:
-            # Note: the number of digits that encode the well are
-            # hard-coded to 4. They do not have to be; unfortunately,
-            # it is not possible to know how to break down the pos
-            # string in its components. Usually, the well information
-            # is stored in the well column of image.csv, and therefore
-            # this information is not used.
-            map.put("well", self._wellFromPosition(pos[0:4]))
-            map.put("planeNum", int(pos[4:]))
-        elif len_pos == 8:
-            map.put("well", self._wellFromPosition(pos[0:4]))
-            map.put("tileX", str(int(pos[4:6])))
-            map.put("tileY", str(int(pos[6:8])))
-        elif len_pos == 10 or len_pos == 11:
-            map.put("well", self._wellFromPosition(pos[0:4]))
-            map.put("tileX", str(int(pos[4:6])))
-            map.put("tileY", str(int(pos[6:8])))
-            map.put("planeNum", int(pos[8:]) )
-        else:
-            self._logger.error("Unexpected 'pos' length!")
-
-        return map
-
-
-    def _wellFromPosition(self, pos):
-        """
-        Maps a position to a well. The position is a n-digit string,
-        such as '0202' that maps to well B2. The number of digits must be even,
-        and the function will divide them in two n/2 subsets.
-
-        The row is given by one or more letters, the column by an integer:
-        e.g. 2712 maps to AA12.
-        """
-
-        # Number of digits
-        len_pos = len(pos)
-        sub_len = int(len_pos / 2)
-
-        # Extract the 'row' part of the string (the letter)
-        row = int(pos[0:sub_len])
-
-        if row == 0:
-            return ""
-
-        # Extract the 'column' part of the string
-        col = str(int(pos[sub_len:len_pos]))
-
-        if row <= 26:
-            R = LETTERS[row - 1]
-            return R + col
-
-        # The row part of the well name if a made
-        # of multiple letters
-
-        # Number of digits
-        n_digits = math.log(row) / math.log(26)
-
-        # Row string
-        R = ''
-
-        while n_digits > 0:
-
-            # Step
-            step = 26 ** int(n_digits)
-
-            # Right-most letter
-            r = row // step
-
-            # Append the letter
-            R = R + LETTERS[r - 1]
-
-            # Now go to the next letter
-            row = row - step
-            n_digits = n_digits - 1
-
-        return R + col
 
 
     def _buildChannelName(self, row):
