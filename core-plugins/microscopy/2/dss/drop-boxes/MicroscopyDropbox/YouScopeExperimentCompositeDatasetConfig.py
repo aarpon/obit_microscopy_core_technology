@@ -240,7 +240,7 @@ class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig)
             if m_pos.group("y") is not None:
                 tileY = int(m_pos.group("y"))
             if m_pos.group("z") is not None:
-                tileZ = int(m_pos.group("z"))
+                planeNum = int(m_pos.group("z"))
 
         # Try the fallback option
         m_pos_name_fb = self._pattern_pos_name_fb.match(row[6])
