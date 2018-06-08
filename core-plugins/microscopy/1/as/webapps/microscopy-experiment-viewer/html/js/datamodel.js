@@ -103,10 +103,9 @@ DataModel.prototype.getSamplesForExperiment = function(action) {
 /**
  * Call an aggregation plug-in to copy the datasets associated to selected
  * node to the user folder.
- * @param {type} ?
- * @param {type} ?
- * @param {type} ?
- * @returns {tubes} ?
+ * @param experimentId Experiment ID
+ * @param sampleId Sample ID
+ * @param mode Mode to be passed to the aggragation service.
  */
 DataModel.prototype.copyDatasetsToUserDir = function(experimentId, sampleId, mode) {
 
