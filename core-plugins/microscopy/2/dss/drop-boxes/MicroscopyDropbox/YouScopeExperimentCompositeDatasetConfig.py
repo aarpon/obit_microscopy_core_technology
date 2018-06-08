@@ -25,7 +25,7 @@ from GlobalSettings import GlobalSettings
 from java.io import BufferedReader
 from java.io import File
 from java.io import FileReader
-from java.util import HashMap
+from java.util import LinkedHashMap
 from com.sun.rowset.internal import Row
 import string
 
@@ -86,7 +86,7 @@ class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig)
     def __init__(self, csvTable, allSeriesMetadata, seriesIndices, logger, seriesNum=0):
         """Constructor.
 
-        @param csvTable:          map of the rows from the images.csv file as processed
+        @param csvTable:          (linked hash) map of the rows from the images.csv file as processed
                                   by YouScopeExperimentCompositeDatasetConfig.buildImagesCSVTable()
         @param allSeriesMetadata: list of metadata attributes generated either
                                   by the Annotation Tool and parsed from the
@@ -527,7 +527,7 @@ class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig)
     def buildImagesCSVTable(fileName, logger):
 
         # Initialize the table
-        csvTable = HashMap()
+        csvTable = LinkedHashMap()
 
         # Header
         isHeader = True
