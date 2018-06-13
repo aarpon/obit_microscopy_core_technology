@@ -48,7 +48,6 @@ class Processor:
         # Set up logging
         self._logger = logger
 
-
     def dictToXML(self, d):
         """Converts a dictionary into an XML string."""
 
@@ -101,7 +100,7 @@ class Processor:
         expId = expId + "_" + self.getCustomTimeStamp()
 
         # Log
-        self._logger.info("PROCESSOR::createExperiment(): " + 
+        self._logger.info("PROCESSOR::createExperiment(): " +
                           "Register experiment %s" % expId)
 
         # Create the experiment
@@ -112,7 +111,7 @@ class Processor:
             self._logger.error(msg)
             raise Exception(msg)
         else:
-            self._logger.info("PROCESSOR::createExperiment(): " + 
+            self._logger.info("PROCESSOR::createExperiment(): " +
                               "Created experiment with ID " + expId + ".")
 
         # Store the name
@@ -204,7 +203,7 @@ class Processor:
         openBISExperiment.setPropertyValue("MICROSCOPY_EXPERIMENT_VERSION",
                                            expVersion)
 
-        # Set the description -- but only if is not empty. 
+        # Set the description -- but only if is not empty.
         # This makes sure that the description of an already existing experiment
         # is not overridden by an empty string.
         if description != "":
@@ -236,7 +235,7 @@ class Processor:
         # Add the attachments
         if attachments is not None:
 
-            # Extract all relative file names 
+            # Extract all relative file names
             attachmentFiles = attachments.split(";")
 
             for f in attachmentFiles:
@@ -246,7 +245,7 @@ class Processor:
                     continue
 
                 # Inform
-                msg = "Adding file attachment " + f 
+                msg = "Adding file attachment " + f
                 self._logger.info(msg)
 
                 # Build the full path
@@ -302,7 +301,7 @@ class Processor:
 
         else:
 
-            # Get the metadata for all series from the (processed) settings XML 
+            # Get the metadata for all series from the (processed) settings XML
             allSeriesMetadata = []
             for series in microscopyFileNode:
                 allSeriesMetadata.append(series.attrib)
@@ -311,8 +310,8 @@ class Processor:
             num_series = len(microscopyFileNode)
 
         # Log
-        self._logger.info("PROCESSOR::processMicroscopyFile(): " + 
-                          "File " + relativeFileName + " contains " + 
+        self._logger.info("PROCESSOR::processMicroscopyFile(): " +
+                          "File " + relativeFileName + " contains " +
                            str(num_series) + " series.")
 
         # Get the correct space where to create the sample
@@ -321,8 +320,13 @@ class Processor:
         self._logger.info("Creating sample with auto-generated code in space " + sample_space)
 
         # Create a sample for the dataset
-        sample = self._transaction.createNewSampleWithGeneratedCode(sample_space,
-                                                                    "MICROSCOPY_SAMPLE_TYPE")
+        if self._transaction.serverInformation.get('project-samples-enabled') == 'true':
+            project_identifier = identifier[:identifier.rfind('/')]
+            sample = self._transaction.createNewProjectSampleWithGeneratedCode(project_identifier,
+                                                                               "MICROSCOPY_SAMPLE_TYPE")
+        else:
+            sample = self._transaction.createNewSampleWithGeneratedCode(sample_space,
+                                                                        "MICROSCOPY_SAMPLE_TYPE")
 
         # Set the sample name
         sample.setPropertyValue("MICROSCOPY_SAMPLE_NAME",
@@ -363,8 +367,8 @@ class Processor:
                 # Register the file for the first time (for series 0)
 
                 # Log
-                self._logger.info("PROCESSOR::processMicroscopyFile(): " + 
-                                  "Creating new image dataset for file " + 
+                self._logger.info("PROCESSOR::processMicroscopyFile(): " +
+                                  "Creating new image dataset for file " +
                                    str(fileName) + " and series 0.")
 
                 # Create an image dataset
@@ -388,7 +392,7 @@ class Processor:
                 # Register subsequent series to point to the same file
 
                 # Log
-                self._logger.info("PROCESSOR::processMicroscopyFile(): " + 
+                self._logger.info("PROCESSOR::processMicroscopyFile(): " +
                                   "Appending series " + str(i) + " to dataset " +
                                   str(image_data_set))
 
@@ -407,7 +411,6 @@ class Processor:
 
             # Set the (common) sample for the series
             dataset.setSample(sample)
-
 
     def processMicroscopyCompositeFile(self, microscopyCompositeFileNode,
                                        openBISExperiment):
@@ -436,7 +439,7 @@ class Processor:
             self._logger.info("PROCESSOR::processMicroscopyCompositeFile(): " + \
                               "Processing " + compositeFileType)
 
-        # Get the metadata for all series from the (processed) settings XML 
+        # Get the metadata for all series from the (processed) settings XML
         allSeriesMetadata = []
         for series in microscopyCompositeFileNode:
             allSeriesMetadata.append(series.attrib)
@@ -476,8 +479,8 @@ class Processor:
         fullFolder = os.path.join(self._incoming.getAbsolutePath(), relativeFolder)
 
         # Log
-        self._logger.info("PROCESSOR::processMicroscopyFile(): " + 
-                          "Folder " + relativeFolder + " contains " + 
+        self._logger.info("PROCESSOR::processMicroscopyFile(): " +
+                          "Folder " + relativeFolder + " contains " +
                            str(num_series) + " series.")
 
         # Get the series indices
@@ -511,7 +514,7 @@ class Processor:
 
             elif compositeFileType == "Generic TIFF Series":
 
-                compositeDatasetConfig =GenericTIFFSeriesCompositeDatasetConfig(allSeriesMetadata,
+                compositeDatasetConfig = GenericTIFFSeriesCompositeDatasetConfig(allSeriesMetadata,
                                                                                 seriesIndices,
                                                                                 self._logger,
                                                                                 seriesNum)
@@ -547,8 +550,8 @@ class Processor:
             if image_data_set is None:
 
                 # Log
-                self._logger.info("PROCESSOR::processCompositeMicroscopyFile(): " + 
-                                  "Creating new image dataset for folder " + 
+                self._logger.info("PROCESSOR::processCompositeMicroscopyFile(): " +
+                                  "Creating new image dataset for folder " +
                                    str(fullFolder) + " and series " + str(seriesNum))
 
                 # Create a dataset
@@ -576,7 +579,6 @@ class Processor:
                         dataset,
                         self._logger)
 
-
                 # Now store a reference to the first dataset
                 image_data_set = dataset
 
@@ -586,7 +588,7 @@ class Processor:
             else:
 
                 # Log
-                self._logger.info("PROCESSOR::processCompositeMicroscopyFile(): " + 
+                self._logger.info("PROCESSOR::processCompositeMicroscopyFile(): " +
                                   "Appending series " + str(i) + " to dataset " +
                                   str(image_data_set))
 
@@ -609,7 +611,6 @@ class Processor:
             # Set the (common) sample for the series
             dataset.setSample(sample)
 
-
     def register(self, tree):
         """Register the Experiment using the parsed properties file.
 
@@ -626,7 +627,7 @@ class Processor:
         machinename = root.attrib.get("machineName")
         if machinename is None:
             machinename = ""
-        self._machinename = machinename        
+        self._machinename = machinename
 
         # Iterate over the children (Experiments)
         for experimentNode in root:
@@ -668,9 +669,8 @@ class Processor:
                     raise Exception(msg)
 
         # Log that we are finished with the registration
-        self._logger.info("PROCESSOR::register(): " + 
+        self._logger.info("PROCESSOR::register(): " +
                           "Registration completed")
-
 
     def retrieveOrCreateTags(self, tagList):
         """Retrieve or create the tags (metaprojects) with specified names."""
@@ -713,7 +713,6 @@ class Processor:
 
         return openBISTags
 
-
     def run(self):
         """Run the registration."""
 
@@ -725,8 +724,8 @@ class Processor:
             raise Exception(msg)
 
         # Log
-        self._logger.info("PROCESSOR::run(): " + 
-                          "Incoming folder: " + 
+        self._logger.info("PROCESSOR::run(): " +
+                          "Incoming folder: " +
                           self._incoming.getAbsolutePath())
 
         # There must be just one subfolder: the user subfolder
@@ -760,7 +759,7 @@ class Processor:
                 propertiesFile = os.path.join(self._incoming.getAbsolutePath(),
                                               line)
                 propertiesFileList.append(propertiesFile)
-                self._logger.info("PROCESSOR::run(): " + 
+                self._logger.info("PROCESSOR::run(): " +
                                   "Found: " + str(propertiesFile))
         finally:
             f.close()
@@ -768,7 +767,7 @@ class Processor:
         # Process (and ultimately register) all experiments
         for propertiesFile in propertiesFileList:
             # Log
-            self._logger.info("PROCESSOR::run(): " + 
+            self._logger.info("PROCESSOR::run(): " +
                               "Processing: " + propertiesFile)
 
             # Read the properties file into an ElementTree
