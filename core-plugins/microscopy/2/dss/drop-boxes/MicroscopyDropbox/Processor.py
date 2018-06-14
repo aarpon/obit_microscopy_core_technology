@@ -453,8 +453,13 @@ class Processor:
         self._logger.info("Creating sample with auto-generated code in space " + sample_space)
 
         # Create a sample for the dataset
-        sample = self._transaction.createNewSampleWithGeneratedCode(sample_space,
-                                                                    "MICROSCOPY_SAMPLE_TYPE")
+        if self._transaction.serverInformation.get('project-samples-enabled') == 'true':
+            project_identifier = identifier[:identifier.rfind('/')]
+            sample = self._transaction.createNewProjectSampleWithGeneratedCode(project_identifier,
+                                                                               "MICROSCOPY_SAMPLE_TYPE")
+        else:
+            sample = self._transaction.createNewSampleWithGeneratedCode(sample_space,
+                                                                        "MICROSCOPY_SAMPLE_TYPE")
 
         # Set the sample name
         name = microscopyCompositeFileNode.attrib.get("name")
