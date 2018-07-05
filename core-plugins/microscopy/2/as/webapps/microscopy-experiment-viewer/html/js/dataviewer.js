@@ -173,7 +173,7 @@ DataViewer.prototype.initView = function() {
             thumbnailView.append(thumbnailImage);
             thumbnailView.append($("<br />"));
             thumbnailView.append(link);
-            if (datasetSize != "") {
+            if (datasetSize !== "") {
                 thumbnailView.append($("<br />"));
                 var spanSz =  $("<span>").addClass("filesize").text(datasetSize);
                 thumbnailView.append(spanSz);

@@ -59,7 +59,7 @@ function DataModel() {
 
                 } else {
 
-                    if (response.result.length == 0) {
+                    if (response.result.length === 0) {
 
                         var msg = "No (sample) datasets found for experiment with code " +
                             dataModelObj.exp.code;
@@ -153,13 +153,13 @@ DataModel.prototype.processResultsFromExportDatasetsServerSidePlugin = function 
             // Indeed there was an error.
             status = "Sorry, could not process request.";
             level = "error";
-            r_Success = false;
+            r_Success = "0";
 
         } else {
 
             // No obvious error. Retrieve the results
             status = "";
-            if (response.result.rows.length != 1) {
+            if (response.result.rows.length !== 1) {
 
                 // Unexpected number of rows returned
                 status = unexpected;
@@ -178,7 +178,7 @@ DataModel.prototype.processResultsFromExportDatasetsServerSidePlugin = function 
 
                 // If the processing is not completed, we wait a few seconds and trigger the
                 // server-side plug-in again. The interval is defined by the admin.
-                if (r_Completed == false) {
+                if (r_Completed === "0") {
 
                     // We only need the UID of the job
                     parameters = {};
@@ -199,7 +199,7 @@ DataModel.prototype.processResultsFromExportDatasetsServerSidePlugin = function 
 
                     // First, check if the process is finished or whether it is still running
 
-                    if (row.length != 8) {
+                    if (row.length !== 8) {
 
                         // Again, something is wrong with the returned results
                         status = unexpected;
@@ -215,9 +215,9 @@ DataModel.prototype.processResultsFromExportDatasetsServerSidePlugin = function 
                         r_ZipArchiveFileName = row[6].value;
                         r_Mode = row[7].value;
 
-                        if (r_Success == true) {
+                        if (r_Success === "1") {
                             var snip = "<b>Congratulations!</b>&nbsp;";
-                            if (r_NCopiedFiles == 1) {
+                            if (r_NCopiedFiles === 1) {
                                 snip = snip +
                                     "<span class=\"badge\">1</span> file was ";
                             } else {
@@ -225,10 +225,10 @@ DataModel.prototype.processResultsFromExportDatasetsServerSidePlugin = function 
                                     "<span class=\"badge\">" +
                                     r_NCopiedFiles + "</span> files were ";
                             }
-                            if (r_Mode == "normal") {
+                            if (r_Mode === "normal") {
                                 status = snip + "successfully exported to " +
                                     "{...}/" + r_RelativeExpFolder + ".";
-                            } else if (r_Mode == "hrm") {
+                            } else if (r_Mode === "hrm") {
                                 status = snip + "successfully exported to your HRM source folder.";
                             } else {
                                 // Add a placeholder to store the download URL.
@@ -236,7 +236,7 @@ DataModel.prototype.processResultsFromExportDatasetsServerSidePlugin = function 
                             }
                             level = "success";
                         } else {
-                            if (r_Mode == "normal") {
+                            if (r_Mode === "normal") {
                                 status = "Sorry, there was an error exporting " +
                                     "to your user folder:<br /><br />\"" +
                                     r_ErrorMessage + "\".";
@@ -252,7 +252,7 @@ DataModel.prototype.processResultsFromExportDatasetsServerSidePlugin = function 
         DATAVIEWER.displayStatus(status, level);
 
         // Retrieve the URL (asynchronously)
-        if (r_Success == true && r_Mode == "zip") {
+        if (r_Success === "1" && r_Mode === "zip") {
             DATAMODEL.openbisServer.createSessionWorkspaceDownloadUrl(r_ZipArchiveFileName,
                 function(url) {
                     var downloadString =
@@ -265,7 +265,9 @@ DataModel.prototype.processResultsFromExportDatasetsServerSidePlugin = function 
 
 /**
  * Get thumbnail dataset for current sample
- * @param action
+ * @param expCode Experiment code.
+ * @param sampleCode Sample code.
+ * @param action Function callback.
  */
 DataModel.prototype.getDataSetsForSampleAndExperiment = function(expCode, sampleCode, action) {
 
@@ -313,7 +315,7 @@ DataModel.prototype.getDataSetsForSampleAndExperiment = function(expCode, sample
     this.openbisServer.searchForDataSets(criteria, function(response) {
 
         // Get the containers
-        if (response.error || response.result.length == 0) {
+        if (response.error || response.result.length === 0) {
             return null;
         }
 
@@ -327,7 +329,7 @@ DataModel.prototype.getDataSetsForSampleAndExperiment = function(expCode, sample
         for (var i = 0; i < response.result.length; i++) {
             var series = response.result[i];
             for (var j = 0; j < series.containedDataSets.length; j++) {
-                if (series.containedDataSets[j].dataSetTypeCode == "MICROSCOPY_IMG_THUMBNAIL") {
+                if (series.containedDataSets[j].dataSetTypeCode === "MICROSCOPY_IMG_THUMBNAIL") {
                     action(series.containedDataSets[j]);
                     return;
                 }
@@ -350,7 +352,7 @@ DataModel.prototype.retrieveAndDisplayAttachments = function() {
     var experimentId = {
         "@type" : "ExperimentIdentifierId",
         "identifier" : this.expId
-    }
+    };
 
     // Alias
     var dataModelObj = this;
