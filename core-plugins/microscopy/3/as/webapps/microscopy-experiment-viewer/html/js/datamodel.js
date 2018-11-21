@@ -151,11 +151,12 @@ DataModel.prototype.getMicroscopySamplesForMicroscopyExperimentSample = function
  * @param sampleId Sample ID
  * @param mode Mode to be passed to the aggragation service.
  */
-DataModel.prototype.copyDatasetsToUserDir = function(experimentId, sampleId, mode) {
+DataModel.prototype.copyDatasetsToUserDir = function(experimentId, expSampleId, sampleId, mode) {
 
     // Add call to the aggregation service
     var parameters = {
         experimentId: experimentId,
+        expSampleId: expSampleId,
         sampleId: sampleId,
         mode: mode
     };

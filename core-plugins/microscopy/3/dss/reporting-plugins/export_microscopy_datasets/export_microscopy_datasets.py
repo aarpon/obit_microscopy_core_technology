@@ -36,6 +36,7 @@ def c_unique(seq):
     seen_add = seen.add
     return [ x for x in seq if not (x in seen or seen_add(x))]
 
+
 def zip_folder(folder_path, output_path):
     """Zip the contents of an entire folder recursively. Please notice that
     empty sub-folders will NOT be included in the archive.
@@ -62,7 +63,7 @@ def zip_folder(folder_path, output_path):
             #
             #     Exception: [Errno 21] Is a directory <directory_name>
             #
-            # when trying to write a directory to a zip file (in contrast to 
+            # when trying to write a directory to a zip file (in contrast to
             # Python's implementation) and 2) oBIT does not export empty
             # folders in the first place.
 
@@ -109,10 +110,11 @@ class Mover():
     performs the actual copying.
     """
 
-    def __init__(self, experimentId, sampleId, mode, userId, properties, logger):
+    def __init__(self, experimentId, expSampleId, sampleId, mode, userId, properties, logger):
         """Constructor
 
-        experimentId: id of the experiment (must be specified)
+        experimentId: id of the (COLLECTION) experiment (must be specified)
+        expSampleId:  if of the MICROSCOPY_EXPERIMENT sample  (must be specified)
         sampleId:     id of the sample (optional, if specified, the sample id
                       will be used in the search criteria; if set to "" only
                       the experiment id will be used as filter).
@@ -126,6 +128,9 @@ class Mover():
         logger:       logger.
         """
 
+        # Verbosity
+        self._VERBOSE = True
+
         # Logger
         self._logger = logger
 
@@ -135,26 +140,38 @@ class Mover():
         # Store properties
         self._properties = properties
 
-        # Experiment identifier
+        # (COLLECTION) Experiment identifier
         self._experimentId = experimentId
 
-        # Get the experiment
-        self._experiment = searchService.getExperiment(self._experimentId)
+        # Get the collection
+        self._collection = searchService.getExperiment(self._experimentId)
+        if self._VERBOSE:
+            self._logger.info("Retrieved COLLECTION experiment with PERM-ID: " + str(self._collection.permId))
+
+        # (MICROSCOPY_EXPERIMENT) sample identifier
+        self._expSampleId = expSampleId
+
+        # Get the MICROSCOPY_EXPERIMENT sample
+        self._expSample = self._getMicroscopyExperimentSample()
+        if self._VERBOSE:
+            self._logger.info("MICROSCOPY_EXPERIMENT sample retrieved with PERM-ID: " + str(self._expSample.permId))
 
         # Sample identifier
         self._sampleId = sampleId
 
-        # Get the sample
+        # Optional: get the MICROSCOPY_SAMPLE_TYPE sample
         self._sample = None
-        if not self._sampleId == "":
-            self._sample = searchService.getSample(self._sampleId)
+        if self._sampleId != "":
+            self._sample = self._getMicroscopySampleTypeSample()
+            if self._VERBOSE:
+                self._logger.info("MICROSCOPY_SAMPLE_TYPE sample retrieved with PERM-ID: " + str(self._sample.permId))
 
         # Experiment code (alias)
-        # If no / is found, _experimentCode will be the same as _experimentId
-        self._experimentCode = self._experimentId[self._experimentId.rfind("/") + 1:]
+        # If no / is found, _expSampleCode will be the same as _expSampleId
+        self._expSampleCode = self._expSampleId[self._expSampleId.rfind("/") + 1:]
 
         # User folder: depending on the 'mode' settings, the user folder changes
-        if mode =="normal":
+        if mode == "normal":
 
             # Standard user folder
             self._userFolder = os.path.join(self._properties['base_dir'], \
@@ -175,7 +192,7 @@ class Mover():
                                             userId, self._properties['hrm_src_subdir'])
 
         else:
-            raise Exception("Bad value for argument 'mode' (" + mode  +")")
+            raise Exception("Bad value for argument 'mode' (" + mode + ")")
 
         # Store the mode
         self._mode = mode
@@ -187,18 +204,18 @@ class Mover():
 
         # Export full path in user/tmp folder
         self._rootExportPath = os.path.join(self._userFolder,
-                                            self._experimentCode)
-        
+                                            self._expSampleCode)
+
         # Get the experiment name
-        self._experimentName = self._experiment.getPropertyValue("MICROSCOPY_EXPERIMENT_NAME")
-        
+        self._experimentName = self._expSample.getPropertyValue("MICROSCOPY_EXPERIMENT_NAME")
+
         # Experiment full path within the export path
         self._experimentPath = os.path.join(self._rootExportPath,
                                             self._experimentName)
 
         # Info
         self._logger.info("Export experiment with code " + \
-                          self._experimentCode + " to " + \
+                          self._expSampleCode + " to " + \
                           str(self._userFolder))
         self._logger.info("Export mode is " + self._mode)
 
@@ -207,7 +224,6 @@ class Mover():
 
         # Keep track of the number of copied files
         self._numCopiedFiles = 0
-
 
     # Public methods
     # =========================================================================
@@ -220,9 +236,9 @@ class Mover():
         """
 
         # Check that the experiment could be retrieved
-        if self._experiment is None:
+        if self._expSample is None:
             self._message = "Could not retrieve experiment with " \
-            "identifier " + self._experimentId + "!"
+            "identifier " + self._expSampleId + "!"
             self._logger.error(self._message)
             return False
 
@@ -239,7 +255,6 @@ class Mover():
         return (self._copyFilesForExperiment() and
                 self._copyAccessoryFilesForExperiment())
 
-
     def compressIfNeeded(self):
         """Compresses the exported experiment folder to a zip archive
         but only if the mode was "zip".
@@ -247,7 +262,6 @@ class Mover():
 
         if self._mode == "zip":
             zip_folder(self._rootExportPath, self.getZipArchiveFullPath())
-
 
     def getZipArchiveFullPath(self):
         """Return the full path of the zip archive (or "" if mode was "normal").
@@ -258,7 +272,6 @@ class Mover():
 
         return ""
 
-
     def getZipArchiveFileName(self):
         """Return the file name of the zip archive without path."""
 
@@ -268,13 +281,11 @@ class Mover():
 
         return ""
 
-
     def getErrorMessage(self):
         """
         Return the error message (in case process() returned failure)
         """
         return self._message
-
 
     def getNumberOfCopiedFiles(self):
         """
@@ -282,14 +293,12 @@ class Mover():
         """
         return self._numCopiedFiles
 
-
     def getRelativeRootExperimentPath(self):
         """
         Return the experiment path relative to the user folder.
         """
         return userId + "/" + \
             self._rootExportPath[self._rootExportPath.rfind(self._properties['export_dir']):]
-
 
     # Private methods
     # =========================================================================
@@ -317,6 +326,94 @@ class Mover():
 
         return ext
 
+    def _getMicroscopyExperimentSample(self):
+        """Find the MICROSCOPY_EXPERIMENT sample with given Id."""
+
+        # Search sample of type MICROSCOPY_EXPERIMENT with specified CODE
+        sampleCriteria = SearchCriteria()
+        sampleCriteria.addMatchClause(
+            MatchClause.createAttributeMatch(
+                MatchClauseAttribute.TYPE, "MICROSCOPY_EXPERIMENT"))
+        sampleCriteria.addMatchClause(
+            MatchClause.createAttributeMatch(
+                MatchClauseAttribute.CODE, self._expSampleId))
+
+        # Add search criteria for the collection (experiment)
+        expCriteria = SearchCriteria()
+        expCriteria.addMatchClause(
+            MatchClause.createAttributeMatch(
+                MatchClauseAttribute.TYPE, "COLLECTION"))
+        expCriteria.addMatchClause(
+            MatchClause.createAttributeMatch(
+                MatchClauseAttribute.CODE, self._experimentId))
+
+        # Add the experiment subcriteria
+        sampleCriteria.addSubCriteria(
+            SearchSubCriteria.createExperimentCriteria(expCriteria))
+
+        # Search
+        samples = searchService.searchForSamples(sampleCriteria)
+
+        if len(samples) == 0:
+            samples = []
+            self._message = "Could not retrieve MICROSCOPY_EXPERIMENT sample with id " + \
+                self._expSampleId + " from COLLECTION experiment " + self._experimentId + "."
+            self._logger.error(self._message)
+            return samples
+
+        # Return
+        return samples[0]
+
+    def _getMicroscopySampleTypeSample(self):
+
+        # Search sample of type MICROSCOPY_SAMPLE_TYPE with specified CODE
+        sampleCriteria = SearchCriteria()
+        sampleCriteria.addMatchClause(
+            MatchClause.createAttributeMatch(
+                MatchClauseAttribute.TYPE, "MICROSCOPY_SAMPLE_TYPE"))
+        sampleCriteria.addMatchClause(
+            MatchClause.createAttributeMatch(
+                MatchClauseAttribute.CODE, self._sampleId))
+
+        # Add search criteria for sample of type MICROSCOPY_EXPERIMENT with specified CODE
+        sampleParentCriteria = SearchCriteria()
+        sampleParentCriteria.addMatchClause(
+            MatchClause.createAttributeMatch(
+                MatchClauseAttribute.TYPE, "MICROSCOPY_EXPERIMENT"))
+        sampleParentCriteria.addMatchClause(
+            MatchClause.createAttributeMatch(
+                MatchClauseAttribute.CODE, self._expSampleId))
+
+        # Add search criteria for the collection (experiment)
+        expCriteria = SearchCriteria()
+        expCriteria.addMatchClause(
+            MatchClause.createAttributeMatch(
+                MatchClauseAttribute.TYPE, "COLLECTION"))
+        expCriteria.addMatchClause(
+            MatchClause.createAttributeMatch(
+                MatchClauseAttribute.CODE, self._experimentId))
+
+        # Add the parent sample subcriteria
+        sampleCriteria.addSubCriteria(
+            SearchSubCriteria.createSampleParentCriteria(sampleParentCriteria))
+
+        # Add the experiment subcriteria
+        sampleCriteria.addSubCriteria(
+            SearchSubCriteria.createExperimentCriteria(expCriteria))
+
+        # Search
+        samples = searchService.searchForSamples(sampleCriteria)
+
+        if len(samples) == 0:
+            samples = []
+            self._message = "Could not retrieve MICROSCOPY_SAMPLE_TYPE sample with id " + \
+                self._sampleId + " for parent sample MICROSCOPY_EXPERIMENT with id " + \
+                self._expSampleId + " from COLLECTION experiment " + self._experimentId + "."
+            self._logger.error(self._message)
+            return samples
+
+        # Return
+        return samples[0]
 
     def _copyFilesForExperiment(self):
         """
@@ -329,7 +426,7 @@ class Mover():
         """
 
         # Get the datasets for the experiment
-        dataSets = self._getDataSetsForExperiment()
+        dataSets = self._getDataSetsForMicroscopyExperimentSample()
         if len(dataSets) == 0:
             self._logger.error("Experiment does not contain datasets.")
             return False
@@ -353,7 +450,6 @@ class Mover():
 
         # Return success
         return True
-
 
     def _copyAccessoryFilesForExperiment(self):
         """
@@ -390,35 +486,72 @@ class Mover():
         # Return success
         return True
 
-
-    def _getDataSetsForExperiment(self):
+    def _getDataSetsForMicroscopyExperimentSample(self):
         """
-        Return a list of datasets belonging to the experiment and optionally
-        to the sample. If the sample ID is empty, only the experiment is used
-        in the search criteria.
+        Return a list of datasets belonging to the MICROSCOPY_EXPERIMENT sample and optionally  
+        to the MICROSCOPY_SAMPLE_TYPE sample. If the MICROSCOPY_SAMPLE_TYPE sample ID is empty,
+        only the MICROSCOPY_EXPERIMENT id is used in the search criteria.
         If none are found, return [].
 
         """
+        # Dataset criteria
+        datasetSearchCriteria = SearchCriteria()
+        datasetSearchCriteria.addMatchClause(
+            MatchClause.createAttributeMatch(
+                MatchClauseAttribute.TYPE, "MICROSCOPY_IMG_CONTAINER"))
 
-        # Set search criteria to retrieve all datasets of type MICROSCOPY_IMG_CONTAINER
-        # for the experiment. If the sample code is set, we also filter by it.
-        searchCriteria = SearchCriteria()
-        searchCriteria.addMatchClause(MatchClause.createAttributeMatch(MatchClauseAttribute.TYPE, "MICROSCOPY_IMG_CONTAINER"))
+        # Add search criteria for the collection (experiment)
         expCriteria = SearchCriteria()
-        expCriteria.addMatchClause(MatchClause.createAttributeMatch(MatchClauseAttribute.PERM_ID, self._experiment.permId))
-        searchCriteria.addSubCriteria(SearchSubCriteria.createExperimentCriteria(expCriteria))
-        if self._sample is not None:
-            self._logger.info("Filter by sample " + self._sampleId)
-            sampleCriteria = SearchCriteria()
-            sampleCriteria.addMatchClause(MatchClause.createAttributeMatch(MatchClauseAttribute.PERM_ID, self._sample.permId))
-            searchCriteria.addSubCriteria(SearchSubCriteria.createSampleCriteria(sampleCriteria))
+        expCriteria.addMatchClause(
+            MatchClause.createAttributeMatch(
+                MatchClauseAttribute.TYPE, "COLLECTION"))
+        expCriteria.addMatchClause(
+            MatchClause.createAttributeMatch(
+                MatchClauseAttribute.CODE, self._experimentId))
 
-        dataSets = searchService.searchForDataSets(searchCriteria)
+        # Add search criteria for sample of type MICROSCOPY_EXPERIMENT with specified CODE
+        sampleExpCriteria = SearchCriteria()
+        sampleExpCriteria.addMatchClause(
+            MatchClause.createAttributeMatch(
+                MatchClauseAttribute.TYPE, "MICROSCOPY_EXPERIMENT"))
+        sampleExpCriteria.addMatchClause(
+            MatchClause.createAttributeMatch(
+                MatchClauseAttribute.CODE, self._expSampleId))
+
+        if self._sampleId is not None:
+
+            # Add search criteria for sample of type MICROSCOPY_SAMPLE_TYPE with specified CODE
+            sampleCriteria = SearchCriteria()
+            sampleCriteria.addMatchClause(
+                MatchClause.createAttributeMatch(
+                    MatchClauseAttribute.TYPE, "MICROSCOPY_SAMPLE_TYPE"))
+            sampleCriteria.addMatchClause(
+                MatchClause.createAttributeMatch(
+                    MatchClauseAttribute.CODE, self._sampleId))
+            sampleCriteria.addSubCriteria(
+                SearchSubCriteria.createSampleParentCriteria(sampleExpCriteria))
+
+            # Add search for a parent sample of type MICROSCOPY_SAMPLE_TYPE as subcriterion
+            datasetSearchCriteria.addSubCriteria(
+                SearchSubCriteria.createSampleCriteria(sampleCriteria))
+
+        else:
+
+            # Only add the serach for a sample of type MICROSCOPY_EXPERIMENT as subcriterion
+            datasetSearchCriteria.addSubCriteria(
+                SearchSubCriteria.createSampleCriteria(sampleExpCriteria))
+
+        # Add the experiment criteria
+        datasetSearchCriteria.addSubCriteria(
+           SearchSubCriteria.createExperimentCriteria(expCriteria))
+
+        # Retrieve the datasets
+        dataSets = searchService.searchForDataSets(datasetSearchCriteria)
 
         if len(dataSets) == 0:
             dataSets = []
             self._message = "Could not retrieve datasets for experiment " \
-            "with id " + self._experimentId
+            "with id " + self._expSampleId
             if self._sampleId != "":
                 self._message = self._message + " and sample with id " + \
                 self._sampleId
@@ -426,7 +559,6 @@ class Mover():
 
         # Return
         return dataSets
-
 
     def _getAccessoryDataSetsForExperiment(self):
         """
@@ -437,34 +569,72 @@ class Mover():
 
         """
 
-        # Set search criteria to retrieve all datasets of type for the experiment.
-        # If the sample code is set, we also filter by it.
-        searchCriteria = SearchCriteria()
-        searchCriteria.addMatchClause(MatchClause.createAttributeMatch(MatchClauseAttribute.TYPE, "MICROSCOPY_ACCESSORY_FILE"))
-        expCriteria = SearchCriteria()
-        expCriteria.addMatchClause(MatchClause.createAttributeMatch(MatchClauseAttribute.PERM_ID, self._experiment.permId))
-        searchCriteria.addSubCriteria(SearchSubCriteria.createExperimentCriteria(expCriteria))
-        if self._sample is not None:
-            self._logger.info("Filter by sample " + self._sampleId)
-            sampleCriteria = SearchCriteria()
-            sampleCriteria.addMatchClause(MatchClause.createAttributeMatch(MatchClauseAttribute.PERM_ID, self._sample.permId))
-            searchCriteria.addSubCriteria(SearchSubCriteria.createSampleCriteria(sampleCriteria))
+        # Dataset criteria
+        datasetSearchCriteria = SearchCriteria()
+        datasetSearchCriteria.addMatchClause(
+            MatchClause.createAttributeMatch(
+                MatchClauseAttribute.TYPE, "MICROSCOPY_ACCESSORY_FILE"))
 
-        accessoryDataSets = searchService.searchForDataSets(searchCriteria)
+        # Add search criteria for the collection (experiment)
+        expCriteria = SearchCriteria()
+        expCriteria.addMatchClause(
+            MatchClause.createAttributeMatch(
+                MatchClauseAttribute.TYPE, "COLLECTION"))
+        expCriteria.addMatchClause(
+            MatchClause.createAttributeMatch(
+                MatchClauseAttribute.CODE, self._experimentId))
+
+        # Add search criteria for sample of type MICROSCOPY_EXPERIMENT with specified CODE
+        sampleExpCriteria = SearchCriteria()
+        sampleExpCriteria.addMatchClause(
+            MatchClause.createAttributeMatch(
+                MatchClauseAttribute.TYPE, "MICROSCOPY_EXPERIMENT"))
+        sampleExpCriteria.addMatchClause(
+            MatchClause.createAttributeMatch(
+                MatchClauseAttribute.CODE, self._expSampleId))
+
+        if self._sampleId is not None:
+
+            # Add search criteria for sample of type MICROSCOPY_SAMPLE_TYPE with specified CODE
+            sampleCriteria = SearchCriteria()
+            sampleCriteria.addMatchClause(
+                MatchClause.createAttributeMatch(
+                    MatchClauseAttribute.TYPE, "MICROSCOPY_SAMPLE_TYPE"))
+            sampleCriteria.addMatchClause(
+                MatchClause.createAttributeMatch(
+                    MatchClauseAttribute.CODE, self._sampleId))
+            sampleCriteria.addSubCriteria(
+                SearchSubCriteria.createSampleParentCriteria(sampleExpCriteria))
+
+            # Add search for a parent sample of type MICROSCOPY_SAMPLE_TYPE as subcriterion
+            datasetSearchCriteria.addSubCriteria(
+                SearchSubCriteria.createSampleCriteria(sampleCriteria))
+
+        else:
+
+            # Only add the serach for a sample of type MICROSCOPY_EXPERIMENT as subcriterion
+            datasetSearchCriteria.addSubCriteria(
+                SearchSubCriteria.createSampleCriteria(sampleExpCriteria))
+
+        # Add the experiment criteria
+        datasetSearchCriteria.addSubCriteria(
+           SearchSubCriteria.createExperimentCriteria(expCriteria))
+
+        # Retrieve the datasets
+        accessoryDataSets = searchService.searchForDataSets(datasetSearchCriteria)
 
         # Append the accessory datasets
         if len(accessoryDataSets) != 0:
-            self._message = "Found " + str(len(accessoryDataSets)) + \
-                            " accessory datasets for experiment " \
-                            "with id " + self._experimentId
+            accessoryDataSets = []
+            self._message = "The experiment with id " + self._expSampleId
             if self._sampleId != "":
                 self._message = self._message + " and sample with id " + \
                 self._sampleId
+            self._message = self._message + "has no accessory datasets."
             self._logger.info(self._message)
 
         # Return
         return accessoryDataSets
-
 
     def _getFilesForDataSets(self, dataSets):
         """
@@ -496,10 +666,8 @@ class Mover():
             self._message = "Could not retrieve dataset files!"
             self._logger.error(self._message)
 
-
         # Return the files
         return dataSetFiles
-
 
     def _getFilesForAccessoryDataSets(self, dataSets):
         """
@@ -530,10 +698,8 @@ class Mover():
             self._message = "Could not retrieve accessory dataset files!"
             self._logger.error(self._message)
 
-
         # Return the files
         return dataSetFiles
-
 
     def _isValidMicroscopyFile(self, fileName):
         """Checks whether the file has a compatible extension."""
@@ -544,7 +710,6 @@ class Mover():
 
         self._logger.error("File " + fileName + " is not a valid microscopy file.")
         return False
-
 
     def _copyFile(self, source, dstDir):
         """Copies the source file (with full path) to directory dstDir.
@@ -578,7 +743,6 @@ class Mover():
             else:
                 self._copyFile(fullPath, dstSubDir)
 
-
     def _createDir(self, dirFullPath):
         """Creates the passed directory (with full path).
         """
@@ -589,7 +753,6 @@ class Mover():
         # Create dir
         if not os.path.exists(dirFullPath):
             os.makedirs(dirFullPath)
-
 
     def _createRootAndExperimentFolder(self):
         """
@@ -640,13 +803,11 @@ class Mover():
         return True
 
 
-
-
 # Parse properties file for custom settings
 def parsePropertiesFile():
     """Parse properties file for custom plug-in settings."""
 
-    filename = "../core-plugins/microscopy/2/dss/reporting-plugins/export_microscopy_datasets/plugin.properties"
+    filename = "../core-plugins/microscopy/3/dss/reporting-plugins/export_microscopy_datasets/plugin.properties"
     var_names = ['base_dir', 'export_dir', 'hrm_base_dir', 'hrm_src_subdir']
 
     properties = {}
@@ -699,7 +860,7 @@ def parsePropertiesFile():
 # At the end of the first call, a table with following columns is returned:
 #
 # uid      : unique identifier of the running plug-in
-# completed: indicated if the plug-in has finished. This is set to False in the 
+# completed: indicated if the plug-in has finished. This is set to False in the
 #            first call.
 #
 # Later calls return a table with the following columns:
@@ -707,8 +868,8 @@ def parsePropertiesFile():
 # uid      : unique identifier of the running plug-in. This was returned to
 #            the client in the first call and was passed on again as a parameter.
 #            Here it is returned again to make sure that client and server
-#            always know which task they are talking about. 
-# completed: True if the process has completed in the meanwhile, False if it 
+#            always know which task they are talking about.
+# completed: True if the process has completed in the meanwhile, False if it
 #            is still running.
 # success  : True if the process completed successfully, False otherwise.
 # message  : error message in case success was False.
@@ -737,15 +898,15 @@ def aggregate(parameters, tableBuilder):
         row.setCell("completed", False)
 
         # Launch the actual process in a separate thread
-        thread = Thread(target = aggregateProcess,
-                        args = (parameters, tableBuilder, uid))
+        thread = Thread(target=aggregateProcess,
+                        args=(parameters, tableBuilder, uid))
         thread.start()
 
         # Return immediately
         return
 
     # The process is already running in a separate thread. We get current
-    # results and return them 
+    # results and return them
     resultToSend = LRCache.get(uid);
     if resultToSend is None:
         # This should not happen
@@ -767,7 +928,7 @@ def aggregate(parameters, tableBuilder):
     row.setCell("completed", resultToSend["completed"])
     row.setCell("success", resultToSend["success"])
     row.setCell("message", resultToSend["message"])
-    row.setCell("nCopiedFiles", resultToSend["nCopiedFiles"]) 
+    row.setCell("nCopiedFiles", resultToSend["nCopiedFiles"])
     row.setCell("relativeExpFolder", resultToSend["relativeExpFolder"])
     row.setCell("zipArchiveFileName", resultToSend["zipArchiveFileName"])
     row.setCell("mode", resultToSend["mode"])
@@ -792,7 +953,7 @@ def aggregateProcess(parameters, tableBuilder, uid):
 
     # Get path to containing folder
     # __file__ does not work (reliably) in Jython
-    dbPath = "../core-plugins/microscopy/2/dss/reporting-plugins/export_microscopy_datasets"
+    dbPath = "../core-plugins/microscopy/3/dss/reporting-plugins/export_microscopy_datasets"
 
     # Path to the logs subfolder
     logPath = os.path.join(dbPath, "logs")
@@ -805,7 +966,7 @@ def aggregateProcess(parameters, tableBuilder, uid):
     logFile = os.path.join(logPath, "log.txt")
 
     # Set up logging
-    logging.basicConfig(filename=logFile, level=logging.DEBUG, 
+    logging.basicConfig(filename=logFile, level=logging.DEBUG,
                         format='%(asctime)-15s %(levelname)s: %(message)s')
     logger = logging.getLogger()
 
@@ -814,10 +975,13 @@ def aggregateProcess(parameters, tableBuilder, uid):
     if properties is None:
         raise Exception("Could not process plugin.properties")
 
-    # Get the experiment identifier
+    # Get the COLLECTION experiment identifier
     experimentId = parameters.get("experimentId")
 
-    # Get the sample identifier
+    # Get the MICROSCOPY_EXPERIMENT sample identifier
+    expSampleId = parameters.get("expSampleId")
+
+    # Get the MICROSCOPY_SAMPLE_TYPE sample identifier
     sampleId = parameters.get("sampleId")
 
     # Get the mode
@@ -825,16 +989,20 @@ def aggregateProcess(parameters, tableBuilder, uid):
 
     # Info
     logger.info("Aggregation plug-in called with following parameters:")
-    logger.info("experimentId = " + experimentId)
-    logger.info("sampleId     = " + sampleId)
-    logger.info("mode         = " + mode)
-    logger.info("userId       = " + userId)
+    logger.info("* COLLECTION experimentId          = " + experimentId)
+    logger.info("* MICROSCOPY_EXPERIMENT sample Id  = " + expSampleId)
+    logger.info("* MICROSCOPY_SAMPLE_TYPE sample Id = " + sampleId)
+    logger.info("* mode         = " + mode)
+    logger.info("* userId       = " + userId)
     logger.info("Aggregation plugin properties:")
-    logger.info("properties   = " + str(properties))
+    logger.info(" * base_dir       = " + properties['base_dir'])
+    logger.info(" * export_dir     = " + properties['export_dir'])
+    logger.info(" * hrm_base_dir   = " + properties['hrm_base_dir'])
+    logger.info(" * hrm_src_subdir = " + properties['hrm_src_subdir'])
 
     # Instantiate the Mover object - userId is a global variable
     # made available to the aggregation plug-in
-    mover = Mover(experimentId, sampleId, mode, userId, properties, logger)
+    mover = Mover(experimentId, expSampleId, sampleId, mode, userId, properties, logger)
 
     # Process
     success = mover.process()

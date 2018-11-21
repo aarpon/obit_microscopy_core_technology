@@ -37,7 +37,7 @@ function DataModel() {
     this.microscopyExperimentSample = null;
 
     // MICROSCOPY_EXPERIMENT sample name
-    //this.microscopyExperimentSampleName = "";
+    this.microscopyExperimentSampleName = "";
 
     // Datasets and dataset codes
     this.dataSets = [];
@@ -291,6 +291,7 @@ DataModel.prototype.copyDatasetsToUserDir = function (experimentId, sampleId, mo
     // Add call to the aggregation service
     var parameters = {
         experimentId: experimentId,
+        expSampleId: expSampleId,
         sampleId: sampleId,
         mode: mode
     };
