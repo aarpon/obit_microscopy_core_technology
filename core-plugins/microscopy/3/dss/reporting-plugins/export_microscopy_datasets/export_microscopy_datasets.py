@@ -143,11 +143,6 @@ class Mover():
         # (COLLECTION) Experiment identifier
         self._experimentId = experimentId
 
-        # Get the collection
-        self._collection = searchService.getExperiment(self._experimentId)
-        if self._VERBOSE:
-            self._logger.info("Retrieved COLLECTION experiment with PERM-ID: " + str(self._collection.permId))
-
         # (MICROSCOPY_EXPERIMENT) sample identifier
         self._expSampleId = expSampleId
 
@@ -252,8 +247,8 @@ class Mover():
         # Now point the current path to the newly created experiment folder
 
         # And we copy the files contained in the Experiment
-        return (self._copyFilesForExperiment() and
-                self._copyAccessoryFilesForExperiment())
+        return (self._copyFilesForExperiment("MICROSCOPY_IMG_CONTAINER") and
+                self._copyFilesForExperiment("MICROSCOPY_ACCESSORY_FILE"))
 
     def compressIfNeeded(self):
         """Compresses the exported experiment folder to a zip archive
@@ -415,7 +410,7 @@ class Mover():
         # Return
         return samples[0]
 
-    def _copyFilesForExperiment(self):
+    def _copyFilesForExperiment(self, requestedDatasetType="MICROSCOPY_IMG_CONTAINER"):
         """
         Copies the microscopy files in the experiment to the user directory.
         Folders are copied recursively.
@@ -425,80 +420,69 @@ class Mover():
         getErrorMessage() method.
         """
 
+        # Only two types of experiment are allowed
+        assert requestedDatasetType == "MICROSCOPY_IMG_CONTAINER" or requestedDatasetType == "MICROSCOPY_ACCESSORY_FILE", \
+            "Input argument 'requestedDatasetType' must be one of MICROSCOPY_IMG_CONTAINER or MICROSCOPY_ACCESSORY_FILE."
+
         # Get the datasets for the experiment
-        dataSets = self._getDataSetsForMicroscopyExperimentSample()
-        if len(dataSets) == 0:
-            self._logger.error("Experiment does not contain datasets.")
+        dataSets = []
+        if self._sampleId == "":
+            # Collect datasets for **all samples** of type MICROSCOPY_SAMPLE_TYPE
+            # beloging to the specified MICROSCOPY_EXPERIMENT sample
+            dataSets = self._getDataSetsForMicroscopyExperimentSample(requestedDatasetType)
+        else:
+            # Collect datasets for the **requested sample** of type MICROSCOPY_SAMPLE_TYPE
+            # beloging to the specified MICROSCOPY_EXPERIMENT sample
+            dataSets = self._getDataSetsForMicroscopySampleType(requestedDatasetType)
+
+        # Datasets of type must exist
+        if requestedDatasetType == "MICROSCOPY_IMG_CONTAINER" and len(dataSets) == 0:
+            self._logger.error("Experiment does not contain datasets of type MICROSCOPY_IMG_CONTAINER.")
             return False
 
         # Get the files for the datasets
-        dataSetFiles = self._getFilesForDataSets(dataSets)
-        if len(dataSetFiles) == 0:
+        dataSetFiles = self._getFilesForDataSets(dataSets, requestedDatasetType)
+        if requestedDatasetType == "MICROSCOPY_IMG_CONTAINER" and len(dataSetFiles) == 0:
             self._logger.error("Datasets do not contain files.")
             return False
 
-        # Since sub-series reference the same file, we make sure to keep
-        # a unique version of the file list
-        dataSetFiles = c_unique(dataSetFiles)
+        # Process returned dataset files
+        if dataSetFiles:
 
-        # Copy the files to the experiment folder
-        for micrFile in dataSetFiles:
-            if os.path.isdir(micrFile):
-                self._copyDir(micrFile, self._experimentPath)
-            else:
-                self._copyFile(micrFile, self._experimentPath)
+            # Since sub-series reference the same file, we make sure to keep
+            # a unique version of the file list
+            dataSetFiles = c_unique(dataSetFiles)
 
-        # Return success
-        return True
-
-    def _copyAccessoryFilesForExperiment(self):
-        """
-        Copies the microscopy files in the experiment to the user directory.
-        Folders are copied recursively.
-
-        Returns True for success. In case of error, returns False and sets
-        the error message in self._message -- to be retrieved with the
-        getErrorMessage() method.
-        """
-
-        # Get the datasets for the experiment
-        dataSets = self._getAccessoryDataSetsForExperiment()
-        if len(dataSets) == 0:
-            return True
-
-        # Get the files for the datasets
-        dataSetFiles = self._getFilesForAccessoryDataSets(dataSets)
-        if len(dataSetFiles) == 0:
-            self._logger.error("Accessory datasets do not contain files.")
-            return False
-
-        # Since sub-series reference the same file, we make sure to keep
-        # a unique version of the file list
-        dataSetFiles = c_unique(dataSetFiles)
-
-        # Copy the files to the experiment folder
-        for micrFile in dataSetFiles:
-            if os.path.isdir(micrFile):
-                self._copyDir(micrFile, self._experimentPath)
-            else:
-                self._copyFile(micrFile, self._experimentPath)
+            # Copy the files to the experiment folder
+            for micrFile in dataSetFiles:
+                if os.path.isdir(micrFile):
+                    self._copyDir(micrFile, self._experimentPath)
+                else:
+                    self._copyFile(micrFile, self._experimentPath)
 
         # Return success
         return True
 
-    def _getDataSetsForMicroscopyExperimentSample(self):
+    def _getDataSetsForMicroscopySampleType(self, requestedDatasetType="MICROSCOPY_IMG_CONTAINER"):
         """
-        Return a list of datasets belonging to the MICROSCOPY_EXPERIMENT sample and optionally  
-        to the MICROSCOPY_SAMPLE_TYPE sample. If the MICROSCOPY_SAMPLE_TYPE sample ID is empty,
-        only the MICROSCOPY_EXPERIMENT id is used in the search criteria.
+        Return a list of datasets of requested type belonging to the MICROSCOPY_EXPERIMENT sample 
+        and a specific sample of type MICROSCOPY_SAMPLE_TYPE.
         If none are found, return [].
-
         """
+
+        # Only two types of experiment are allowed
+        assert requestedDatasetType == "MICROSCOPY_IMG_CONTAINER" or requestedDatasetType == "MICROSCOPY_ACCESSORY_FILE", \
+            "Input argument 'requestedDatasetType' must be one of MICROSCOPY_IMG_CONTAINER or MICROSCOPY_ACCESSORY_FILE."
+
+        if self._VERBOSE:
+            self._logger.info("Retrieving datasets for requested MICROSCOPY_SAMPLE_TYPE " + \
+                              "with code " + self._sampleId) + "."
+
         # Dataset criteria
         datasetSearchCriteria = SearchCriteria()
         datasetSearchCriteria.addMatchClause(
             MatchClause.createAttributeMatch(
-                MatchClauseAttribute.TYPE, "MICROSCOPY_IMG_CONTAINER"))
+                MatchClauseAttribute.TYPE, requestedDatasetType))
 
         # Add search criteria for the collection (experiment)
         expCriteria = SearchCriteria()
@@ -518,30 +502,22 @@ class Mover():
             MatchClause.createAttributeMatch(
                 MatchClauseAttribute.CODE, self._expSampleId))
 
-        if self._sampleId is not None:
+        # Add search criteria for sample of type MICROSCOPY_SAMPLE_TYPE with specified CODE
+        sampleCriteria = SearchCriteria()
+        sampleCriteria.addMatchClause(
+            MatchClause.createAttributeMatch(
+                MatchClauseAttribute.TYPE, "MICROSCOPY_SAMPLE_TYPE"))
+        sampleCriteria.addMatchClause(
+             MatchClause.createAttributeMatch(
+                MatchClauseAttribute.CODE, self._sampleId))
+        sampleCriteria.addSubCriteria(
+            SearchSubCriteria.createSampleParentCriteria(sampleExpCriteria))
 
-            # Add search criteria for sample of type MICROSCOPY_SAMPLE_TYPE with specified CODE
-            sampleCriteria = SearchCriteria()
-            sampleCriteria.addMatchClause(
-                MatchClause.createAttributeMatch(
-                    MatchClauseAttribute.TYPE, "MICROSCOPY_SAMPLE_TYPE"))
-            sampleCriteria.addMatchClause(
-                MatchClause.createAttributeMatch(
-                    MatchClauseAttribute.CODE, self._sampleId))
-            sampleCriteria.addSubCriteria(
-                SearchSubCriteria.createSampleParentCriteria(sampleExpCriteria))
+        # Add search for a parent sample of type MICROSCOPY_SAMPLE_TYPE as subcriterion
+        datasetSearchCriteria.addSubCriteria(
+            SearchSubCriteria.createSampleCriteria(sampleCriteria))
 
-            # Add search for a parent sample of type MICROSCOPY_SAMPLE_TYPE as subcriterion
-            datasetSearchCriteria.addSubCriteria(
-                SearchSubCriteria.createSampleCriteria(sampleCriteria))
-
-        else:
-
-            # Only add the serach for a sample of type MICROSCOPY_EXPERIMENT as subcriterion
-            datasetSearchCriteria.addSubCriteria(
-                SearchSubCriteria.createSampleCriteria(sampleExpCriteria))
-
-        # Add the experiment criteria
+         # Add the experiment criteria
         datasetSearchCriteria.addSubCriteria(
            SearchSubCriteria.createExperimentCriteria(expCriteria))
 
@@ -560,22 +536,26 @@ class Mover():
         # Return
         return dataSets
 
-    def _getAccessoryDataSetsForExperiment(self):
+    def _getDataSetsForMicroscopyExperimentSample(self, requestedDatasetType="MICROSCOPY_IMG_CONTAINER"):
         """
-        Return a list of datasets belonging to the experiment and optionally
-        to the sample. If the sample ID is empty, only the experiment is used
-        in the search criteria.
+        Return a list of datasets of the requested type belonging to the MICROSCOPY_EXPERIMENT 
+        (i.e. all contained MICROSCOPY_SAMPLE_TYPE samples).
         If none are found, return [].
-
         """
 
-        # Dataset criteria
-        datasetSearchCriteria = SearchCriteria()
-        datasetSearchCriteria.addMatchClause(
-            MatchClause.createAttributeMatch(
-                MatchClauseAttribute.TYPE, "MICROSCOPY_ACCESSORY_FILE"))
+        # Only two types of experiment are allowed
+        assert requestedDatasetType == "MICROSCOPY_IMG_CONTAINER" or requestedDatasetType == "MICROSCOPY_ACCESSORY_FILE", \
+            "Input argument 'requestedDatasetType' must be one of MICROSCOPY_IMG_CONTAINER or MICROSCOPY_ACCESSORY_FILE."
 
-        # Add search criteria for the collection (experiment)
+        if self._VERBOSE:
+            self._logger.info("Retrieving datasets of type " + requestedDatasetType + \
+                              " for all MICROSCOPY_SAMPLE_TYPE samples.")
+
+        #
+        # Common search criteria
+        #
+
+        # Search criteria for the collection (experiment)
         expCriteria = SearchCriteria()
         expCriteria.addMatchClause(
             MatchClause.createAttributeMatch(
@@ -584,7 +564,10 @@ class Mover():
             MatchClause.createAttributeMatch(
                 MatchClauseAttribute.CODE, self._experimentId))
 
-        # Add search criteria for sample of type MICROSCOPY_EXPERIMENT with specified CODE
+        if self._VERBOSE:
+            self._logger.info("COLLECTION criteria successfully created")
+
+        # Search criteria for sample of type MICROSCOPY_EXPERIMENT with specified CODE
         sampleExpCriteria = SearchCriteria()
         sampleExpCriteria.addMatchClause(
             MatchClause.createAttributeMatch(
@@ -593,55 +576,145 @@ class Mover():
             MatchClause.createAttributeMatch(
                 MatchClauseAttribute.CODE, self._expSampleId))
 
-        if self._sampleId is not None:
+        if self._VERBOSE:
+            self._logger.info("MICROSCOPY_EXPERIMENT criteria successfully created")
 
-            # Add search criteria for sample of type MICROSCOPY_SAMPLE_TYPE with specified CODE
+        #
+        # First, get all samples of type MICROSCOPY_SAMPLE_TYPE for
+        # the requested MICROSCOPY_EXPERIMENT sample.
+        #
+
+        # Search criteria for all samples of type MICROSCOPY_SAMPLE_TYPE
+        sampleCriteria = SearchCriteria()
+        sampleCriteria.addMatchClause(
+            MatchClause.createAttributeMatch(
+                MatchClauseAttribute.TYPE, "MICROSCOPY_SAMPLE_TYPE"))
+
+        if self._VERBOSE:
+            self._logger.info("MICROSCOPY_SAMPLE_TYPE criteria successfully created")
+
+        # Add the sampleExpCriteria as parent sample criteria
+        sampleCriteria.addSubCriteria(
+            SearchSubCriteria.createSampleParentCriteria(sampleExpCriteria))
+
+        if self._VERBOSE:
+            self._logger.info("MICROSCOPY_EXPERIMENT criteria successfully added as parent sample criteria to MICROSCOPY_SAMPLE_TYPE criteria")
+
+        # Retrieve the MICROSCOPY_SAMPLE_TYPE samples
+        samples = searchService.searchForSamples(sampleCriteria)
+
+        if self._VERBOSE:
+            self._logger.info("search executed: returned " + str(len(samples)) + " samples")
+
+        # Did we find any samples?
+        if len(samples) == 0:
+            self._message = "Could not retrieve any samples of type MICROSCOPY_SAMPLE_TYPE " + \
+                " for parent sample MICROSCOPY_EXPERIMENT with id " + self._expSampleId + \
+                " from COLLECTION experiment " + self._experimentId + "."
+            self._logger.error(self._message)
+
+            # No datasets found; return an empty list
+            dataSets = []
+            return dataSets
+
+        #
+        # Then, get all datasets of requested type for each of the MICROSCOPY_SAMPLE_TYPE samples.
+        # Please notice that datasets of type MICROSCOPY_IMG_CONTAINER must exist for all samples,
+        # whereas datasets of type MICROSCOPY_ACCESSORY_FILE may be absent.
+        #
+
+        # Initialize dataSets list
+        dataSets = []
+
+        # Dataset criteria: set type to match the requested one
+        datasetSearchCriteria = SearchCriteria()
+        datasetSearchCriteria.addMatchClause(
+            MatchClause.createAttributeMatch(
+                MatchClauseAttribute.TYPE, requestedDatasetType))
+
+        if self._VERBOSE:
+            self._logger.info("Criteria for datasets of type " + requestedDatasetType + " successfully created.")
+
+        # Process all samples
+        for sample in samples:
+
+            if self._VERBOSE:
+                self._logger.info("Processing sample with code " + str(sample.code))
+
+            # We recycle the expCriteria and sampleExpCriteria from above; we create
+            # a sample search criteria for current sample type and code
             sampleCriteria = SearchCriteria()
             sampleCriteria.addMatchClause(
                 MatchClause.createAttributeMatch(
                     MatchClauseAttribute.TYPE, "MICROSCOPY_SAMPLE_TYPE"))
+
+            if self._VERBOSE:
+                self._logger.info("MICROSCOPY_SAMPLE_TYPE criteria successfully created")
+
+            # Add current sample code as criterion
             sampleCriteria.addMatchClause(
                 MatchClause.createAttributeMatch(
-                    MatchClauseAttribute.CODE, self._sampleId))
+                    MatchClauseAttribute.CODE, sample.code))
             sampleCriteria.addSubCriteria(
                 SearchSubCriteria.createSampleParentCriteria(sampleExpCriteria))
+
+            if self._VERBOSE:
+                self._logger.info("MICROSCOPY_EXPERIMENT criteria successfully added as parent sample criteria to MICROSCOPY_SAMPLE_TYPE criteria")
 
             # Add search for a parent sample of type MICROSCOPY_SAMPLE_TYPE as subcriterion
             datasetSearchCriteria.addSubCriteria(
                 SearchSubCriteria.createSampleCriteria(sampleCriteria))
 
-        else:
+            if self._VERBOSE:
+                self._logger.info("MICROSCOPY_SAMPLE_TYPE criteria successfully added as sample criteria to the dataset criteria")
 
-            # Only add the serach for a sample of type MICROSCOPY_EXPERIMENT as subcriterion
+            # Add the experiment criteria
             datasetSearchCriteria.addSubCriteria(
-                SearchSubCriteria.createSampleCriteria(sampleExpCriteria))
+                SearchSubCriteria.createExperimentCriteria(expCriteria))
 
-        # Add the experiment criteria
-        datasetSearchCriteria.addSubCriteria(
-           SearchSubCriteria.createExperimentCriteria(expCriteria))
+            if self._VERBOSE:
+                self._logger.info("COLLECTION criteria successfully added as experiment criteria to the dataset criteria")
 
-        # Retrieve the datasets
-        accessoryDataSets = searchService.searchForDataSets(datasetSearchCriteria)
+            # Retrieve the datasets
+            currentDataSets = searchService.searchForDataSets(datasetSearchCriteria)
 
-        # Append the accessory datasets
-        if len(accessoryDataSets) != 0:
-            accessoryDataSets = []
-            self._message = "The experiment with id " + self._expSampleId
-            if self._sampleId != "":
-                self._message = self._message + " and sample with id " + \
-                self._sampleId
-            self._message = self._message + "has no accessory datasets."
-            self._logger.info(self._message)
+            if self._VERBOSE:
+                self._logger.info("search executed: returned " + str(len(currentDataSets)) + " datasets")
 
-        # Return
-        return accessoryDataSets
+            # We expect that ALL samples have at least one dataset of type MICROSCOPY_IMG_CONTAINER,
+            # but samples of type MICROSCOPY_ACCESSORY_FILE may be absent.
+            numRetrievedDataSets = len(currentDataSets)
+            if numRetrievedDataSets == 0 and requestedDatasetType == "MICROSCOPY_IMG_CONTAINER":
+                self._message = "Could not retrieve any datasets for sample of type " + \
+                "MICROSCOPY_SAMPLE_TYPE and code " + sample.code + "."
+                self._logger.error(self._message)
+                # Return an empty list of datasets
+                dataSets = []
+                return dataSets
 
-    def _getFilesForDataSets(self, dataSets):
+            # Append the retrieved datasets to the global list
+            if numRetrievedDataSets > 0:
+                dataSets.extend(currentDataSets)
+
+        if self._VERBOSE:
+            self._logger.info("Returning a total of " + str(len(dataSets)) + " datasets")
+
+        # We collected all datasets
+        return dataSets
+
+    def _getFilesForDataSets(self, dataSets, requestedDatasetType="MICROSCOPY_IMG_CONTAINER"):
         """
         Get the list of microscopy file paths that correspond to the input list
         of datasets. If no files are found, returns [].
         """
 
+        # Only two types of experiment are allowed
+        assert requestedDatasetType == "MICROSCOPY_IMG_CONTAINER" or requestedDatasetType == "MICROSCOPY_ACCESSORY_FILE", \
+            "Input argument 'requestedDatasetType' must be one of MICROSCOPY_IMG_CONTAINER or MICROSCOPY_ACCESSORY_FILE."
+
+        if self._VERBOSE:
+            self._logger.info("Entering method _getFilesForDataSets() with " + str(len(dataSets)) + " datasets to process")
+
         if dataSets == []:
             return []
 
@@ -657,45 +730,17 @@ class Mover():
                         fileName = str(fileName)
                         if os.path.isdir(str(fileName)):
                             dataSetFiles.append(fileName)
-                        elif self._isValidMicroscopyFile(fileName):
-                            dataSetFiles.append(fileName)
                         else:
-                            raise("Unexpected file!")
+                            if requestedDatasetType == "MICROSCOPY_IMG_CONTAINER":
+                                if self._isValidMicroscopyFile(fileName):
+                                    # Only valid microscopy files are accepted
+                                    dataSetFiles.append(fileName)
+                            else:
+                                # All files are accepted
+                                dataSetFiles.append(fileName)
 
         if len(dataSetFiles) == 0:
             self._message = "Could not retrieve dataset files!"
-            self._logger.error(self._message)
-
-        # Return the files
-        return dataSetFiles
-
-    def _getFilesForAccessoryDataSets(self, dataSets):
-        """
-        Get the list of file paths that correspond to the input list
-        of accessory datasets. If no files are found, returns [].
-        """
-
-        if dataSets == []:
-            return []
-
-        dataSetFiles = []
-        for dataSet in dataSets:
-            content = contentProvider.getContent(dataSet.getDataSetCode())
-            nodes = content.listMatchingNodes("original", ".*")
-
-            # All file types are allowed
-            if nodes is not None:
-                for node in nodes:
-                    fileName = node.tryGetFile()
-                    if fileName is not None:
-                        fileName = str(fileName)
-                        if os.path.isdir(str(fileName)):
-                            dataSetFiles.append(fileName)
-                        else:
-                            dataSetFiles.append(fileName)
-
-        if len(dataSetFiles) == 0:
-            self._message = "Could not retrieve accessory dataset files!"
             self._logger.error(self._message)
 
         # Return the files
