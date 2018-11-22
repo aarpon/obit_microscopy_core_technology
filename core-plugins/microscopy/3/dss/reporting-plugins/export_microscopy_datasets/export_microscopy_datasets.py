@@ -128,9 +128,6 @@ class Mover():
         logger:       logger.
         """
 
-        # Verbosity
-        self._VERBOSE = True
-
         # Logger
         self._logger = logger
 
@@ -148,8 +145,10 @@ class Mover():
 
         # Get the MICROSCOPY_EXPERIMENT sample
         self._expSample = self._getMicroscopyExperimentSample()
-        if self._VERBOSE:
-            self._logger.info("MICROSCOPY_EXPERIMENT sample retrieved with PERM-ID: " + str(self._expSample.permId))
+
+        # Inform
+        self._logger.info("MICROSCOPY_EXPERIMENT sample retrieved " + \
+                          "with PERM-ID: " + str(self._expSample.permId))
 
         # Sample identifier
         self._sampleId = sampleId
@@ -158,8 +157,10 @@ class Mover():
         self._sample = None
         if self._sampleId != "":
             self._sample = self._getMicroscopySampleTypeSample()
-            if self._VERBOSE:
-                self._logger.info("MICROSCOPY_SAMPLE_TYPE sample retrieved with PERM-ID: " + str(self._sample.permId))
+
+            # Inform
+            self._logger.info("MICROSCOPY_SAMPLE_TYPE sample retrieved " + \
+                              "with PERM-ID: " + str(self._sample.permId))
 
         # Experiment code (alias)
         # If no / is found, _expSampleCode will be the same as _expSampleId
@@ -474,9 +475,9 @@ class Mover():
         assert requestedDatasetType == "MICROSCOPY_IMG_CONTAINER" or requestedDatasetType == "MICROSCOPY_ACCESSORY_FILE", \
             "Input argument 'requestedDatasetType' must be one of MICROSCOPY_IMG_CONTAINER or MICROSCOPY_ACCESSORY_FILE."
 
-        if self._VERBOSE:
-            self._logger.info("Retrieving datasets for requested MICROSCOPY_SAMPLE_TYPE " + \
-                              "with code " + self._sampleId) + "."
+        # Inform
+        self._logger.info("Retrieving datasets for requested MICROSCOPY_SAMPLE_TYPE " + \
+                          "with code " + self._sampleId) + "."
 
         # Dataset criteria
         datasetSearchCriteria = SearchCriteria()
@@ -547,9 +548,9 @@ class Mover():
         assert requestedDatasetType == "MICROSCOPY_IMG_CONTAINER" or requestedDatasetType == "MICROSCOPY_ACCESSORY_FILE", \
             "Input argument 'requestedDatasetType' must be one of MICROSCOPY_IMG_CONTAINER or MICROSCOPY_ACCESSORY_FILE."
 
-        if self._VERBOSE:
-            self._logger.info("Retrieving datasets of type " + requestedDatasetType + \
-                              " for all MICROSCOPY_SAMPLE_TYPE samples.")
+        # Inform
+        self._logger.info("Retrieving datasets of type " + requestedDatasetType + \
+                          " for all MICROSCOPY_SAMPLE_TYPE samples.")
 
         #
         # Common search criteria
@@ -564,9 +565,6 @@ class Mover():
             MatchClause.createAttributeMatch(
                 MatchClauseAttribute.CODE, self._experimentId))
 
-        if self._VERBOSE:
-            self._logger.info("COLLECTION criteria successfully created")
-
         # Search criteria for sample of type MICROSCOPY_EXPERIMENT with specified CODE
         sampleExpCriteria = SearchCriteria()
         sampleExpCriteria.addMatchClause(
@@ -575,9 +573,6 @@ class Mover():
         sampleExpCriteria.addMatchClause(
             MatchClause.createAttributeMatch(
                 MatchClauseAttribute.CODE, self._expSampleId))
-
-        if self._VERBOSE:
-            self._logger.info("MICROSCOPY_EXPERIMENT criteria successfully created")
 
         #
         # First, get all samples of type MICROSCOPY_SAMPLE_TYPE for
@@ -590,21 +585,12 @@ class Mover():
             MatchClause.createAttributeMatch(
                 MatchClauseAttribute.TYPE, "MICROSCOPY_SAMPLE_TYPE"))
 
-        if self._VERBOSE:
-            self._logger.info("MICROSCOPY_SAMPLE_TYPE criteria successfully created")
-
         # Add the sampleExpCriteria as parent sample criteria
         sampleCriteria.addSubCriteria(
             SearchSubCriteria.createSampleParentCriteria(sampleExpCriteria))
 
-        if self._VERBOSE:
-            self._logger.info("MICROSCOPY_EXPERIMENT criteria successfully added as parent sample criteria to MICROSCOPY_SAMPLE_TYPE criteria")
-
         # Retrieve the MICROSCOPY_SAMPLE_TYPE samples
         samples = searchService.searchForSamples(sampleCriteria)
-
-        if self._VERBOSE:
-            self._logger.info("search executed: returned " + str(len(samples)) + " samples")
 
         # Did we find any samples?
         if len(samples) == 0:
@@ -632,14 +618,8 @@ class Mover():
             MatchClause.createAttributeMatch(
                 MatchClauseAttribute.TYPE, requestedDatasetType))
 
-        if self._VERBOSE:
-            self._logger.info("Criteria for datasets of type " + requestedDatasetType + " successfully created.")
-
         # Process all samples
         for sample in samples:
-
-            if self._VERBOSE:
-                self._logger.info("Processing sample with code " + str(sample.code))
 
             # We recycle the expCriteria and sampleExpCriteria from above; we create
             # a sample search criteria for current sample type and code
@@ -648,9 +628,6 @@ class Mover():
                 MatchClause.createAttributeMatch(
                     MatchClauseAttribute.TYPE, "MICROSCOPY_SAMPLE_TYPE"))
 
-            if self._VERBOSE:
-                self._logger.info("MICROSCOPY_SAMPLE_TYPE criteria successfully created")
-
             # Add current sample code as criterion
             sampleCriteria.addMatchClause(
                 MatchClause.createAttributeMatch(
@@ -658,28 +635,16 @@ class Mover():
             sampleCriteria.addSubCriteria(
                 SearchSubCriteria.createSampleParentCriteria(sampleExpCriteria))
 
-            if self._VERBOSE:
-                self._logger.info("MICROSCOPY_EXPERIMENT criteria successfully added as parent sample criteria to MICROSCOPY_SAMPLE_TYPE criteria")
-
             # Add search for a parent sample of type MICROSCOPY_SAMPLE_TYPE as subcriterion
             datasetSearchCriteria.addSubCriteria(
                 SearchSubCriteria.createSampleCriteria(sampleCriteria))
-
-            if self._VERBOSE:
-                self._logger.info("MICROSCOPY_SAMPLE_TYPE criteria successfully added as sample criteria to the dataset criteria")
 
             # Add the experiment criteria
             datasetSearchCriteria.addSubCriteria(
                 SearchSubCriteria.createExperimentCriteria(expCriteria))
 
-            if self._VERBOSE:
-                self._logger.info("COLLECTION criteria successfully added as experiment criteria to the dataset criteria")
-
             # Retrieve the datasets
             currentDataSets = searchService.searchForDataSets(datasetSearchCriteria)
-
-            if self._VERBOSE:
-                self._logger.info("search executed: returned " + str(len(currentDataSets)) + " datasets")
 
             # We expect that ALL samples have at least one dataset of type MICROSCOPY_IMG_CONTAINER,
             # but samples of type MICROSCOPY_ACCESSORY_FILE may be absent.
@@ -696,9 +661,6 @@ class Mover():
             if numRetrievedDataSets > 0:
                 dataSets.extend(currentDataSets)
 
-        if self._VERBOSE:
-            self._logger.info("Returning a total of " + str(len(dataSets)) + " datasets")
-
         # We collected all datasets
         return dataSets
 
@@ -711,9 +673,6 @@ class Mover():
         # Only two types of experiment are allowed
         assert requestedDatasetType == "MICROSCOPY_IMG_CONTAINER" or requestedDatasetType == "MICROSCOPY_ACCESSORY_FILE", \
             "Input argument 'requestedDatasetType' must be one of MICROSCOPY_IMG_CONTAINER or MICROSCOPY_ACCESSORY_FILE."
-
-        if self._VERBOSE:
-            self._logger.info("Entering method _getFilesForDataSets() with " + str(len(dataSets)) + " datasets to process")
 
         if dataSets == []:
             return []
