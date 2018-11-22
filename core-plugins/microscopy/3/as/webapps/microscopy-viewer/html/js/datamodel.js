@@ -171,13 +171,10 @@ function DataModel() {
  */
 DataModel.prototype.initData = function (action) {
 
-    // Build the code from the identifier
-    this.sampleCode = this.microscopySampleId.substring(1 + this.microscopySampleId.lastIndexOf("/"));
-
     // Search for the MICROSCOPY_SAMPLE_TYPE sample. Make sure to retrieve the parent samples as well
     var searchCriteria = new SearchCriteria();
     searchCriteria.addMatchClause(SearchCriteriaMatchClause.createAttributeMatch("TYPE", "MICROSCOPY_SAMPLE_TYPE"));
-    searchCriteria.addMatchClause(SearchCriteriaMatchClause.createAttributeMatch("CODE", this.sampleCode));
+    searchCriteria.addMatchClause(SearchCriteriaMatchClause.createAttributeMatch("CODE", this.microscopySampleId));
 
     this.openbisServer.searchForSamplesWithFetchOptions(searchCriteria, ["PROPERTIES", "PARENTS"], action);
 
@@ -286,7 +283,7 @@ DataModel.prototype.experimentContainsAccessoryFiles = function (action) {
  * @param sampleId Sample ID
  * @param mode Mode to be passed to the aggragation service.
  */
-DataModel.prototype.copyDatasetsToUserDir = function (experimentId, sampleId, mode) {
+DataModel.prototype.copyDatasetsToUserDir = function (experimentId, expSampleId, sampleId, mode) {
 
     // Add call to the aggregation service
     var parameters = {

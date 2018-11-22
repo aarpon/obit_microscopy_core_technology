@@ -39,7 +39,7 @@ DataViewer.prototype.initView = function() {
 
     // Aliases
     var sample = DATAMODEL.microscopySample;
-    var exp = DATAMODEL.microscopyExperimentSample;
+    var expSample = DATAMODEL.microscopyExperimentSample;
     var dataSetCodes = DATAMODEL.dataSetCodes;
 
     // Get the sample name view
@@ -55,7 +55,7 @@ DataViewer.prototype.initView = function() {
     imageView.empty();
 
     // Make sure we have something to display
-    if (sample == null || exp == null) {
+    if (sample == null || expSample == null) {
         sampleNameView.append("<h2>Sorry, could not retrieve information!</h2>");
         sampleNameView.append("<p>Please contact your administrator.</p>");
         return;
@@ -90,8 +90,8 @@ DataViewer.prototype.initView = function() {
     experimentNameRow.append($("<div>").addClass("metadataTitle").append(expNameTitle));
 
     // Display the experiment name (code) and link it to the experiment web app
-    var link = $("<a>").text(exp.properties.MICROSCOPY_EXPERIMENT_NAME).attr("href", "#").click(
-        DATAVIEWER.linkToExperiment(exp.permId)
+    var link = $("<a>").text(expSample.properties.MICROSCOPY_EXPERIMENT_NAME).attr("href", "#").click(
+        DATAVIEWER.linkToExperiment(expSample.permId)
     );
 
     // Experiment name/link
@@ -115,8 +115,8 @@ DataViewer.prototype.initView = function() {
 
     // Retrieve the experiment description
     var expDescrValue;
-    if (exp.properties.MICROSCOPY_EXPERIMENT_DESCRIPTION) {
-        expDescrValue = exp.properties.MICROSCOPY_EXPERIMENT_DESCRIPTION;
+    if (expSample.properties.MICROSCOPY_EXPERIMENT_DESCRIPTION) {
+        expDescrValue = expSample.properties.MICROSCOPY_EXPERIMENT_DESCRIPTION;
     } else {
         expDescrValue = "<i>No description provided.</i>";
     }
@@ -202,7 +202,8 @@ DataViewer.prototype.refreshView = function(dataSetCode) {
     this.displayMetadata(dataSetCode);
 
     // Display the export action
-    this.displayActions(DATAMODEL.microscopyExperimentSample, DATAMODEL.microscopySample, dataSetCode);
+    this.displayActions(DATAMODEL.microscopyExperimentSample,
+        DATAMODEL.microscopySample, dataSetCode);
 
 };
 
@@ -374,7 +375,7 @@ DataViewer.prototype.displayMetadata = function(dataSetCode) {
  * @param sample Sample object.
  * @param dataSetCode Dataset Code.
  */
-DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
+DataViewer.prototype.displayActions = function(expSample, sample, dataSetCode) {
 
     // Get the detailViewAction div and empty it
     var detailViewAction = $("#actionView");
@@ -382,7 +383,7 @@ DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
     $("#actionViewExpl").empty();
 
     // Get the experiment identifier
-    var experimentId = exp.identifier;
+    var experimentId = sample.experimentIdentifierOrNull;
     if (undefined === experimentId) {
         DATAVIEWER.displayStatus("Could not retrieve experiment identifier!", "error");
         return;
@@ -390,6 +391,9 @@ DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
 
     // Get the sample identifier
     var sampleId = sample.identifier;
+
+    // Get the sample experiment identifier
+    var expSampleId = expSample.identifier;
 
     // Retrieve action div
     var detailViewActionDiv = $("#actionView");
@@ -488,7 +492,7 @@ DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
             .html("")
             .click(function() {
                 DATAMODEL.copyDatasetsToUserDir(
-                    experimentId, sampleId, "normal");
+                    experimentId, expSampleId, sampleId, "normal");
                 return false;
             });
 
@@ -519,7 +523,7 @@ DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
             .html("")
             .click(function() {
                 DATAMODEL.copyDatasetsToUserDir(
-                    experimentId, sampleId, "hrm");
+                    experimentId, expSampleId, sampleId, "hrm");
                 return false;
             });
 
@@ -548,7 +552,7 @@ DataViewer.prototype.displayActions = function(exp, sample, dataSetCode) {
         .html("")
         .click(function() {
             DATAMODEL.copyDatasetsToUserDir(
-                experimentId, sampleId, "zip");
+                experimentId, expSampleId, sampleId, "zip");
             return false;
         });
 
