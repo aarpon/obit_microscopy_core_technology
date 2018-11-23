@@ -86,11 +86,10 @@ class Processor:
         return [name for name in os.listdir(incomingStr)
                 if os.path.isdir(os.path.join(incomingStr, name))]
 
-    def processCollectionNode(self, collectionNode, openBISCollectionType="COLLECTION"):
+    def processCollectionNode(self, collectionNode):
         """Register an openBIS Experiment based on the Collection XML node.
 
         @param collectionNode An XML node corresponding to a Collection.
-        @param openBISCollectionType The Collection type (default: "COLLECTION")
         @return IExperiment collection
         """
 
@@ -105,9 +104,9 @@ class Processor:
         # If the collection does not exist, create it
         if collection is None:
 
-            # Create a new collection of given type
+            # Create a new collection of type "COLLECTION"
             collection = transaction.createNewExperiment(openBISIdentifier,
-                                                         openBISCollectionType)
+                                                         "COLLECTION")
             if collection is None:
                 msg = "PROCESSOR::processCollectionNode(): failed creating " + \
                 "collection with ID " + openBISIdentifier + "."
