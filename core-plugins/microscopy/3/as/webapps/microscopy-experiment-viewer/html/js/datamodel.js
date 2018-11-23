@@ -104,14 +104,19 @@ DataModel.prototype.getMicroscopyExperimentSampleData = function(action) {
     // Get search criteria for sample with type MICROSCOPY_EXPERIMENT and CODE this.microscoyExperimentSampleId
     var sampleCriteria = new SearchCriteria();
     sampleCriteria.addMatchClause(
-        SearchCriteriaMatchClause.createAttributeMatch("CODE", this.microscoyExperimentSampleId)
+        SearchCriteriaMatchClause.createAttributeMatch(
+            "CODE", this.microscoyExperimentSampleId
+        )
     );
     sampleCriteria.addMatchClause(
-        SearchCriteriaMatchClause.createAttributeMatch("TYPE", "MICROSCOPY_EXPERIMENT")
+        SearchCriteriaMatchClause.createAttributeMatch(
+            "TYPE", "MICROSCOPY_EXPERIMENT"
+        )
     );
 
     // Search for datasets
-    this.openbisServer.searchForSamples(sampleCriteria, action);
+    this.openbisServer.searchForSamplesWithFetchOptions(sampleCriteria,
+        ["PROPERTIES", "METAPROJECTS"], action);
 };
 
 /**
@@ -123,16 +128,22 @@ DataModel.prototype.getMicroscopySamplesForMicroscopyExperimentSample = function
     // Get search criteria for sample of type MICROSCOPY_EXPERIMENT and CODE this.microscoyExperimentSampleId
     var sampleCriteria = new SearchCriteria();
     sampleCriteria.addMatchClause(
-        SearchCriteriaMatchClause.createAttributeMatch("CODE", this.microscoyExperimentSampleId)
+        SearchCriteriaMatchClause.createAttributeMatch(
+            "CODE", this.microscoyExperimentSampleId
+        )
     );
     sampleCriteria.addMatchClause(
-        SearchCriteriaMatchClause.createAttributeMatch("TYPE", "MICROSCOPY_EXPERIMENT")
+        SearchCriteriaMatchClause.createAttributeMatch(
+            "TYPE", "MICROSCOPY_EXPERIMENT"
+        )
     );
 
     // Get search criteria for datasets of type MICROSCOPY_SAMPLE_TYPE
     var childSampleCriteria = new SearchCriteria();
     childSampleCriteria.addMatchClause(
-        SearchCriteriaMatchClause.createAttributeMatch("TYPE", "MICROSCOPY_SAMPLE_TYPE")
+        SearchCriteriaMatchClause.createAttributeMatch(
+            "TYPE", "MICROSCOPY_SAMPLE_TYPE"
+        )
     );
 
     // Add sample search criteria as subcriteria
@@ -147,9 +158,10 @@ DataModel.prototype.getMicroscopySamplesForMicroscopyExperimentSample = function
 /**
  * Call an aggregation plug-in to copy the datasets associated to selected
  * node to the user folder.
- * @param experimentId Experiment ID
- * @param sampleId Sample ID
- * @param mode Mode to be passed to the aggragation service.
+ * @param experimentId COLLECTION experiment ID
+ * @param expSampleId MICROSCOPY_EXPERIMENT sample ID.
+ * @param sampleId MICROSCOPY_SAMLE_TYPE sample ID
+ * @param mode Mode to be passed to the aggregation service.
  */
 DataModel.prototype.copyDatasetsToUserDir = function(experimentId, expSampleId, sampleId, mode) {
 
