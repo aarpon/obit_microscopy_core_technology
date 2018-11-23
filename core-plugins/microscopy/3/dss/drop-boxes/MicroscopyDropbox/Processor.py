@@ -34,8 +34,14 @@ class Processor:
     # The user name
     _username = ""
 
+    # The machine name
+    _machinename = ""
+
     # The logger
     _logger = None
+
+    # The version number
+    __version__ = 2
 
     # Constructor
     def __init__(self, transaction, logger):
@@ -43,7 +49,6 @@ class Processor:
         # Store arguments
         self._transaction = transaction
         self._incoming = transaction.getIncoming()
-        self._username = ""
 
         # Set up logging
         self._logger = logger
@@ -81,57 +86,53 @@ class Processor:
         return [name for name in os.listdir(incomingStr)
                 if os.path.isdir(os.path.join(incomingStr, name))]
 
-    def createExperiment(self, expId, expName, expType="MICROSCOPY_EXPERIMENT"):
-        """Create an experiment with given Experiment ID extended with the addition
-        of a string composed from current date and time.
+    def processCollectionNode(self, collectionNode, openBISCollectionType="COLLECTION"):
+        """Register an openBIS Experiment based on the Collection XML node.
 
-        @param expID, the experiment ID
-        @param expName, the experiment name
-        @param expType, the experiment type that must already exist; optional,
-        default is "MICROSCOPY_EXPERIMENT"
+        @param collectionNode An XML node corresponding to a Collection.
+        @param openBISCollectionType The Collection type (default: "COLLECTION")
+        @return IExperiment collection
         """
 
-        # Make sure to keep the code length within the limits imposed by
-        # openBIS for codes
-        if len(expId) > 41:
-            expId = expId[0:41]
+        # Retrieve information from the XML node
 
-        # Create univocal ID
-        expId = expId + "_" + self.getCustomTimeStamp()
+        # Get the openBIS identifier
+        openBISIdentifier = collectionNode.attrib.get("openBISIdentifier")
 
-        # Log
-        self._logger.info("PROCESSOR::createExperiment(): " +
-                          "Register experiment %s" % expId)
+        # Retrieve the collection
+        collection = self._transaction.getExperiment(openBISIdentifier)
 
-        # Create the experiment
-        exp = self._transaction.createNewExperiment(expId, expType)
-        if not exp:
-            msg = "PROCESSOR::createExperiment(): " + \
-            "Could not create experiment " + expId + "!"
-            self._logger.error(msg)
-            raise Exception(msg)
-        else:
-            self._logger.info("PROCESSOR::createExperiment(): " +
-                              "Created experiment with ID " + expId + ".")
+        # If the collection does not exist, create it
+        if collection is None:
 
-        # Store the name
-        exp.setPropertyValue("MICROSCOPY_EXPERIMENT_NAME", expName)
+            # Create a new collection of given type
+            collection = transaction.createNewExperiment(openBISIdentifier,
+                                                         openBISCollectionType)
+            if collection is None:
+                msg = "PROCESSOR::processCollectionNode(): failed creating " + \
+                "collection with ID " + openBISIdentifier + "."
+                self._logger.err(msg)
+                raise Exception(msg)
 
-        return exp
+            else:
+                self._logger.info("PROCESSOR::processCollectionNode(): " +
+                              "Created collection with ID " + openBISIdentifier + ".")
 
-    def processExperiment(self, experimentNode,
-                          openBISExpType="MICROSCOPY_EXPERIMENT"):
-        """Register an IExperiment based on the Experiment XML node.
+                # The collection name is hard-coded to "Microscopy Experiment Collection"
+                collectionName = "Microscopy Experiment Collection"
 
-        @param experimentNode An XML node corresponding to an Experiment
-        @param openBISExpType The experiment type
-        @return IExperiment experiment
+                # Set the collection name
+                collection.setPropertyValue("NAME", collectionName)
+
+        return collection
+
+    def processExperimentNode(self, experimentNode, collection):
+        """Register a MICROSCOPY_EXPERIMENT sample based on the Experiment XML node.
+
+        @param experimentNode An XML node corresponding to a MICROSCOPY_EXPERIMENT (sample)
+        @param collection An IExperiment of type COLLECTION
+        @return ISample Sample of type MICROSCOPY_EXPERIMENT
         """
-
-        # Get the experiment version
-        expVersion = experimentNode.attrib.get("version")
-        if expVersion is None:
-            expVersion = "0"
 
         # Get the openBIS identifier
         openBISIdentifier = experimentNode.attrib.get("openBISIdentifier")
@@ -139,25 +140,8 @@ class Processor:
         # Get the experiment name
         expName = experimentNode.attrib.get("name")
 
-        # Get the experiment date and reformat it to be compatible
-        # with postgreSQL
-        # TODO: Add this
-        # expDate = self.formatExpDateForPostgreSQL(experimentNode.attrib.get("date"))
-
         # Get the description
         description = experimentNode.attrib.get("description")
-
-        # Get the acquisition hardware
-        # TODO: Add this
-        # acqHardware = experimentNode.attrib.get("acq_hardware")
-
-        # Get the acquisition software
-        # TODO: Add this
-        # acqSoftware = experimentNode.attrib.get("acq_software")
-
-        # Get the owner name
-        # TODO: Add this
-        # owner = experimentNode.attrib.get("owner_name")
 
         # Get attachments
         attachments = experimentNode.attrib.get("attachments")
@@ -170,15 +154,18 @@ class Processor:
         # Create univocal ID
         openBISIdentifier = openBISIdentifier + "_" + self.getCustomTimeStamp()
 
-        # Make sure to create a new Experiment
-        openBISExperiment = self._transaction.createNewExperiment(openBISIdentifier, openBISExpType)
-        print(type(openBISExperiment))
+        # Make sure to create a new sample of type "MICROSCOPY_EXPERIMENT"
+        openBISSample = self._transaction.createNewSample(openBISIdentifier,
+                                                          "MICROSCOPY_EXPERIMENT")
 
-        if not openBISExperiment:
-            msg = "PROCESSOR::processExperiment(): " + \
+        if openBISSample is None:
+            msg = "PROCESSOR::processExperimentNode(): " + \
             "Could not create experiment " + openBISIdentifier
             self._logger.error(msg)
             raise Exception(msg)
+
+        # Set the experiment
+        openBISSample.setExperiment(collection)
 
         # Get comma-separated tag list
         tagList = experimentNode.attrib.get("tags")
@@ -189,48 +176,31 @@ class Processor:
 
             # Set the metaprojects (tags)
             for openBISTag in openBISTags:
-                openBISTag.addEntity(openBISExperiment)
+                openBISTag.addEntity(openBISSample)
 
-        # Set the date
-        # TODO: Add this
-        # openBISExperiment.setPropertyValue("MICROSCOPY_EXPERIMENT_DATE",
-        #                                   expDate)
+        # Store the name (in both the MICROSCOPY_EXPERIMENT_NAME and NAME properties)
+        # NAME is used by the ELN-LIMS UI.
+        openBISSample.setPropertyValue("NAME", expName)
+        openBISSample.setPropertyValue("MICROSCOPY_EXPERIMENT_NAME", expName)
 
-        # Store the name
-        openBISExperiment.setPropertyValue("MICROSCOPY_EXPERIMENT_NAME", expName)
-
-        # Set the experiment version
-        openBISExperiment.setPropertyValue("MICROSCOPY_EXPERIMENT_VERSION",
-                                           expVersion)
+        # Set the experiment version (to be the global __version__)
+        openBISSample.setPropertyValue("MICROSCOPY_EXPERIMENT_VERSION",
+                                       str(self.__version__))
 
         # Set the description -- but only if is not empty.
         # This makes sure that the description of an already existing experiment
         # is not overridden by an empty string.
         if description != "":
-            openBISExperiment.setPropertyValue("MICROSCOPY_EXPERIMENT_DESCRIPTION",
-                                               description)
+            openBISSample.setPropertyValue("MICROSCOPY_EXPERIMENT_DESCRIPTION",
+                                           description)
         else:
-            currentDescription = openBISExperiment.getPropertyValue("MICROSCOPY_EXPERIMENT_DESCRIPTION")
+            currentDescription = openBISSample.getPropertyValue("MICROSCOPY_EXPERIMENT_DESCRIPTION")
             if (currentDescription is None or currentDescription == ""):
-                openBISExperiment.setPropertyValue("MICROSCOPY_EXPERIMENT_DESCRIPTION", "")
-
-        # TODO: Add this
-        # openBISExperiment.setPropertyValue("MICROSCOPY_EXPERIMENT_ACQ_HARDWARE",
-        #                                   acqHardware)
+                openBISSample.setPropertyValue("MICROSCOPY_EXPERIMENT_DESCRIPTION", "")
 
         # Set the acquisition hardware friendly name
-        openBISExperiment.setPropertyValue("MICROSCOPY_EXPERIMENT_ACQ_HARDWARE_FRIENDLY_NAME",
-                                           self._machinename)
-
-        # Set the acquisition software
-        # TODO: Add this
-        # openBISExperiment.setPropertyValue("MICROSCOPY_EXPERIMENT_ACQ_SOFTWARE",
-        #                                   acqSoftware)
-
-        # Set the experiment owner
-        # TODO: Add this
-        # openBISExperiment.setPropertyValue("MICROSCOPY_EXPERIMENT_OWNER",
-        #                                   owner)
+        openBISSample.setPropertyValue("MICROSCOPY_EXPERIMENT_ACQ_HARDWARE_FRIENDLY_NAME",
+                                       self._machinename)
 
         # Add the attachments
         if attachments is not None:
@@ -260,19 +230,19 @@ class Processor:
                 byteArray = FileUtils.readFileToByteArray(javaFile)
 
                 # Add attachment
-                openBISExperiment.addAttachment(attachmentFilePath,
-                                                attachmentFileName,
-                                                "", byteArray)
+                openBISSample.addAttachment(attachmentFilePath,
+                                            attachmentFileName,
+                                            "", byteArray)
 
         # Return the openBIS Experiment object
-        return openBISExperiment
+        return openBISSample
 
-    def processMicroscopyFile(self, microscopyFileNode, openBISExperiment):
+    def processMicroscopyFile(self, microscopyFileNode, openBISSample):
         """Register the Microscopy File using the parsed properties file.
 
-        @param microscopyFileNode An XML node corresponding to a microscopy
-        file (dataset)
-        @param openBISExperiment An ISample object representing an Experiment
+        @param microscopyFileNode An XML node corresponding to a microscopy 
+               file (dataset)
+        @param openBISSample An ISample object representing an Experiment
         """
 
         # Assign the file to the dataset (we will use the absolute path)
@@ -315,7 +285,8 @@ class Processor:
                            str(num_series) + " series.")
 
         # Get the correct space where to create the sample
-        identifier = openBISExperiment.getExperimentIdentifier()
+        identifier = openBISSample.getSampleIdentifier()
+
         sample_space = identifier[1:identifier.find('/', 1)]
         self._logger.info("Creating sample with auto-generated code in space " + sample_space)
 
@@ -344,7 +315,10 @@ class Processor:
             sample.setPropertyValue("MICROSCOPY_SAMPLE_SIZE_IN_BYTES", datasetSize)
 
         # Set the experiment
-        sample.setExperiment(openBISExperiment)
+        sample.setExperiment(openBISSample.getExperiment())
+
+        # Set the parent MICROSCOPY_EXPERIMENT sample
+        sample.setParentSampleIdentifiers([openBISSample.getSampleIdentifier()])
 
         # Register all series in the file
         image_data_set = None
@@ -413,12 +387,12 @@ class Processor:
             dataset.setSample(sample)
 
     def processMicroscopyCompositeFile(self, microscopyCompositeFileNode,
-                                       openBISExperiment):
+                                       openBISSample):
         """Register the Microscopy Composite File using the parsed properties file.
 
         @param microscopyCompositeFileNode An XML node corresponding to a microscopy
         file (dataset)
-        @param openBISExperiment An ISample object representing an Experiment
+        @param openBISSample An ISample object representing an Experiment
         """
 
         # Make sure to have a supported composite file type
@@ -448,7 +422,7 @@ class Processor:
         num_series = len(microscopyCompositeFileNode)
 
         # Get the correct space where to create the sample
-        identifier = openBISExperiment.getExperimentIdentifier()
+        identifier = openBISSample.getSampleIdentifier()
         sample_space = identifier[1:identifier.find('/', 1)]
         self._logger.info("Creating sample with auto-generated code in space " + sample_space)
 
@@ -476,8 +450,11 @@ class Processor:
         if datasetSize is not None:
             sample.setPropertyValue("MICROSCOPY_SAMPLE_SIZE_IN_BYTES", datasetSize)
 
-        # Set the experiment
-        sample.setExperiment(openBISExperiment)
+        # Set the experiment Identifier
+        sample.setExperiment(openBISSample.getExperiment())
+
+        # Set the parent MICROSCOPY_EXPERIMENT sample
+        sample.setParentSampleIdentifiers([openBISSample.getSampleIdentifier()])
 
         # Get the relative path to the containing folder
         relativeFolder = microscopyCompositeFileNode.attrib.get("relativeFolder")
@@ -579,7 +556,7 @@ class Processor:
                         fullFolder,
                         relativeFolder,
                         self._transaction,
-                        openBISExperiment,
+                        openBISSample,
                         sample,
                         dataset,
                         self._logger)
@@ -625,6 +602,20 @@ class Processor:
         # Get the root node (obitXML)
         root = tree.getroot()
 
+        # Make sure that we have the expected version of the properties file
+        file_version = root.attrib.get("version")
+        if file_version is None:
+            msg = "PROCESSOR::register(): Expected properties file version " + \
+                str(self.__version__) + ". This file is obsolete. Cannot process."
+            self._logger.error(msg)
+            raise Exception(msg)
+        file_version = int(file_version)
+        if file_version < self.__version__:
+            msg = "PROCESSOR::register(): Expected properties file version " + \
+                str(self.__version__) + ". This file is obsolete. Cannot process."
+            self._logger.error(msg)
+            raise Exception(msg)
+
         # Store the username
         self._username = root.attrib.get("userName")
 
@@ -634,44 +625,57 @@ class Processor:
             machinename = ""
         self._machinename = machinename
 
-        # Iterate over the children (Experiments)
-        for experimentNode in root:
+        # Iterate over the collections
+        for collectionNode in root:
 
-            # The tag of the immediate children of the root experimentNode
-            # must be Experiment
-            if experimentNode.tag != "Experiment":
+            # The tag of the immediate children of the root must be 'Collection'
+            if collectionNode.tag != "Collection":
                 msg = "PROCESSOR::register(): " + \
-                      "Expected Experiment node, found " + experimentNode.tag
+                    "Expected Collection node, found " + collectionNode.tag
                 self._logger.error(msg)
                 raise Exception(msg)
 
-            # Process an Experiment XML node and get/create an IExperimentUpdatable
-            openBISExperiment = self.processExperiment(experimentNode,
-                                                       "MICROSCOPY_EXPERIMENT")
+            # Process a Collection XML node and get/create an IExperimentUpdatable
+            openBISCollection = self.processCollectionNode(collectionNode)
 
-            # Process children of the Experiment
-            for fileNode in experimentNode:
+            # Iterate over the children (Experiment nodes that map to MICROSCOPY_EXPERIMENT samples)
+            for experimentNode in collectionNode:
 
-                if fileNode.tag == "MicroscopyFile":
-
-                    # Process the MicroscopyFile node
-                    self.processMicroscopyFile(fileNode, openBISExperiment)
-
-                elif fileNode.tag == "MicroscopyCompositeFile":
-
-                    # Process the MicroscopyCompositeFile node
-                    self.processMicroscopyCompositeFile(fileNode, openBISExperiment)
-
-                    # Inform
-                    self._logger.info("Processed composite file")
-
-                else:
-
+                # The tag of the immediate children of the root experimentNode
+                # must be Experiment
+                if experimentNode.tag != "Experiment":
                     msg = "PROCESSOR::register(): " + \
-                    "Expected either MicroscopyFile or MicroscopyCompositeFile " + \
-                    "node; found instead " + fileNode.tag + ")!"
+                          "Expected Experiment node, found " + experimentNode.tag
                     self._logger.error(msg)
                     raise Exception(msg)
+
+                # Process an Experiment XML node and get/create an ISample
+                openBISSample = self.processExperimentNode(experimentNode,
+                                                           openBISCollection)
+
+                # Process children of the Experiment
+                for fileNode in experimentNode:
+
+                    if fileNode.tag == "MicroscopyFile":
+
+                        # Process the MicroscopyFile node
+                        self.processMicroscopyFile(fileNode, openBISSample)
+
+                    elif fileNode.tag == "MicroscopyCompositeFile":
+
+                        # Process the MicroscopyCompositeFile node
+                        self.processMicroscopyCompositeFile(fileNode, openBISSample)
+
+                        # Inform
+                        self._logger.info("Processed composite file")
+
+                    else:
+
+                        msg = "PROCESSOR::register(): " + \
+                        "Expected either MicroscopyFile or MicroscopyCompositeFile " + \
+                        "node; found instead " + fileNode.tag + ")!"
+                        self._logger.error(msg)
+                        raise Exception(msg)
 
         # Log that we are finished with the registration
         self._logger.info("PROCESSOR::register(): " +
