@@ -86,36 +86,31 @@ class Processor:
         return [name for name in os.listdir(incomingStr)
                 if os.path.isdir(os.path.join(incomingStr, name))]
 
-    def processCollectionNode(self, collectionNode):
-        """Register an openBIS Experiment based on the Collection XML node.
+    def getOrCreateCollection(self, openBISCollectionIdentifier):
+        """Retrieve or register an openBIS Collection with given identifier.
 
-        @param collectionNode An XML node corresponding to a Collection.
+        @param openBISCollectionIdentifier The Collection's openBIS indentifier.
         @return IExperiment collection
         """
 
-        # Retrieve information from the XML node
-
-        # Get the openBIS identifier
-        openBISIdentifier = collectionNode.attrib.get("openBISIdentifier")
-
-        # Retrieve the collection
-        collection = self._transaction.getExperiment(openBISIdentifier)
+        # Try retrieving the collection
+        collection = self._transaction.getExperiment(openBISCollectionIdentifier)
 
         # If the collection does not exist, create it
         if collection is None:
 
             # Create a new collection of type "COLLECTION"
-            collection = transaction.createNewExperiment(openBISIdentifier,
+            collection = transaction.createNewExperiment(openBISCollectionIdentifier,
                                                          "COLLECTION")
             if collection is None:
-                msg = "PROCESSOR::processCollectionNode(): failed creating " + \
-                "collection with ID " + openBISIdentifier + "."
+                msg = "PROCESSOR::getOrCreateCollection(): failed creating " + \
+                      "collection with ID " + openBISCollectionIdentifier + "."
                 self._logger.err(msg)
                 raise Exception(msg)
 
             else:
-                self._logger.info("PROCESSOR::processCollectionNode(): " +
-                              "Created collection with ID " + openBISIdentifier + ".")
+                self._logger.info("PROCESSOR::getOrCreateCollection(): " +
+                                  "Created collection with ID " + openBISCollectionIdentifier + ".")
 
                 # The collection name is hard-coded to "Microscopy Experiment Collection"
                 collectionName = "Microscopy Experiment Collection"
@@ -125,13 +120,15 @@ class Processor:
 
         return collection
 
-    def processExperimentNode(self, experimentNode, collection):
+    def processExperimentNode(self, experimentNode):
         """Register a MICROSCOPY_EXPERIMENT sample based on the Experiment XML node.
 
         @param experimentNode An XML node corresponding to a MICROSCOPY_EXPERIMENT (sample)
-        @param collection An IExperiment of type COLLECTION
         @return ISample Sample of type MICROSCOPY_EXPERIMENT
         """
+
+        # Get the openBIS collection identifier
+        openBISCollectionIdentifier = experimentNode.attrib.get("openBISCollectionIdentifier")
 
         # Get the openBIS identifier
         openBISIdentifier = experimentNode.attrib.get("openBISIdentifier")
@@ -153,18 +150,21 @@ class Processor:
         # Create univocal ID
         openBISIdentifier = openBISIdentifier + "_" + self.getCustomTimeStamp()
 
-        # Make sure to create a new sample of type "MICROSCOPY_EXPERIMENT"
-        openBISSample = self._transaction.createNewSample(openBISIdentifier,
-                                                          "MICROSCOPY_EXPERIMENT")
+        # Get or create the collection with given identifier
+        collection = self.getOrCreateCollection(openBISCollectionIdentifier)
 
-        if openBISSample is None:
+        # Make sure to create a new sample of type "MICROSCOPY_EXPERIMENT"
+        openBISExperimentSample = self._transaction.createNewSample(openBISIdentifier,
+                                                                    "MICROSCOPY_EXPERIMENT")
+
+        if openBISExperimentSample is None:
             msg = "PROCESSOR::processExperimentNode(): " + \
-            "Could not create experiment " + openBISIdentifier
+                  "Could not create MICROSCOPY_EXPERIMENT sample " + openBISIdentifier
             self._logger.error(msg)
             raise Exception(msg)
 
-        # Set the experiment
-        openBISSample.setExperiment(collection)
+        # Set the collection
+        openBISExperimentSample.setExperiment(collection)
 
         # Get comma-separated tag list
         tagList = experimentNode.attrib.get("tags")
@@ -175,31 +175,31 @@ class Processor:
 
             # Set the metaprojects (tags)
             for openBISTag in openBISTags:
-                openBISTag.addEntity(openBISSample)
+                openBISTag.addEntity(openBISExperimentSample)
 
         # Store the name (in both the MICROSCOPY_EXPERIMENT_NAME and NAME properties)
-        # NAME is used by the ELN-LIMS UI.
-        openBISSample.setPropertyValue("NAME", expName)
-        openBISSample.setPropertyValue("MICROSCOPY_EXPERIMENT_NAME", expName)
+        # NAME is used by the ELN-LIMS user interface.
+        openBISExperimentSample.setPropertyValue("NAME", expName)
+        openBISExperimentSample.setPropertyValue("MICROSCOPY_EXPERIMENT_NAME", expName)
 
         # Set the experiment version (to be the global __version__)
-        openBISSample.setPropertyValue("MICROSCOPY_EXPERIMENT_VERSION",
-                                       str(self.__version__))
+        openBISExperimentSample.setPropertyValue("MICROSCOPY_EXPERIMENT_VERSION",
+                                                 str(self.__version__))
 
         # Set the description -- but only if is not empty.
         # This makes sure that the description of an already existing experiment
         # is not overridden by an empty string.
         if description != "":
-            openBISSample.setPropertyValue("MICROSCOPY_EXPERIMENT_DESCRIPTION",
-                                           description)
+            openBISExperimentSample.setPropertyValue("MICROSCOPY_EXPERIMENT_DESCRIPTION",
+                                                     description)
         else:
-            currentDescription = openBISSample.getPropertyValue("MICROSCOPY_EXPERIMENT_DESCRIPTION")
+            currentDescription = openBISExperimentSample.getPropertyValue("MICROSCOPY_EXPERIMENT_DESCRIPTION")
             if (currentDescription is None or currentDescription == ""):
-                openBISSample.setPropertyValue("MICROSCOPY_EXPERIMENT_DESCRIPTION", "")
+                openBISExperimentSample.setPropertyValue("MICROSCOPY_EXPERIMENT_DESCRIPTION", "")
 
         # Set the acquisition hardware friendly name
-        openBISSample.setPropertyValue("MICROSCOPY_EXPERIMENT_ACQ_HARDWARE_FRIENDLY_NAME",
-                                       self._machinename)
+        openBISExperimentSample.setPropertyValue("MICROSCOPY_EXPERIMENT_ACQ_HARDWARE_FRIENDLY_NAME",
+                                                 self._machinename)
 
         # Add the attachments
         if attachments is not None:
@@ -218,23 +218,21 @@ class Processor:
                 self._logger.info(msg)
 
                 # Build the full path
-                attachmentFilePath = os.path.join(self._incoming.getAbsolutePath(),
-                                                  f)
+                attachmentFilePath = os.path.join(self._incoming.getAbsolutePath(), f)
 
                 # Extract the file name
                 attachmentFileName = os.path.basename(attachmentFilePath)
 
-                # Read the attachment into a byte array
-                javaFile = java.io.File(attachmentFilePath)
-                byteArray = FileUtils.readFileToByteArray(javaFile)
-
-                # Add attachment
-                openBISSample.addAttachment(attachmentFilePath,
-                                            attachmentFileName,
-                                            "", byteArray)
+                # Create a dataset of type ATTACHMENT and add it to the
+                # MICROSCOPY_EXPERIMENT sample and the containing COLLECTION
+                attachmentDataSet = self._transaction.createNewDataSet("ATTACHMENT")
+                self._transaction.moveFile(attachmentFilePath, attachmentDataSet)
+                attachmentDataSet.setPropertyValue("NAME", attachmentFileName)
+                attachmentDataSet.setExperiment(collection)
+                attachmentDataSet.setSample(openBISExperimentSample)
 
         # Return the openBIS Experiment object
-        return openBISSample
+        return openBISExperimentSample
 
     def processMicroscopyFile(self, microscopyFileNode, openBISSample):
         """Register the Microscopy File using the parsed properties file.
@@ -281,7 +279,7 @@ class Processor:
         # Log
         self._logger.info("PROCESSOR::processMicroscopyFile(): " +
                           "File " + relativeFileName + " contains " +
-                           str(num_series) + " series.")
+                          str(num_series) + " series.")
 
         # Get the correct space where to create the sample
         identifier = openBISSample.getSampleIdentifier()
@@ -313,7 +311,7 @@ class Processor:
         if datasetSize is not None:
             sample.setPropertyValue("MICROSCOPY_SAMPLE_SIZE_IN_BYTES", datasetSize)
 
-        # Set the experiment
+        # Set the collection
         sample.setExperiment(openBISSample.getExperiment())
 
         # Set the parent MICROSCOPY_EXPERIMENT sample
@@ -342,7 +340,7 @@ class Processor:
                 # Log
                 self._logger.info("PROCESSOR::processMicroscopyFile(): " +
                                   "Creating new image dataset for file " +
-                                   str(fileName) + " and series 0.")
+                                  str(fileName) + " and series 0.")
 
                 # Create an image dataset
                 dataset = self._transaction.createNewImageDataSet(singleDatasetConfig,
@@ -398,12 +396,12 @@ class Processor:
         compositeFileType = microscopyCompositeFileNode.attrib.get("compositeFileType")
 
         if compositeFileType != "Leica TIFF Series" and \
-            compositeFileType != "Generic TIFF Series" and \
-            compositeFileType != "YouScope Experiment" and \
-            compositeFileType != "Visitron ND":
+                compositeFileType != "Generic TIFF Series" and \
+                compositeFileType != "YouScope Experiment" and \
+                compositeFileType != "Visitron ND":
 
             msg = "PROCESSOR::processMicroscopyCompositeFile(): " + \
-                      "Invalid composite file type found: " + compositeFileType
+                  "Invalid composite file type found: " + compositeFileType
             self._logger.error(msg)
             raise Exception(msg)
 
@@ -462,7 +460,7 @@ class Processor:
         # Log
         self._logger.info("PROCESSOR::processMicroscopyFile(): " +
                           "Folder " + relativeFolder + " contains " +
-                           str(num_series) + " series.")
+                          str(num_series) + " series.")
 
         # Get the series indices
         seriesIndices = microscopyCompositeFileNode.attrib.get("seriesIndices")
@@ -471,7 +469,6 @@ class Processor:
         # For YouScope experiments, process the images.csv file and register the
         # accessory files in the root of the experiment
         if compositeFileType == "YouScope Experiment":
-
             # Build image file table
             csvTable = YouScopeExperimentCompositeDatasetConfig.buildImagesCSVTable(fullFolder + "/images.csv",
                                                                                     self._logger)
@@ -496,9 +493,9 @@ class Processor:
             elif compositeFileType == "Generic TIFF Series":
 
                 compositeDatasetConfig = GenericTIFFSeriesCompositeDatasetConfig(allSeriesMetadata,
-                                                                                seriesIndices,
-                                                                                self._logger,
-                                                                                seriesNum)
+                                                                                 seriesIndices,
+                                                                                 self._logger,
+                                                                                 seriesNum)
 
             elif compositeFileType == "YouScope Experiment":
 
@@ -518,7 +515,7 @@ class Processor:
             else:
 
                 msg = "PROCESSOR::processMicroscopyCompositeFile(): " + \
-                "Invalid composite file type found: " + compositeFileType
+                      "Invalid composite file type found: " + compositeFileType
                 self._logger.error(msg)
                 raise Exception(msg)
 
@@ -533,7 +530,7 @@ class Processor:
                 # Log
                 self._logger.info("PROCESSOR::processCompositeMicroscopyFile(): " +
                                   "Creating new image dataset for folder " +
-                                   str(fullFolder) + " and series " + str(seriesNum))
+                                  str(fullFolder) + " and series " + str(seriesNum))
 
                 # Create a dataset
                 dataset = self._transaction.createNewImageDataSet(compositeDatasetConfig,
@@ -599,82 +596,75 @@ class Processor:
         """
 
         # Get the root node (obitXML)
-        root = tree.getroot()
+        rootNode = tree.getroot()
+
+        # Check the tag
+        if rootNode.tag != "obitXML":
+            msg = "PROCESSOR::register(): Unexpected properties root node tag '" + \
+                  rootNode.tag + "'. Invalid file. Cannot process."
+            self._logger.error(msg)
+            raise Exception(msg)
 
         # Make sure that we have the expected version of the properties file
-        file_version = root.attrib.get("version")
+        file_version = rootNode.attrib.get("version")
         if file_version is None:
             msg = "PROCESSOR::register(): Expected properties file version " + \
-                str(self.__version__) + ". This file is obsolete. Cannot process."
+                  str(self.__version__) + ". This file is obsolete. Cannot process."
             self._logger.error(msg)
             raise Exception(msg)
         file_version = int(file_version)
         if file_version < self.__version__:
             msg = "PROCESSOR::register(): Expected properties file version " + \
-                str(self.__version__) + ". This file is obsolete. Cannot process."
+                  str(self.__version__) + ". This file is obsolete. Cannot process."
             self._logger.error(msg)
             raise Exception(msg)
 
         # Store the username
-        self._username = root.attrib.get("userName")
+        self._username = rootNode.attrib.get("userName")
 
         # Store the machine name
-        machinename = root.attrib.get("machineName")
+        machinename = rootNode.attrib.get("machineName")
         if machinename is None:
             machinename = ""
         self._machinename = machinename
 
-        # Iterate over the collections
-        for collectionNode in root:
+        # Iterate over the children (Experiment nodes that map to MICROSCOPY_EXPERIMENT samples)
+        for experimentNode in rootNode:
 
-            # The tag of the immediate children of the root must be 'Collection'
-            if collectionNode.tag != "Collection":
+            # The tag of the immediate children of the root experimentNode
+            # must be Experiment
+            if experimentNode.tag != "Experiment":
                 msg = "PROCESSOR::register(): " + \
-                    "Expected Collection node, found " + collectionNode.tag
+                      "Expected Experiment node, found " + experimentNode.tag
                 self._logger.error(msg)
                 raise Exception(msg)
 
-            # Process a Collection XML node and get/create an IExperimentUpdatable
-            openBISCollection = self.processCollectionNode(collectionNode)
+            # Process an Experiment XML node and get/create an ISample
+            openBISExperimentSample = self.processExperimentNode(experimentNode)
 
-            # Iterate over the children (Experiment nodes that map to MICROSCOPY_EXPERIMENT samples)
-            for experimentNode in collectionNode:
+            # Process children of the Experiment
+            for fileNode in experimentNode:
 
-                # The tag of the immediate children of the root experimentNode
-                # must be Experiment
-                if experimentNode.tag != "Experiment":
+                if fileNode.tag == "MicroscopyFile":
+
+                    # Process the MicroscopyFile node
+                    self.processMicroscopyFile(fileNode, openBISExperimentSample)
+
+                elif fileNode.tag == "MicroscopyCompositeFile":
+
+                    # Process the MicroscopyCompositeFile node
+                    self.processMicroscopyCompositeFile(fileNode, openBISExperimentSample)
+
+                    # Inform
+                    self._logger.info("Processed composite file")
+
+                else:
+
                     msg = "PROCESSOR::register(): " + \
-                          "Expected Experiment node, found " + experimentNode.tag
+                          "Expected either MicroscopyFile or MicroscopyCompositeFile " + \
+                          "node; found instead " + fileNode.tag + ")!"
                     self._logger.error(msg)
                     raise Exception(msg)
-
-                # Process an Experiment XML node and get/create an ISample
-                openBISSample = self.processExperimentNode(experimentNode,
-                                                           openBISCollection)
-
-                # Process children of the Experiment
-                for fileNode in experimentNode:
-
-                    if fileNode.tag == "MicroscopyFile":
-
-                        # Process the MicroscopyFile node
-                        self.processMicroscopyFile(fileNode, openBISSample)
-
-                    elif fileNode.tag == "MicroscopyCompositeFile":
-
-                        # Process the MicroscopyCompositeFile node
-                        self.processMicroscopyCompositeFile(fileNode, openBISSample)
-
-                        # Inform
-                        self._logger.info("Processed composite file")
-
-                    else:
-
-                        msg = "PROCESSOR::register(): " + \
-                        "Expected either MicroscopyFile or MicroscopyCompositeFile " + \
-                        "node; found instead " + fileNode.tag + ")!"
-                        self._logger.error(msg)
-                        raise Exception(msg)
 
         # Log that we are finished with the registration
         self._logger.info("PROCESSOR::register(): " +
@@ -712,7 +702,7 @@ class Processor:
                 # Check that creation was succcessful
                 if metaproject is None:
                     msg = "Could not create metaproject " + tag + \
-                    "for user " + self._username
+                          "for user " + self._username
                     self._logger.error(msg)
                     raise Exception(msg)
 
@@ -727,7 +717,7 @@ class Processor:
         # Make sure that incoming is a folder
         if not self._incoming.isDirectory():
             msg = "PROCESSOR::run(): " + \
-            "Incoming MUST be a folder!"
+                  "Incoming MUST be a folder!"
             self._logger.error(msg)
             raise Exception(msg)
 
@@ -740,7 +730,7 @@ class Processor:
         subFolders = self.getSubFolders()
         if len(subFolders) != 1:
             msg = "PROCESSOR::run(): " + \
-            "Expected user subfolder!"
+                  "Expected user subfolder!"
             self._logger.error(msg)
             raise Exception(msg)
 
@@ -752,7 +742,7 @@ class Processor:
         dataFileName = os.path.join(userFolder, "data_structure.ois")
         if not os.path.exists(dataFileName):
             msg = "PROCESSOR::run(): " + \
-            "File data_structure.ois not found!"
+                  "File data_structure.ois not found!"
             self._logger.error(msg)
             raise Exception(msg)
 
