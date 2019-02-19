@@ -170,12 +170,8 @@ class Processor:
         tagList = experimentNode.attrib.get("tags")
         if tagList != None and tagList != "":
 
-            # Retrieve or create the tags
-            openBISTags = self.retrieveOrCreateTags(tagList)
-
-            # Set the metaprojects (tags)
-            for openBISTag in openBISTags:
-                openBISTag.addEntity(openBISExperimentSample)
+            # Add tags (create them if needed)
+            openBISExperimentSample = self.registerTags(openBISExperimentSample, tagList)
 
         # Store the name (in both the MICROSCOPY_EXPERIMENT_NAME and NAME properties)
         # NAME is used by the ELN-LIMS user interface.
@@ -670,46 +666,35 @@ class Processor:
         self._logger.info("PROCESSOR::register(): " +
                           "Registration completed")
 
-    def retrieveOrCreateTags(self, tagList):
-        """Retrieve or create the tags (metaprojects) with specified names."""
-
-        # Initialize openBISTags list
-        openBISTags = []
+    def registerTags(self, openBISExperimentSample, tagList):
+        """Register the tags as parent samples of type ORGANIZATION_UNIT."""
 
         # Make sure tagList is not None
         if tagList is None:
-            return []
+            return openBISExperimentSample
+
+        # Collect the parent sample identifiers
+        tagSampleIdentifiers = []
 
         # Get the individual tag names (with no blank spaces)
         tags = ["".join(t.strip()) for t in tagList.split(",")]
 
-        # Process all tags (metaprojects)
+        # Process all tags
         for tag in tags:
             if len(tag) == 0:
                 continue
 
-            # Retrieve the tag (metaproject)
-            metaproject = self._transaction.getMetaproject(tag, self._username)
-            if metaproject is None:
+            # If the tag (sample of type "ORGANIZATION_UNIT") does not yet exist, create it
+            sample = self._transaction.getSample(tag)
+            if sample is None:
+                sample = self._transaction.createNewSample(tag, "ORGANIZATION_UNIT")
 
-                # Create the tag (metaproject)
-                self._logger.info("Creating metaproject " + tag)
+            tagSampleIdentifiers.append(tag)
 
-                metaproject = self._transaction.createNewMetaproject(tag,
-                                                                     "",
-                                                                     self._username)
+        # Add tag samples as parent
+        openBISExperimentSample.setParentSampleIdentifiers(tagSampleIdentifiers)
 
-                # Check that creation was succcessful
-                if metaproject is None:
-                    msg = "Could not create metaproject " + tag + \
-                          "for user " + self._username
-                    self._logger.error(msg)
-                    raise Exception(msg)
-
-            # Add the created metaproject to the list
-            openBISTags.append(metaproject)
-
-        return openBISTags
+        return openBISExperimentSample
 
     def run(self):
         """Run the registration."""
