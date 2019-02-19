@@ -77,25 +77,25 @@ DataViewer.prototype.initView = function() {
     experimentDescriptionView_div.append(this.prepareTitle("Description"));
     experimentDescriptionView_div.append($("<p>").html(exp_descr));
 
-    // Get metaprojects (tags)
-    var metaprojects = "<i>None</i>";
-    if (microscopyExperimentSample.metaprojects) {
-        if (microscopyExperimentSample.metaprojects.length === 0) {
-            metaprojects = "<i>None</i>";
-        } else if (microscopyExperimentSample.metaprojects.length === 1) {
-            metaprojects = microscopyExperimentSample.metaprojects[0].name;
+    // Get sample tags
+    var sampleTags = "<i>None</i>";
+    if (microscopyExperimentSample.parents) {
+        if (microscopyExperimentSample.parents === 0) {
+            sampleTags = "<i>None</i>";
+        } else if (microscopyExperimentSample.parents.length === 1) {
+            sampleTags = microscopyExperimentSample.parents[0].code;
         } else {
-            for (var i = 0; i < microscopyExperimentSample.metaprojects.length; i++) {
-                if (i < (microscopyExperimentSample.metaprojects.length - 1)) {
-                    metaprojects = metaprojects.concat(microscopyExperimentSample.metaprojects[i].name + ", ");
+            for (var i = 0; i < microscopyExperimentSample.parents.length; i++) {
+                if (i < (microscopyExperimentSample.parents.length - 1)) {
+                    sampleTags = sampleTags.concat(microscopyExperimentSample.parents[i].code + ", ");
                 } else {
-                    metaprojects = metaprojects.concat(microscopyExperimentSample.metaprojects[i].name);
+                    sampleTags = sampleTags.concat(microscopyExperimentSample.parents[i].code);
                 }
             }
         }
     }
     experimentTagView_div.append(this.prepareTitle("Tags", "info"));
-    experimentTagView_div.append($("<p>").html(metaprojects));
+    experimentTagView_div.append($("<p>").html(sampleTags));
 
     // Display the samples
     if (samples != null) {
@@ -217,11 +217,12 @@ DataViewer.prototype.displayAttachments = function(dataModelObj, attachments) {
     } else {
         text = "There are " + dataModelObj.attachments.length + " attachments.";
     }
-    // Link to the attachment tab
+
+    // Link to the data-sets tab
     var link = $("<a>").text(text).attr("href", "#").attr("title", text).click(
         function() {
             var url = "#entity=SAMPLE&permId=" + dataModelObj.microscopyExperimentSample.permId +
-                "&ui-subtab=attachment-section&ui-timestamp=" + (new Date().getTime());
+                "&ui-subtab=data-sets-section&ui-timestamp=" + (new Date().getTime());
             window.top.location.hash = url;
             return false;
         });

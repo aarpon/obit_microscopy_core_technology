@@ -24,7 +24,7 @@ function DataModel() {
     this.openbisServer.useSession(this.context.getSessionId());
 
     // MICROSCOPY_EXPERIMENT sample object
-    this.microscoyExperimentSampleId = this.context.getEntityIdentifier();
+    this.microscopyExperimentSampleId = this.context.getEntityIdentifier();
 
     // (openBIS) Experiment identifier
     this.expId = null;
@@ -101,11 +101,11 @@ function DataModel() {
  */
 DataModel.prototype.getMicroscopyExperimentSampleData = function(action) {
 
-    // Get search criteria for sample with type MICROSCOPY_EXPERIMENT and CODE this.microscoyExperimentSampleId
+    // Get search criteria for sample with type MICROSCOPY_EXPERIMENT and CODE this.microscopyExperimentSampleId
     var sampleCriteria = new SearchCriteria();
     sampleCriteria.addMatchClause(
         SearchCriteriaMatchClause.createAttributeMatch(
-            "CODE", this.microscoyExperimentSampleId
+            "CODE", this.microscopyExperimentSampleId
         )
     );
     sampleCriteria.addMatchClause(
@@ -116,7 +116,7 @@ DataModel.prototype.getMicroscopyExperimentSampleData = function(action) {
 
     // Search for datasets
     this.openbisServer.searchForSamplesWithFetchOptions(sampleCriteria,
-        ["PROPERTIES", "METAPROJECTS"], action);
+        ["PROPERTIES", "PARENTS"], action);
 };
 
 /**
@@ -125,11 +125,11 @@ DataModel.prototype.getMicroscopyExperimentSampleData = function(action) {
  */
 DataModel.prototype.getMicroscopySamplesForMicroscopyExperimentSample = function(action) {
 
-    // Get search criteria for sample of type MICROSCOPY_EXPERIMENT and CODE this.microscoyExperimentSampleId
+    // Get search criteria for sample of type MICROSCOPY_EXPERIMENT and CODE this.microscopyExperimentSampleId
     var sampleCriteria = new SearchCriteria();
     sampleCriteria.addMatchClause(
         SearchCriteriaMatchClause.createAttributeMatch(
-            "CODE", this.microscoyExperimentSampleId
+            "CODE", this.microscopyExperimentSampleId
         )
     );
     sampleCriteria.addMatchClause(
@@ -152,7 +152,8 @@ DataModel.prototype.getMicroscopySamplesForMicroscopyExperimentSample = function
     );
 
     // Search for datasets attached to the sample types and code defined above
-    this.openbisServer.searchForSamples(childSampleCriteria, action);
+    this.openbisServer.searchForSamplesWithFetchOptions(childSampleCriteria,
+        ["PROPERTIES", "PARENTS"], action);
 };
 
 /**
@@ -397,24 +398,29 @@ DataModel.prototype.processResultsFromExportDatasetsServerSidePlugin = function 
  */
 DataModel.prototype.retrieveAndDisplayAttachments = function() {
 
-    // Get attachments
-    var sampleId = {
-        "@type" : "SampleIdentifierId",
-        "identifier" : this.microscoyExperimentSampleId
-    };
-
     // Alias
     var dataModelObj = this;
 
     // Retrieve the attachments
-    this.openbisServer.listAttachmentsForSample(sampleId, false, function(response) {
+    this.openbisServer.listDataSetsForSample(this.microscopyExperimentSample, true, function(response) {
         if (response.error) {
             dataModelObj.attachments = [];
             console.log("There was an error retrieving the attachments for current experiment!");
         } else {
 
+            // Make sure all datasets are of the correct type
+            var attachments = []
+            for (var i = 0; i < response.result.length; i++) {
+
+                var tmp = response.result[i];
+
+                if (tmp.dataSetTypeCode === "ATTACHMENT") {
+                    attachments.push(tmp);
+                }
+            }
+
             // Store the attachment array
-            dataModelObj.attachments = response.result;
+            dataModelObj.attachments = attachments;
 
             // Display the info
             DATAVIEWER.displayAttachments(dataModelObj);
