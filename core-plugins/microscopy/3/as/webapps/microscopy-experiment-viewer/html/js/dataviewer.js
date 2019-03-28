@@ -85,11 +85,12 @@ DataViewer.prototype.initView = function() {
         } else if (microscopyExperimentSample.parents.length === 1) {
             sampleTags = microscopyExperimentSample.parents[0].code;
         } else {
+            var sampleTags = "";
             for (var i = 0; i < microscopyExperimentSample.parents.length; i++) {
                 if (i < (microscopyExperimentSample.parents.length - 1)) {
-                    sampleTags = sampleTags.concat(microscopyExperimentSample.parents[i].code + ", ");
+                    sampleTags = sampleTags.concat(microscopyExperimentSample.parents[i].properties["NAME"] + ", ");
                 } else {
-                    sampleTags = sampleTags.concat(microscopyExperimentSample.parents[i].code);
+                    sampleTags = sampleTags.concat(microscopyExperimentSample.parents[i].properties["NAME"]);
                 }
             }
         }
@@ -357,7 +358,8 @@ DataViewer.prototype.displayActions = function(microscopyExperimentSample) {
 DataViewer.prototype.displayThumbnailForSample= function(sample, img_id) {
 
 	// Get the datasets with type "MICROSCOPY_IMG_THUMBNAIL" for current sample
-    DATAMODEL.getMicroscopyImgThumbnailDataSetsForMicroscopySample(DATAMODEL.expId, sample.code, function(dataset) {
+    DATAMODEL.getMicroscopyImgThumbnailDataSetsForMicroscopySample(DATAMODEL.collectionId,
+        sample.code, function(dataset) {
 
         // Get the containers
         if (dataset == null) {

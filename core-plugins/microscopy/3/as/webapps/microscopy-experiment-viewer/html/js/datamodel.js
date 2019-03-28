@@ -23,11 +23,11 @@ function DataModel() {
     // all the facade calls
     this.openbisServer.useSession(this.context.getSessionId());
 
-    // MICROSCOPY_EXPERIMENT sample object
+    // MICROSCOPY_EXPERIMENT sample identifier
     this.microscopyExperimentSampleId = this.context.getEntityIdentifier();
 
-    // (openBIS) Experiment identifier
-    this.expId = null;
+    // (openBIS) Experiment (collection) identifier
+    this.collectionId = null;
 
     // MICROSCOPY_EXPERIMENT sample (entity returned from the context)
     this.microscopyExperimentSample = null;
@@ -43,12 +43,12 @@ function DataModel() {
 
         if (response.hasOwnProperty("error")) {
             // Server returned an error
-            dataModelObj.expId = null;
+            dataModelObj.collectionId = null;
             dataModelObj.expName = "Error: could not retrieve experiment!";
         } else {
 
             // Store the (openBIS) experiment identifier
-            dataModelObj.expId = response.result[0].experimentIdentifierOrNull;
+            dataModelObj.collectionId = response.result[0].experimentIdentifierOrNull;
 
             // Store the MICROSCOPY_EXPERIMENT sample object
             dataModelObj.microscopyExperimentSample = response.result[0];
@@ -72,7 +72,7 @@ function DataModel() {
                     if (response.result.length === 0) {
 
                         var msg = "No (sample) datasets found for experiment with code " +
-                            dataModelObj.expId;
+                            dataModelObj.collectionId;
                         DATAVIEWER.displayStatus(msg, "error");
 
                     } else {
