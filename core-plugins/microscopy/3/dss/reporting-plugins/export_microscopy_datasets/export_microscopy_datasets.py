@@ -21,6 +21,8 @@ from ch.ethz.scu.obit.common.server.longrunning import LRCache
 import uuid
 from threading import Thread
 
+_DEBUG = False
+
 
 def touch(full_file):
     """Touches a file.
@@ -110,26 +112,34 @@ class Mover():
     performs the actual copying.
     """
 
-    def __init__(self, experimentId, expSampleId, sampleId, mode, userId, properties, logger):
+    def __init__(self, experimentId, expSamplePermId, samplePermId, mode, userId, properties, logger):
         """Constructor
 
-        experimentId: id of the (COLLECTION) experiment (must be specified)
-        expSampleId:  if of the MICROSCOPY_EXPERIMENT sample  (must be specified)
-        sampleId:     id of the sample (optional, if specified, the sample id
-                      will be used in the search criteria; if set to "" only
-                      the experiment id will be used as filter).
-        mode:         "normal", "zip", or "hrm". If mode is "normal", the files
-                      will be copied to the user folder; if mode is "zip", the
-                      files will be packaged into a zip files and served for 
-                      download via the browser; if mode is "hrm", the files
-                      will be copied to the HRM source folder.
-        userId:       user id.
-        properties:   plug-in properties. 
-        logger:       logger.
+        experimentId   : id of the (COLLECTION) experiment (must be specified)
+        expSamplePermId: permId of the MICROSCOPY_EXPERIMENT sample  (must be specified)
+        samplePermId   : permId of the sample (optional, if specified, the sample id
+                         will be used in the search criteria; if set to "" only
+                         the experiment sample permId will be used as filter).
+        mode:            "normal", "zip", or "hrm". If mode is "normal", the files
+                         will be copied to the user folder; if mode is "zip", the
+                         files will be packaged into a zip files and served for 
+                         download via the browser; if mode is "hrm", the files
+                         will be copied to the HRM source folder.
+        userId:          user id.
+        properties:      plug-in properties. 
+        logger:          logger.
         """
 
         # Logger
         self._logger = logger
+
+        # Inform
+        if _DEBUG:
+            self._logger.info("Mover called with parameters: \n" +
+                              "    experimentId   : " + experimentId + "\n" +
+                              "    expSamplePermId: " + expSamplePermId + "\n" +
+                              "    samplePermId   : " + samplePermId + "\n" +
+                              "    mode           : " + mode)
 
         # Store the valid file extensions
         self._validExtensions = self._getValidExtensions()
@@ -138,24 +148,36 @@ class Mover():
         self._properties = properties
 
         # (COLLECTION) Experiment identifier
-        self._experimentId = experimentId
+        self._collectionId = experimentId
 
-        # (MICROSCOPY_EXPERIMENT) sample identifier
-        self._expSampleId = expSampleId
+        # Get (COLLECTION) experiment
+        self._collection = searchService.getExperiment(self._collectionId)
+
+        if _DEBUG:
+            self._logger.info("Retrieved experiment with perm id " +
+                              self._collection.permId)
+
+        # Collection name
+        self._collectionName = self._collectionId[self._collectionId.rfind("/") + 1:]
+
+        # (MICROSCOPY_EXPERIMENT) sample permanent identifier
+        self._expSamplePermId = expSamplePermId
+
+        # Experiment sample type
+        self._expSampleType = "MICROSCOPY_EXPERIMENT"
 
         # Get the MICROSCOPY_EXPERIMENT sample
         self._expSample = self._getMicroscopyExperimentSample()
 
-        # Inform
-        self._logger.info("MICROSCOPY_EXPERIMENT sample retrieved " + \
-                          "with PERM-ID: " + str(self._expSample.permId))
-
         # Sample identifier
-        self._sampleId = sampleId
+        self._samplePermId = samplePermId
+
+        # Sample type
+        self._sampleType = "MICROSCOPY_SAMPLE_TYPE"
 
         # Optional: get the MICROSCOPY_SAMPLE_TYPE sample
         self._sample = None
-        if self._sampleId != "":
+        if self._samplePermId != "":
             self._sample = self._getMicroscopySampleTypeSample()
 
             # Inform
@@ -163,8 +185,11 @@ class Mover():
                               "with PERM-ID: " + str(self._sample.permId))
 
         # Experiment code (alias)
-        # If no / is found, _expSampleCode will be the same as _expSampleId
-        self._expSampleCode = self._expSampleId[self._expSampleId.rfind("/") + 1:]
+        self._expSampleCode = self._expSample.getCode()
+
+        # Inform
+        if _DEBUG:
+            self._logger.info("Experiment sample code: " + str(self._expSampleCode))
 
         # User folder: depending on the 'mode' settings, the user folder changes
         if mode == "normal":
@@ -187,6 +212,8 @@ class Mover():
             self._userFolder = os.path.join(self._properties['hrm_base_dir'], \
                                             userId, self._properties['hrm_src_subdir'])
 
+            self._logger.info("HRM root path: " + self._userFolder)
+
         else:
             raise Exception("Bad value for argument 'mode' (" + mode + ")")
 
@@ -200,6 +227,7 @@ class Mover():
 
         # Export full path in user/tmp folder
         self._rootExportPath = os.path.join(self._userFolder,
+                                            self._collectionName,
                                             self._expSampleCode)
 
         # Get the experiment name
@@ -272,8 +300,8 @@ class Mover():
         """Return the file name of the zip archive without path."""
 
         if self._mode == "zip":
-            fullFile = java.io.File(self.getZipArchiveFullPath())
-            return fullFile.getName()
+            fullFile = self.getZipArchiveFullPath()
+            return fullFile[fullFile.find(self._collectionName):]
 
         return ""
 
@@ -325,37 +353,37 @@ class Mover():
     def _getMicroscopyExperimentSample(self):
         """Find the MICROSCOPY_EXPERIMENT sample with given Id."""
 
-        # Search sample of type MICROSCOPY_EXPERIMENT with specified CODE
+        if _DEBUG:
+            self._logger.info("Retrieving sample with permId " +
+                              self._expSamplePermId + " and type " +
+                              self._expSampleType + " from experiment " +
+                              "with permId " + self._collection.permId +
+                              " and type " + self._collection.getExperimentType())
+
+        # Search sample of type MICROSCOPY_EXPERIMENT with specified permId
         sampleCriteria = SearchCriteria()
         sampleCriteria.addMatchClause(
             MatchClause.createAttributeMatch(
-                MatchClauseAttribute.TYPE, "MICROSCOPY_EXPERIMENT"))
+                MatchClauseAttribute.TYPE,
+                self._expSampleType))
         sampleCriteria.addMatchClause(
             MatchClause.createAttributeMatch(
-                MatchClauseAttribute.CODE, self._expSampleId))
-
-        # Add search criteria for the collection (experiment)
-        expCriteria = SearchCriteria()
-        expCriteria.addMatchClause(
-            MatchClause.createAttributeMatch(
-                MatchClauseAttribute.TYPE, "COLLECTION"))
-        expCriteria.addMatchClause(
-            MatchClause.createAttributeMatch(
-                MatchClauseAttribute.CODE, self._experimentId))
-
-        # Add the experiment subcriteria
-        sampleCriteria.addSubCriteria(
-            SearchSubCriteria.createExperimentCriteria(expCriteria))
+                MatchClauseAttribute.PERM_ID,
+                self._expSamplePermId))
 
         # Search
         samples = searchService.searchForSamples(sampleCriteria)
 
         if len(samples) == 0:
             samples = []
-            self._message = "Could not retrieve MICROSCOPY_EXPERIMENT sample with id " + \
-                self._expSampleId + " from COLLECTION experiment " + self._experimentId + "."
+            self._message = "Could not retrieve " + self._expSampleType + \
+            " sample with permId " + self._expSamplePermId + \
+            " from experiment with permId " + self._collection.permId + "."
             self._logger.error(self._message)
             return samples
+
+        if _DEBUG:
+            self._logger.info("Successfully returned sample with permId " + self._expSamplePermId)
 
         # Return
         return samples[0]
@@ -366,36 +394,32 @@ class Mover():
         sampleCriteria = SearchCriteria()
         sampleCriteria.addMatchClause(
             MatchClause.createAttributeMatch(
-                MatchClauseAttribute.TYPE, "MICROSCOPY_SAMPLE_TYPE"))
+                MatchClauseAttribute.TYPE,
+                self._sampleType)
+            )
         sampleCriteria.addMatchClause(
             MatchClause.createAttributeMatch(
-                MatchClauseAttribute.CODE, self._sampleId))
+                MatchClauseAttribute.PERM_ID,
+                self._samplePermId)
+            )
 
-        # Add search criteria for sample of type MICROSCOPY_EXPERIMENT with specified CODE
+        # Search parent sample of type MICROSCOPY_EXPERIMENT with specified permId
         sampleParentCriteria = SearchCriteria()
         sampleParentCriteria.addMatchClause(
             MatchClause.createAttributeMatch(
-                MatchClauseAttribute.TYPE, "MICROSCOPY_EXPERIMENT"))
+                MatchClauseAttribute.TYPE,
+                self._expSampleType))
         sampleParentCriteria.addMatchClause(
             MatchClause.createAttributeMatch(
-                MatchClauseAttribute.CODE, self._expSampleId))
-
-        # Add search criteria for the collection (experiment)
-        expCriteria = SearchCriteria()
-        expCriteria.addMatchClause(
-            MatchClause.createAttributeMatch(
-                MatchClauseAttribute.TYPE, "COLLECTION"))
-        expCriteria.addMatchClause(
-            MatchClause.createAttributeMatch(
-                MatchClauseAttribute.CODE, self._experimentId))
+                MatchClauseAttribute.PERM_ID,
+                self._expSamplePermId))
 
         # Add the parent sample subcriteria
         sampleCriteria.addSubCriteria(
-            SearchSubCriteria.createSampleParentCriteria(sampleParentCriteria))
-
-        # Add the experiment subcriteria
-        sampleCriteria.addSubCriteria(
-            SearchSubCriteria.createExperimentCriteria(expCriteria))
+            SearchSubCriteria.createSampleParentCriteria(
+                sampleParentCriteria
+                )
+            )
 
         # Search
         samples = searchService.searchForSamples(sampleCriteria)
@@ -404,9 +428,15 @@ class Mover():
             samples = []
             self._message = "Could not retrieve MICROSCOPY_SAMPLE_TYPE sample with id " + \
                 self._sampleId + " for parent sample MICROSCOPY_EXPERIMENT with id " + \
-                self._expSampleId + " from COLLECTION experiment " + self._experimentId + "."
+                self._expSampleId + " from COLLECTION experiment " + self._collectionId + "."
             self._logger.error(self._message)
             return samples
+
+        if _DEBUG:
+            self._logger.info("Retrieved " + str(len(samples)) + \
+                              " samples of type MICROSCOPY_SAMPLE_TYPE " + \
+                              "for parent sample MICROSCOPY_EXPERIMENT " +
+                              "with ID " + self._expSamplePermId)
 
         # Return
         return samples[0]
@@ -427,7 +457,7 @@ class Mover():
 
         # Get the datasets for the experiment
         dataSets = []
-        if self._sampleId == "":
+        if self._samplePermId == "":
             # Collect datasets for **all samples** of type MICROSCOPY_SAMPLE_TYPE
             # beloging to the specified MICROSCOPY_EXPERIMENT sample
             dataSets = self._getDataSetsForMicroscopyExperimentSample(requestedDatasetType)
@@ -446,6 +476,11 @@ class Mover():
         if requestedDatasetType == "MICROSCOPY_IMG_CONTAINER" and len(dataSetFiles) == 0:
             self._logger.error("Datasets do not contain files.")
             return False
+
+        if _DEBUG:
+            self._logger.info("Found " + str(len(dataSetFiles)) + " files for "
+                              "dataSets of type " + requestedDatasetType +
+                              " to copy.")
 
         # Process returned dataset files
         if dataSetFiles:
@@ -475,64 +510,57 @@ class Mover():
         assert requestedDatasetType == "MICROSCOPY_IMG_CONTAINER" or requestedDatasetType == "MICROSCOPY_ACCESSORY_FILE", \
             "Input argument 'requestedDatasetType' must be one of MICROSCOPY_IMG_CONTAINER or MICROSCOPY_ACCESSORY_FILE."
 
-        # Inform
-        self._logger.info("Retrieving datasets for requested MICROSCOPY_SAMPLE_TYPE " + \
-                          "with code " + self._sampleId) + "."
+        self._logger.info("_getDataSetsForMicroscopySampleType() called " +
+                          "with requested data type " + requestedDatasetType)
 
         # Dataset criteria
         datasetSearchCriteria = SearchCriteria()
         datasetSearchCriteria.addMatchClause(
             MatchClause.createAttributeMatch(
-                MatchClauseAttribute.TYPE, requestedDatasetType))
-
-        # Add search criteria for the collection (experiment)
-        expCriteria = SearchCriteria()
-        expCriteria.addMatchClause(
-            MatchClause.createAttributeMatch(
-                MatchClauseAttribute.TYPE, "COLLECTION"))
-        expCriteria.addMatchClause(
-            MatchClause.createAttributeMatch(
-                MatchClauseAttribute.CODE, self._experimentId))
+                MatchClauseAttribute.TYPE,
+                requestedDatasetType)
+            )
 
         # Add search criteria for sample of type MICROSCOPY_EXPERIMENT with specified CODE
         sampleExpCriteria = SearchCriteria()
         sampleExpCriteria.addMatchClause(
             MatchClause.createAttributeMatch(
-                MatchClauseAttribute.TYPE, "MICROSCOPY_EXPERIMENT"))
+                MatchClauseAttribute.TYPE,
+                self._expSampleType))
         sampleExpCriteria.addMatchClause(
             MatchClause.createAttributeMatch(
-                MatchClauseAttribute.CODE, self._expSampleId))
+                MatchClauseAttribute.PERM_ID,
+                 self._expSamplePermId)
+            )
 
         # Add search criteria for sample of type MICROSCOPY_SAMPLE_TYPE with specified CODE
         sampleCriteria = SearchCriteria()
         sampleCriteria.addMatchClause(
             MatchClause.createAttributeMatch(
-                MatchClauseAttribute.TYPE, "MICROSCOPY_SAMPLE_TYPE"))
+                MatchClauseAttribute.TYPE,
+                self._sampleType)
+            )
         sampleCriteria.addMatchClause(
              MatchClause.createAttributeMatch(
-                MatchClauseAttribute.CODE, self._sampleId))
+                MatchClauseAttribute.PERM_ID,
+                self._samplePermId)
+             )
         sampleCriteria.addSubCriteria(
-            SearchSubCriteria.createSampleParentCriteria(sampleExpCriteria))
+            SearchSubCriteria.createSampleParentCriteria(
+                sampleExpCriteria)
+            )
 
         # Add search for a parent sample of type MICROSCOPY_SAMPLE_TYPE as subcriterion
         datasetSearchCriteria.addSubCriteria(
-            SearchSubCriteria.createSampleCriteria(sampleCriteria))
-
-         # Add the experiment criteria
-        datasetSearchCriteria.addSubCriteria(
-           SearchSubCriteria.createExperimentCriteria(expCriteria))
+            SearchSubCriteria.createSampleCriteria(sampleCriteria)
+            )
 
         # Retrieve the datasets
         dataSets = searchService.searchForDataSets(datasetSearchCriteria)
 
-        if len(dataSets) == 0:
-            dataSets = []
-            self._message = "Could not retrieve datasets for experiment " \
-            "with id " + self._expSampleId
-            if self._sampleId != "":
-                self._message = self._message + " and sample with id " + \
-                self._sampleId
-            self._logger.error(self._message)
+        # Inform
+        self._logger.info("Retrieved " + str(len(dataSets)) +
+                          " dataSets of type " + requestedDatasetType + ".")
 
         # Return
         return dataSets
@@ -552,27 +580,20 @@ class Mover():
         self._logger.info("Retrieving datasets of type " + requestedDatasetType + \
                           " for all MICROSCOPY_SAMPLE_TYPE samples.")
 
-        #
-        # Common search criteria
-        #
-
-        # Search criteria for the collection (experiment)
-        expCriteria = SearchCriteria()
-        expCriteria.addMatchClause(
-            MatchClause.createAttributeMatch(
-                MatchClauseAttribute.TYPE, "COLLECTION"))
-        expCriteria.addMatchClause(
-            MatchClause.createAttributeMatch(
-                MatchClauseAttribute.CODE, self._experimentId))
-
         # Search criteria for sample of type MICROSCOPY_EXPERIMENT with specified CODE
         sampleExpCriteria = SearchCriteria()
         sampleExpCriteria.addMatchClause(
             MatchClause.createAttributeMatch(
-                MatchClauseAttribute.TYPE, "MICROSCOPY_EXPERIMENT"))
+                MatchClauseAttribute.TYPE,
+                "MICROSCOPY_EXPERIMENT"
+                )
+            )
         sampleExpCriteria.addMatchClause(
             MatchClause.createAttributeMatch(
-                MatchClauseAttribute.CODE, self._expSampleId))
+                MatchClauseAttribute.PERM_ID,
+                self._expSamplePermId
+                )
+            )
 
         #
         # First, get all samples of type MICROSCOPY_SAMPLE_TYPE for
@@ -583,11 +604,17 @@ class Mover():
         sampleCriteria = SearchCriteria()
         sampleCriteria.addMatchClause(
             MatchClause.createAttributeMatch(
-                MatchClauseAttribute.TYPE, "MICROSCOPY_SAMPLE_TYPE"))
+                MatchClauseAttribute.TYPE,
+                 self._sampleType
+                 )
+            )
 
         # Add the sampleExpCriteria as parent sample criteria
         sampleCriteria.addSubCriteria(
-            SearchSubCriteria.createSampleParentCriteria(sampleExpCriteria))
+            SearchSubCriteria.createSampleParentCriteria(
+                sampleExpCriteria
+                )
+            )
 
         # Retrieve the MICROSCOPY_SAMPLE_TYPE samples
         samples = searchService.searchForSamples(sampleCriteria)
@@ -596,18 +623,27 @@ class Mover():
         if len(samples) == 0:
             self._message = "Could not retrieve any samples of type MICROSCOPY_SAMPLE_TYPE " + \
                 " for parent sample MICROSCOPY_EXPERIMENT with id " + self._expSampleId + \
-                " from COLLECTION experiment " + self._experimentId + "."
+                " from COLLECTION experiment " + self._collectionId + "."
             self._logger.error(self._message)
 
             # No datasets found; return an empty list
             dataSets = []
             return dataSets
 
+        if _DEBUG:
+            self._logger.info("Retrieved " + str(len(samples)) + \
+                              " samples of type MICROSCOPY_SAMPLE_TYPE from " + \
+                              "experiment sample.")
         #
         # Then, get all datasets of requested type for each of the MICROSCOPY_SAMPLE_TYPE samples.
         # Please notice that datasets of type MICROSCOPY_IMG_CONTAINER must exist for all samples,
         # whereas datasets of type MICROSCOPY_ACCESSORY_FILE may be absent.
         #
+
+        if _DEBUG:
+            self._logger.info("Retrieving datasets of type " +
+                              requestedDatasetType + " from " +
+                              "MICROSCOPY_SAMPLE_TYPE samples.")
 
         # Initialize dataSets list
         dataSets = []
@@ -616,32 +652,47 @@ class Mover():
         datasetSearchCriteria = SearchCriteria()
         datasetSearchCriteria.addMatchClause(
             MatchClause.createAttributeMatch(
-                MatchClauseAttribute.TYPE, requestedDatasetType))
+                MatchClauseAttribute.TYPE,
+                requestedDatasetType
+                )
+            )
 
         # Process all samples
         for sample in samples:
+
+            if _DEBUG:
+                self._logger.info("Querying dataset for sample with permId " + \
+                                  sample.getPermId())
 
             # We recycle the expCriteria and sampleExpCriteria from above; we create
             # a sample search criteria for current sample type and code
             sampleCriteria = SearchCriteria()
             sampleCriteria.addMatchClause(
                 MatchClause.createAttributeMatch(
-                    MatchClauseAttribute.TYPE, "MICROSCOPY_SAMPLE_TYPE"))
+                    MatchClauseAttribute.TYPE,
+                    self._sampleType
+                    )
+                )
 
             # Add current sample code as criterion
             sampleCriteria.addMatchClause(
                 MatchClause.createAttributeMatch(
-                    MatchClauseAttribute.CODE, sample.code))
+                    MatchClauseAttribute.PERM_ID,
+                    sample.getPermId()
+                    )
+                )
             sampleCriteria.addSubCriteria(
-                SearchSubCriteria.createSampleParentCriteria(sampleExpCriteria))
+                SearchSubCriteria.createSampleParentCriteria(
+                    sampleExpCriteria
+                    )
+                )
 
             # Add search for a parent sample of type MICROSCOPY_SAMPLE_TYPE as subcriterion
             datasetSearchCriteria.addSubCriteria(
-                SearchSubCriteria.createSampleCriteria(sampleCriteria))
-
-            # Add the experiment criteria
-            datasetSearchCriteria.addSubCriteria(
-                SearchSubCriteria.createExperimentCriteria(expCriteria))
+                SearchSubCriteria.createSampleCriteria(
+                    sampleCriteria
+                    )
+                )
 
             # Retrieve the datasets
             currentDataSets = searchService.searchForDataSets(datasetSearchCriteria)
@@ -651,7 +702,7 @@ class Mover():
             numRetrievedDataSets = len(currentDataSets)
             if numRetrievedDataSets == 0 and requestedDatasetType == "MICROSCOPY_IMG_CONTAINER":
                 self._message = "Could not retrieve any datasets for sample of type " + \
-                "MICROSCOPY_SAMPLE_TYPE and code " + sample.code + "."
+                "MICROSCOPY_SAMPLE_TYPE and permId " + sample.getPermId() + "."
                 self._logger.error(self._message)
                 # Return an empty list of datasets
                 dataSets = []
@@ -983,19 +1034,19 @@ def aggregateProcess(parameters, tableBuilder, uid):
     experimentId = parameters.get("experimentId")
 
     # Get the MICROSCOPY_EXPERIMENT sample identifier
-    expSampleId = parameters.get("expSampleId")
+    expSamplePermId = parameters.get("expSamplePermId")
 
     # Get the MICROSCOPY_SAMPLE_TYPE sample identifier
-    sampleId = parameters.get("sampleId")
+    samplePermId = parameters.get("samplePermId")
 
     # Get the mode
     mode = parameters.get("mode")
 
     # Info
     logger.info("Aggregation plug-in called with following parameters:")
-    logger.info("* COLLECTION experimentId          = " + experimentId)
-    logger.info("* MICROSCOPY_EXPERIMENT sample Id  = " + expSampleId)
-    logger.info("* MICROSCOPY_SAMPLE_TYPE sample Id = " + sampleId)
+    logger.info("* COLLECTION experimentId              = " + experimentId)
+    logger.info("* MICROSCOPY_EXPERIMENT sample permId  = " + expSamplePermId)
+    logger.info("* MICROSCOPY_SAMPLE_TYPE sample permId = " + samplePermId)
     logger.info("* mode         = " + mode)
     logger.info("* userId       = " + userId)
     logger.info("Aggregation plugin properties:")
@@ -1006,7 +1057,7 @@ def aggregateProcess(parameters, tableBuilder, uid):
 
     # Instantiate the Mover object - userId is a global variable
     # made available to the aggregation plug-in
-    mover = Mover(experimentId, expSampleId, sampleId, mode, userId, properties, logger)
+    mover = Mover(experimentId, expSamplePermId, samplePermId, mode, userId, properties, logger)
 
     # Process
     success = mover.process()

@@ -173,13 +173,13 @@ DataModel.prototype.getMicroscopySamplesForMicroscopyExperimentSample = function
  * @param sampleId MICROSCOPY_SAMLE_TYPE sample ID
  * @param mode Mode to be passed to the aggregation service.
  */
-DataModel.prototype.copyDatasetsToUserDir = function (experimentId, expSampleId, sampleId, mode) {
+DataModel.prototype.copyDatasetsToUserDir = function (experimentId, expSamplePermId, samplePermId, mode) {
 
     // Add call to the aggregation service
     var parameters = {
         experimentId: experimentId,
-        expSampleId: expSampleId,
-        sampleId: sampleId,
+        expSamplePermId: expSamplePermId,
+        samplePermId: samplePermId,
         mode: mode
     };
 
@@ -284,7 +284,7 @@ DataModel.prototype.processResultsFromExportDataSetsServerSidePlugin = function 
 
                     if (r_Success === "1") {
                         var snip = "<b>Congratulations!</b>&nbsp;";
-                        if (r_NCopiedFiles === 1) {
+                        if (r_NCopiedFiles === "1") {
                             snip = snip +
                                 "<span class=\"badge\">1</span> file was ";
                         } else {

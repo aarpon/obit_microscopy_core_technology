@@ -390,10 +390,10 @@ DataViewer.prototype.displayActions = function(expSample, sample, dataSetCode) {
     }
 
     // Get the sample identifier
-    var sampleId = sample.identifier;
+    var samplePermId = sample.permId;
 
     // Get the sample experiment identifier
-    var expSampleId = expSample.identifier;
+    var expSamplePermId = expSample.permId;
 
     // Retrieve action div
     var detailViewActionDiv = $("#actionView");
@@ -492,7 +492,7 @@ DataViewer.prototype.displayActions = function(expSample, sample, dataSetCode) {
             .html("")
             .click(function() {
                 DATAMODEL.copyDatasetsToUserDir(
-                    experimentId, expSampleId, sampleId, "normal");
+                    experimentId, expSamplePermId, samplePermId, "normal");
                 return false;
             });
 
@@ -523,7 +523,7 @@ DataViewer.prototype.displayActions = function(expSample, sample, dataSetCode) {
             .html("")
             .click(function() {
                 DATAMODEL.copyDatasetsToUserDir(
-                    experimentId, expSampleId, sampleId, "hrm");
+                    experimentId, expSamplePermId, samplePermId, "hrm");
                 return false;
             });
 
@@ -552,7 +552,7 @@ DataViewer.prototype.displayActions = function(expSample, sample, dataSetCode) {
         .html("")
         .click(function() {
             DATAMODEL.copyDatasetsToUserDir(
-                experimentId, expSampleId, sampleId, "zip");
+                experimentId, expSamplePermId, samplePermId, "zip");
             return false;
         });
 

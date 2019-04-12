@@ -248,8 +248,8 @@ DataViewer.prototype.displayActions = function(microscopyExperimentSample) {
     var experimentId = microscopyExperimentSample.experimentIdentifierOrNull;
 
     // Get the MICROSCOPY_EXPERIMENT sample identifier
-    var expSampleId = microscopyExperimentSample.identifier;
-    if (undefined === expSampleId) {
+    var expSamplePermId = microscopyExperimentSample.permId;
+    if (undefined === expSamplePermId) {
         DATAVIEWER.displayStatus("Could not retrieve the microscopy experiment identifier!", "error");
         return;
     }
@@ -278,7 +278,7 @@ DataViewer.prototype.displayActions = function(microscopyExperimentSample) {
             .html("")
             .click(function() {
                 DATAMODEL.copyDatasetsToUserDir(
-                    experimentId, expSampleId, "", "normal");
+                    experimentId, expSamplePermId, "", "normal");
                 return false;
             });
 
@@ -308,7 +308,7 @@ DataViewer.prototype.displayActions = function(microscopyExperimentSample) {
             .html("")
             .click(function() {
                 DATAMODEL.copyDatasetsToUserDir(
-                    experimentId, expSampleId, "", "hrm");
+                    experimentId, expSamplePermId, "", "hrm");
                 return false;
             });
 
@@ -337,7 +337,7 @@ DataViewer.prototype.displayActions = function(microscopyExperimentSample) {
         .html("")
         .click(function() {
             DATAMODEL.copyDatasetsToUserDir(
-                experimentId, expSampleId, "", "zip");
+                experimentId, expSamplePermId, "", "zip");
             return false;
         });
 

@@ -328,13 +328,13 @@ DataModel.prototype.experimentContainsAccessoryFiles = function (action) {
  * @param sampleId Sample ID
  * @param mode Mode to be passed to the aggragation service.
  */
-DataModel.prototype.copyDatasetsToUserDir = function (experimentId, expSampleId, sampleId, mode) {
+DataModel.prototype.copyDatasetsToUserDir = function (experimentId, expSamplePermId, samplePermId, mode) {
 
     // Add call to the aggregation service
     var parameters = {
         experimentId: experimentId,
-        expSampleId: expSampleId,
-        sampleId: sampleId,
+        expSamplePermId: expSamplePermId,
+        samplePermId: samplePermId,
         mode: mode
     };
 
