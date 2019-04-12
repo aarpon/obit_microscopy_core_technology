@@ -232,8 +232,8 @@ DataModel.prototype.getDataSetsForSampleAndExperiment = function (action) {
     var sampleCriteria = new SearchCriteria();
     sampleCriteria.addMatchClause(
         SearchCriteriaMatchClause.createAttributeMatch(
-            "CODE",
-            this.microscopySampleId
+            "PERM_ID",
+            this.microscopySamplePermId
         )
     );
     sampleCriteria.addMatchClause(

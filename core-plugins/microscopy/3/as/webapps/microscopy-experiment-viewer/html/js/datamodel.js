@@ -135,12 +135,14 @@ DataModel.prototype.getMicroscopySamplesForMicroscopyExperimentSample = function
     var sampleCriteria = new SearchCriteria();
     sampleCriteria.addMatchClause(
         SearchCriteriaMatchClause.createAttributeMatch(
-            "PERM_ID", this.microscopyExperimentSamplePermId
+            "PERM_ID",
+            this.microscopyExperimentSamplePermId
         )
     );
     sampleCriteria.addMatchClause(
         SearchCriteriaMatchClause.createAttributeMatch(
-            "TYPE", this.microscopyExperimentSampleType
+            "TYPE",
+            this.microscopyExperimentSampleType
         )
     );
 
@@ -148,7 +150,8 @@ DataModel.prototype.getMicroscopySamplesForMicroscopyExperimentSample = function
     var childSampleCriteria = new SearchCriteria();
     childSampleCriteria.addMatchClause(
         SearchCriteriaMatchClause.createAttributeMatch(
-            "TYPE", "MICROSCOPY_SAMPLE_TYPE"
+            "TYPE",
+            "MICROSCOPY_SAMPLE_TYPE"
         )
     );
 
