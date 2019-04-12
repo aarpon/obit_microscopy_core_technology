@@ -80,19 +80,16 @@ DataViewer.prototype.initView = function() {
     // Get sample tags
     var sampleTags = "<i>None</i>";
     if (microscopyExperimentSample.parents) {
-        if (microscopyExperimentSample.parents === 0) {
+        if (microscopyExperimentSample.parents.length === 0) {
             sampleTags = "<i>None</i>";
-        } else if (microscopyExperimentSample.parents.length === 1) {
-            sampleTags = microscopyExperimentSample.parents[0].code;
         } else {
-            var sampleTags = "";
-            for (var i = 0; i < microscopyExperimentSample.parents.length; i++) {
-                if (i < (microscopyExperimentSample.parents.length - 1)) {
-                    sampleTags = sampleTags.concat(microscopyExperimentSample.parents[i].properties["NAME"] + ", ");
-                } else {
-                    sampleTags = sampleTags.concat(microscopyExperimentSample.parents[i].properties["NAME"]);
+            var tags = [];
+            for (let i = 0; i < microscopyExperimentSample.parents.length; i++) {
+                if (microscopyExperimentSample.parents[i].sampleTypeCode === "ORGANIZATION_UNIT") {
+                    tags.push(microscopyExperimentSample.parents[i].properties["NAME"]);
                 }
             }
+            sampleTags = tags.join(", ");
         }
     }
     experimentTagView_div.append(this.prepareTitle("Tags", "info"));
