@@ -100,8 +100,8 @@ class Processor:
         if collection is None:
 
             # Create a new collection of type "COLLECTION"
-            collection = transaction.createNewExperiment(openBISCollectionIdentifier,
-                                                         "COLLECTION")
+            collection = self._transaction.createNewExperiment(openBISCollectionIdentifier,
+                                                               "COLLECTION")
             if collection is None:
                 msg = "PROCESSOR::getOrCreateCollection(): failed creating " + \
                       "collection with ID " + openBISCollectionIdentifier + "."
@@ -116,7 +116,7 @@ class Processor:
                 collectionName = "Microscopy Experiment Collection"
 
                 # Set the collection name
-                collection.setPropertyValue("NAME", collectionName)
+                collection.setPropertyValue("$NAME", collectionName)
 
         return collection
 
@@ -175,7 +175,7 @@ class Processor:
 
         # Store the name (in both the MICROSCOPY_EXPERIMENT_NAME and NAME properties)
         # NAME is used by the ELN-LIMS user interface.
-        openBISExperimentSample.setPropertyValue("NAME", expName)
+        openBISExperimentSample.setPropertyValue("$NAME", expName)
         openBISExperimentSample.setPropertyValue("MICROSCOPY_EXPERIMENT_NAME", expName)
 
         # Set the experiment version (to be the global __version__)
@@ -223,7 +223,7 @@ class Processor:
                 # MICROSCOPY_EXPERIMENT sample and the containing COLLECTION
                 attachmentDataSet = self._transaction.createNewDataSet("ATTACHMENT")
                 self._transaction.moveFile(attachmentFilePath, attachmentDataSet)
-                attachmentDataSet.setPropertyValue("NAME", attachmentFileName)
+                attachmentDataSet.setPropertyValue("$NAME", attachmentFileName)
                 attachmentDataSet.setExperiment(collection)
                 attachmentDataSet.setSample(openBISExperimentSample)
 
@@ -649,7 +649,8 @@ class Processor:
                 elif fileNode.tag == "MicroscopyCompositeFile":
 
                     # Process the MicroscopyCompositeFile node
-                    self.processMicroscopyCompositeFile(fileNode, openBISExperimentSample)
+                    self.processMicroscopyCompositeFile(fileNode,
+                                                        openBISExperimentSample)
 
                     # Inform
                     self._logger.info("Processed composite file")
