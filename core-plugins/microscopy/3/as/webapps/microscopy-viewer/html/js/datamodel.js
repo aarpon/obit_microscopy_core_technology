@@ -26,6 +26,12 @@ function DataModel() {
     // Sample identifier
     this.microscopySampleId = this.context.getEntityIdentifier();
 
+    // Sample perm ID
+    this.microscopySamplePermId = this.context.getEntityPermId();
+
+    // Sample type
+    this.microscopySampleType = this.context.getEntityType();
+
     // Sample
     this.microscopySample = null;
 
@@ -57,6 +63,7 @@ function DataModel() {
             // Server returned an error
             dataModelObj.microscopySample = null;
             dataModelObj.microscopySampleId = null;
+            dataModelObj.microscopySamplePermId = null;
             dataModelObj.microscopyExperimentSample = null;
             dataModelObj.microscopyExperimentSampleName = "Error: could not retrieve experiment!";
 
@@ -153,6 +160,7 @@ function DataModel() {
                 // Could not retrieve the sample object
                 dataModelObj.microscopySample = null;
                 dataModelObj.microscopySampleId = null;
+                dataModelObj.microscopySamplePermId = null;
                 dataModelObj.microscopyExperimentSample = null;
                 dataModelObj.microscopyExperimentSampleName = "Error: could not retrieve experiment!";
 
@@ -173,10 +181,18 @@ DataModel.prototype.initData = function (action) {
 
     // Search for the MICROSCOPY_SAMPLE_TYPE sample. Make sure to retrieve the parent samples as well
     var searchCriteria = new SearchCriteria();
-    searchCriteria.addMatchClause(SearchCriteriaMatchClause.createAttributeMatch("TYPE", "MICROSCOPY_SAMPLE_TYPE"));
-    searchCriteria.addMatchClause(SearchCriteriaMatchClause.createAttributeMatch("CODE", this.microscopySampleId));
+    searchCriteria.addMatchClause(
+        SearchCriteriaMatchClause.createAttributeMatch(
+            "TYPE",
+            this.microscopySampleType)
+    );
+    searchCriteria.addMatchClause(
+        SearchCriteriaMatchClause.createAttributeMatch(
+            "PERM_ID",
+            this.microscopySamplePermId));
 
-    this.openbisServer.searchForSamplesWithFetchOptions(searchCriteria, ["PROPERTIES", "PARENTS"], action);
+    this.openbisServer.searchForSamplesWithFetchOptions(searchCriteria,
+        ["PROPERTIES", "PARENTS"], action);
 
 };
 
@@ -186,7 +202,8 @@ DataModel.prototype.initData = function (action) {
  */
 DataModel.prototype.getMicroscopyExperimentSampleData = function (action) {
     // sampleId must be in an array: [sampleId]
-    this.openbisServer.listExperimentsForIdentifiers([this.experimentId], action);
+    this.openbisServer.listExperimentsForIdentifiers(
+        [this.experimentId], action);
 };
 
 /**
@@ -198,26 +215,41 @@ DataModel.prototype.getDataSetsForSampleAndExperiment = function (action) {
     // Experiment criteria (experiment of type "COLLECTION" and code expCode)
     var experimentCriteria = new SearchCriteria();
     experimentCriteria.addMatchClause(
-        SearchCriteriaMatchClause.createAttributeMatch("CODE", this.experimentId)
+        SearchCriteriaMatchClause.createAttributeMatch(
+            "CODE",
+            this.experimentId
+        )
     );
     experimentCriteria.addMatchClause(
-        SearchCriteriaMatchClause.createAttributeMatch("TYPE", "COLLECTION")
+        SearchCriteriaMatchClause.createAttributeMatch(
+            "TYPE",
+            "COLLECTION"
+        )
     );
 
 
     // Sample criteria (sample of type "MICROSCOPY_SAMPLE_TYPE" and code sampleCode)
     var sampleCriteria = new SearchCriteria();
     sampleCriteria.addMatchClause(
-        SearchCriteriaMatchClause.createAttributeMatch("CODE", this.microscopySampleId)
+        SearchCriteriaMatchClause.createAttributeMatch(
+            "CODE",
+            this.microscopySampleId
+        )
     );
     sampleCriteria.addMatchClause(
-        SearchCriteriaMatchClause.createAttributeMatch("TYPE", "MICROSCOPY_SAMPLE_TYPE")
+        SearchCriteriaMatchClause.createAttributeMatch(
+            "TYPE",
+            "MICROSCOPY_SAMPLE_TYPE"
+        )
     );
 
     // Dataset criteria
     var datasetCriteria = new SearchCriteria();
     datasetCriteria.addMatchClause(
-        SearchCriteriaMatchClause.createAttributeMatch("TYPE", "MICROSCOPY_IMG_CONTAINER")
+        SearchCriteriaMatchClause.createAttributeMatch(
+            "TYPE",
+            "MICROSCOPY_IMG_CONTAINER"
+        )
     );
 
     // Add sample and experiment search criteria as subcriteria
@@ -242,26 +274,39 @@ DataModel.prototype.experimentContainsAccessoryFiles = function (action) {
     // Experiment criteria (experiment of type "COLLECTION" and code expCode)
     var experimentCriteria = new SearchCriteria();
     experimentCriteria.addMatchClause(
-        SearchCriteriaMatchClause.createAttributeMatch("CODE", this.experimentId)
+        SearchCriteriaMatchClause.createAttributeMatch(
+            "CODE",
+            this.experimentId
+        )
     );
     experimentCriteria.addMatchClause(
-        SearchCriteriaMatchClause.createAttributeMatch("TYPE", "COLLECTION")
+        SearchCriteriaMatchClause.createAttributeMatch(
+            "TYPE",
+            "COLLECTION"
+        )
     );
 
 
-    // Sample criteria (sample of type "MICROSCOPY_SAMPLE_TYPE" and code sampleCode)
+    // Sample criteria (sample of type "MICROSCOPY_SAMPLE_TYPE" and permId microscopySamplePermId)
     var sampleCriteria = new SearchCriteria();
     sampleCriteria.addMatchClause(
-        SearchCriteriaMatchClause.createAttributeMatch("CODE", this.microscopySampleId)
+        SearchCriteriaMatchClause.createAttributeMatch(
+            "PERM_ID",
+            this.microscopySamplePermId)
     );
     sampleCriteria.addMatchClause(
-        SearchCriteriaMatchClause.createAttributeMatch("TYPE", "MICROSCOPY_SAMPLE_TYPE")
+        SearchCriteriaMatchClause.createAttributeMatch(
+            "TYPE",
+            "MICROSCOPY_SAMPLE_TYPE")
     );
 
     // Dataset criteria
     var datasetCriteria = new SearchCriteria();
     datasetCriteria.addMatchClause(
-        SearchCriteriaMatchClause.createAttributeMatch("TYPE", "MICROSCOPY_ACCESSORY_FILE")
+        SearchCriteriaMatchClause.createAttributeMatch(
+            "TYPE",
+            "MICROSCOPY_ACCESSORY_FILE"
+        )
     );
 
     // Add sample and experiment search criteria as subcriteria
@@ -299,14 +344,14 @@ DataModel.prototype.copyDatasetsToUserDir = function (experimentId, expSampleId,
     // Must use global object
     DATAMODEL.openbisServer.createReportFromAggregationService(CONFIG['dataStoreServer'],
         "export_microscopy_datasets", parameters,
-        DATAMODEL.processResultsFromExportDatasetsServerSidePlugin);
+        DATAMODEL.processResultsFromExportDataSetsServerSidePlugin);
 };
 
 /**
  * Process the results returned from the copyDatasetsToUserDir() server-side plug-in
  * @param response JSON object
  */
-DataModel.prototype.processResultsFromExportDatasetsServerSidePlugin = function (response) {
+DataModel.prototype.processResultsFromExportDataSetsServerSidePlugin = function (response) {
 
     var status;
     var unexpected = "Sorry, unexpected feedback from server " +
@@ -366,7 +411,7 @@ DataModel.prototype.processResultsFromExportDatasetsServerSidePlugin = function 
                         DATAMODEL.openbisServer.createReportFromAggregationService(
                             CONFIG['dataStoreServer'],
                             "export_microscopy_datasets", parameters,
-                            DATAMODEL.processResultsFromExportDatasetsServerSidePlugin)
+                            DATAMODEL.processResultsFromExportDataSetsServerSidePlugin)
                     },
                     parseInt(CONFIG['queryPluginStatusInterval']));
 
