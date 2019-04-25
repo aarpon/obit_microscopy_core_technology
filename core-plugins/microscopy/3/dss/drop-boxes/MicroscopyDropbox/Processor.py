@@ -112,8 +112,8 @@ class Processor:
                 self._logger.info("PROCESSOR::getOrCreateCollection(): " +
                                   "Created collection with ID " + openBISCollectionIdentifier + ".")
 
-                # The collection name is hard-coded to "Microscopy Experiment Collection"
-                collectionName = "Microscopy Experiment Collection"
+                # The collection name is hard-coded to "Microscopy experiments collection"
+                collectionName = "Microscopy experiments collection"
 
                 # Set the collection name
                 collection.setPropertyValue("$NAME", collectionName)
