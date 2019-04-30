@@ -607,11 +607,11 @@ class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig)
             # Set the MICROSCOPY_ACCESSORY_FILE_NAME property
             dataset.setPropertyValue("MICROSCOPY_ACCESSORY_FILE_NAME", f)
 
+            # Set the $NAME property
+            dataset.setPropertyValue("$NAME", f)
+
             # Assign the dataset to the sample
             dataset.setSample(sample)
-
-            # Assign the dataset to the experiment
-            dataset.setExperiment(openBISExperimentSample.getExperiment())
 
             # Add to the container dataset
             dataset.setParentDatasets([parent_dataset.getDataSetCode()])

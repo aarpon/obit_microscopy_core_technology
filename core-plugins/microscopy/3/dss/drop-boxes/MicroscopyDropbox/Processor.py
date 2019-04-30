@@ -76,6 +76,78 @@ class Processor:
         t = datetime.now()
         return t.strftime("%y%d%m%H%M%S") + unicode(t)[20:]
 
+    def createSample(self,
+                     sampleIdentifier,
+                     sampleType):
+        """Create a sample with given code.
+
+        Depending on whether project samples are enabled in openBIS, the sample
+        code will be created accordingly.
+
+        @param sampleIdentifier The full identifier of the new sample.
+        @param sampleType Type of the sample to be created.
+        @return sample Created ISample
+        """
+
+        # The sample identifier must have 3 parts
+        if sampleIdentifier[0] != "/":
+            msg = "Bad sample identifier " + str(sampleIdentifier)
+            self._logger.err(msg)
+            raise Exception(msg)
+
+        parts = sampleIdentifier[1:].split('/')
+        if len(parts) != 3:
+            msg = "Bad sample identifier " + str(sampleIdentifier)
+            self._logger.err(msg)
+            raise Exception(msg)
+
+        if self._transaction.serverInformation.get('project-samples-enabled') == 'true':
+
+            # The code is in the correct form "/SPACE/PROJECT/SAMPLE_CODE
+            code = sampleIdentifier
+
+        else:
+
+            # The code must be brought to the form "/SPACE/SAMPLE_CODE
+            code = parts[0] + "/" + parts[2]
+
+        # Create the sample
+        sample = self._transaction.createNewSample(code, sampleType)
+
+        return sample
+
+    def createSampleWithGenCode(self,
+                                spaceCode,
+                                openBISCollection,
+                                sampleType):
+        """Create a sample with automatically generated code.
+
+        Depending on whether project samples are enabled in openBIS, the sample
+        code will be created accordingly.
+
+        @param spaceCode The code of space (the space must exist).
+        @param openBISCollection The openBIS Collection object (must exist).
+        @param sampleType Type of the sample to be created.
+        @return sample Created ISample
+        """
+
+        if self._transaction.serverInformation.get('project-samples-enabled') == 'true':
+
+            identifier = openBISCollection.getExperimentIdentifier()
+            project_identifier = identifier[:identifier.rfind('/')]
+            sample = self._transaction.createNewProjectSampleWithGeneratedCode(project_identifier,
+                                                                               sampleType)
+        else:
+
+            # Make sure there are not slashes in the spaceCode
+            spaceCode = spaceCode.replace("/", "")
+
+            # Create the sample
+            sample = self._transaction.createNewSampleWithGeneratedCode(spaceCode,
+                                                                        sampleType)
+
+        return sample
+
     def getSubFolders(self):
         """Return a list of subfolders of the passed incoming directory.
 
@@ -154,17 +226,24 @@ class Processor:
         collection = self.getOrCreateCollection(openBISCollectionIdentifier)
 
         # Make sure to create a new sample of type "MICROSCOPY_EXPERIMENT"
-        openBISExperimentSample = self._transaction.createNewSample(openBISIdentifier,
-                                                                    "MICROSCOPY_EXPERIMENT")
+        openBISExperimentSample = self.createSample(openBISIdentifier, "MICROSCOPY_EXPERIMENT")
 
         if openBISExperimentSample is None:
             msg = "PROCESSOR::processExperimentNode(): " + \
                   "Could not create MICROSCOPY_EXPERIMENT sample " + openBISIdentifier
             self._logger.error(msg)
             raise Exception(msg)
+        else:
+            self._logger.info("PROCESSOR::processExperimentNode(): " + \
+                              "Created experiment sample with identifier " + openBISIdentifier)
 
         # Set the collection
         openBISExperimentSample.setExperiment(collection)
+
+        # Inform
+        self._logger.info("PROCESSOR::processExperimentNode(): " + \
+                          "Assigned experiment sample with identifier " + openBISIdentifier +
+                          " to collection " + str(openBISExperimentSample.getExperiment().getExperimentIdentifier()))
 
         # Get comma-separated tag list
         tagList = experimentNode.attrib.get("tags")
@@ -220,11 +299,12 @@ class Processor:
                 attachmentFileName = os.path.basename(attachmentFilePath)
 
                 # Create a dataset of type ATTACHMENT and add it to the
-                # MICROSCOPY_EXPERIMENT sample and the containing COLLECTION
+                # MICROSCOPY_EXPERIMENT sample.
+                # We do not add it directly to the Collection to comply with the way
+                # ELN-LIMS displays the structure in the navigation.
                 attachmentDataSet = self._transaction.createNewDataSet("ATTACHMENT")
                 self._transaction.moveFile(attachmentFilePath, attachmentDataSet)
                 attachmentDataSet.setPropertyValue("$NAME", attachmentFileName)
-                attachmentDataSet.setExperiment(collection)
                 attachmentDataSet.setSample(openBISExperimentSample)
 
         # Return the openBIS Experiment object
@@ -277,24 +357,20 @@ class Processor:
                           "File " + relativeFileName + " contains " +
                           str(num_series) + " series.")
 
-        # Get the correct space where to create the sample
-        identifier = openBISSample.getSampleIdentifier()
+        # Create the sample
+        sample = self.createSampleWithGenCode(openBISSample.getSampleIdentifier(),
+                                              openBISSample.getExperiment(),
+                                              "MICROSCOPY_SAMPLE_TYPE")
 
-        sample_space = identifier[1:identifier.find('/', 1)]
-        self._logger.info("Creating sample with auto-generated code in space " + sample_space)
-
-        # Create a sample for the dataset
-        if self._transaction.serverInformation.get('project-samples-enabled') == 'true':
-            project_identifier = identifier[:identifier.rfind('/')]
-            sample = self._transaction.createNewProjectSampleWithGeneratedCode(project_identifier,
-                                                                               "MICROSCOPY_SAMPLE_TYPE")
-        else:
-            sample = self._transaction.createNewSampleWithGeneratedCode(sample_space,
-                                                                        "MICROSCOPY_SAMPLE_TYPE")
+        # Inform
+        self._logger.info("PROCESSOR::processMicroscopyFile(): " + \
+                          "Successfully created sample of type MICROSCOPY_SAMPLE_TYPE and " + \
+                          "identifier " + sample.getSampleIdentifier())
 
         # Set the sample name
-        sample.setPropertyValue("MICROSCOPY_SAMPLE_NAME",
-                                relativeFileName[relativeFileName.rfind('/') + 1:])
+        file_name_without_path = relativeFileName[relativeFileName.rfind('/') + 1:]
+        sample.setPropertyValue("MICROSCOPY_SAMPLE_NAME", file_name_without_path)
+        sample.setPropertyValue("$NAME", file_name_without_path)
 
         # Set the sample description
         sampleDescr = microscopyFileNode.attrib.get("description")
@@ -307,8 +383,12 @@ class Processor:
         if datasetSize is not None:
             sample.setPropertyValue("MICROSCOPY_SAMPLE_SIZE_IN_BYTES", datasetSize)
 
-        # Set the collection
-        sample.setExperiment(openBISSample.getExperiment())
+        # Inform
+        self._logger.info("PROCESSOR::processMicroscopyFile(): " + \
+                          "Assigning sample of type MICROSCOPY_SAMPLE_TYPE and " +
+                          "identifier " + str(sample.getSampleIdentifier()) + " as " +
+                          "child of sample of type " + str(openBISSample.getSampleType()) +
+                          " and identifier " + str(openBISSample.getSampleIdentifier()))
 
         # Set the parent MICROSCOPY_EXPERIMENT sample
         sample.setParentSampleIdentifiers([openBISSample.getSampleIdentifier()])
@@ -327,7 +407,8 @@ class Processor:
             seriesMetadataXML = self.dictToXML(allSeriesMetadata[i])
 
             # Log the content of the metadata
-            self._logger.info("Series metadata (XML): " + str(seriesMetadataXML))
+            self._logger.info("PROCESSOR::processMicroscopyFile(): " +
+                              "Series metadata (XML): " + str(seriesMetadataXML))
 
             if image_data_set is None:
 
@@ -376,8 +457,24 @@ class Processor:
                 dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME",
                                          allSeriesMetadata[i]["name"])
 
+            # Inform
+            self._logger.info("PROCESSOR::processMicroscopyFile(): " +
+                              "Dataset of type " + str(dataset.getDataSetType()) +
+                              " has permId " + str(sample.getPermId()))
+
+            self._logger.info("PROCESSOR::processMicroscopyFile(): " +
+                              "Assigning dataset to sample of type " + str(sample.getSampleType()) +
+                              " and identifier " + str(sample.getSampleIdentifier()))
+
             # Set the (common) sample for the series
             dataset.setSample(sample)
+
+            # Inform
+            self._logger.info("PROCESSOR::processMicroscopyFile(): " +
+                              "Dataset assigned to sample " + str(sample.getSampleIdentifier()))
+
+            self._logger.info("PROCESSOR::processMicroscopyFile(): " +
+                              "Dataset is assigned to experiment: " + str(sample.getExperiment()))
 
     def processMicroscopyCompositeFile(self, microscopyCompositeFileNode,
                                        openBISSample):
@@ -414,19 +511,15 @@ class Processor:
         # Get the number of series
         num_series = len(microscopyCompositeFileNode)
 
-        # Get the correct space where to create the sample
-        identifier = openBISSample.getSampleIdentifier()
-        sample_space = identifier[1:identifier.find('/', 1)]
-        self._logger.info("Creating sample with auto-generated code in space " + sample_space)
+        # Create the sample
+        sample = self.createSampleWithGenCode(openBISSample.getSampleIdentifier(),
+                                              openBISSample.getExperiment(),
+                                              "MICROSCOPY_SAMPLE_TYPE")
 
-        # Create a sample for the dataset
-        if self._transaction.serverInformation.get('project-samples-enabled') == 'true':
-            project_identifier = identifier[:identifier.rfind('/')]
-            sample = self._transaction.createNewProjectSampleWithGeneratedCode(project_identifier,
-                                                                               "MICROSCOPY_SAMPLE_TYPE")
-        else:
-            sample = self._transaction.createNewSampleWithGeneratedCode(sample_space,
-                                                                        "MICROSCOPY_SAMPLE_TYPE")
+        # Inform
+        self._logger.info("PROCESSOR::processMicroscopyCompositeFile(): " + \
+                "Successfully created sample of type MICROSCOPY_SAMPLE_TYPE and " + \
+                "identifier " + sample.getSampleIdentifier())
 
         # Set the sample name
         name = microscopyCompositeFileNode.attrib.get("name")
@@ -442,9 +535,6 @@ class Processor:
         datasetSize = microscopyCompositeFileNode.attrib.get("datasetSize")
         if datasetSize is not None:
             sample.setPropertyValue("MICROSCOPY_SAMPLE_SIZE_IN_BYTES", datasetSize)
-
-        # Set the experiment Identifier
-        sample.setExperiment(openBISSample.getExperiment())
 
         # Set the parent MICROSCOPY_EXPERIMENT sample
         sample.setParentSampleIdentifiers([openBISSample.getSampleIdentifier()])
@@ -476,7 +566,8 @@ class Processor:
             # Series number
             seriesNum = seriesIndices[i]
 
-            self._logger.info("Processing series " + str(seriesNum) + " of " + str(num_series))
+            self._logger.info("PROCESSOR::processMicroscopyCompositeFile(): " + \
+                              "Processing series " + str(seriesNum) + " of " + str(num_series))
 
             # Create a configuration object
             if compositeFileType == "Leica TIFF Series":
@@ -576,10 +667,12 @@ class Processor:
 
                 # Store the series name in the MICROSCOPY_IMG_CONTAINER_NAME property
                 if "name" in allSeriesMetadata[i] and allSeriesMetadata[i]["name"] != "":
-                    self._logger.info("The series name is " + str(allSeriesMetadata[i]["name"]))
+                    self._logger.info("PROCESSOR::processMicroscopyCompositeFile(): " + \
+                                      "The series name is " + str(allSeriesMetadata[i]["name"]))
                     dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME", allSeriesMetadata[i]["name"])
                 else:
-                    self._logger.info("Falling back to series name series_" + str(seriesNum))
+                    self._logger.info("PROCESSOR::processMicroscopyCompositeFile(): " + \
+                                      "Falling back to series name series_" + str(seriesNum))
                     dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME", "series_" + str(seriesNum))
 
             # Set the (common) sample for the series
@@ -759,3 +852,4 @@ class Processor:
 
             # Now register the experiment
             self.register(tree)
+
