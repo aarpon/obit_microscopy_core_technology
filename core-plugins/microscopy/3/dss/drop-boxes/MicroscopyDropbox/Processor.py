@@ -250,7 +250,7 @@ class Processor:
         openBISExperimentSample = self.createSample(openBISIdentifier,
                                                     "MICROSCOPY_EXPERIMENT",
                                                     setExperiment=True,
-                                                    collection)
+                                                    openBISCollection=collection)
 
         if openBISExperimentSample is None:
             msg = "PROCESSOR::processExperimentNode(): " + \
