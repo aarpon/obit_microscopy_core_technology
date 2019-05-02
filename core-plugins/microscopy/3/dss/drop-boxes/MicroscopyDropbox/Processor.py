@@ -78,7 +78,9 @@ class Processor:
 
     def createSample(self,
                      sampleIdentifier,
-                     sampleType):
+                     sampleType,
+                     setExperiment=False,
+                     openBISCollection=None):
         """Create a sample with given code.
 
         Depending on whether project samples are enabled in openBIS, the sample
@@ -86,6 +88,10 @@ class Processor:
 
         @param sampleIdentifier The full identifier of the new sample.
         @param sampleType Type of the sample to be created.
+        @param setExperiment (optional, default = False) Set to true, to assign the
+               newly created sample to the openBISCollection collection.
+        @param openBISCollection (optional, default = None) If setExperiment is set to
+               true, a valid openBISCollection collection object must be passed.                      
         @return sample Created ISample
         """
 
@@ -114,12 +120,20 @@ class Processor:
         # Create the sample
         sample = self._transaction.createNewSample(code, sampleType)
 
+        # Set the experiment (collection)?
+        if setExperiment:
+            if openBISCollection is not None:
+                sample.setExperiment(openBISCollection)
+            else:
+                raise Exception("A valid Collection object must be provided!")
+
         return sample
 
     def createSampleWithGenCode(self,
                                 spaceCode,
                                 openBISCollection,
-                                sampleType):
+                                sampleType,
+                                setExperiment=True):
         """Create a sample with automatically generated code.
 
         Depending on whether project samples are enabled in openBIS, the sample
@@ -128,6 +142,8 @@ class Processor:
         @param spaceCode The code of space (the space must exist).
         @param openBISCollection The openBIS Collection object (must exist).
         @param sampleType Type of the sample to be created.
+        @param setExperiment (optional, default = True) Set to true, to assign the
+               newly created sample to the openBISCollection collection.        
         @return sample Created ISample
         """
 
@@ -145,6 +161,10 @@ class Processor:
             # Create the sample
             sample = self._transaction.createNewSampleWithGeneratedCode(spaceCode,
                                                                         sampleType)
+
+        # Set the experiment (collection)?
+        if setExperiment:
+            sample.setExperiment(openBISCollection)
 
         return sample
 
@@ -225,8 +245,12 @@ class Processor:
         # Get or create the collection with given identifier
         collection = self.getOrCreateCollection(openBISCollectionIdentifier)
 
-        # Make sure to create a new sample of type "MICROSCOPY_EXPERIMENT"
-        openBISExperimentSample = self.createSample(openBISIdentifier, "MICROSCOPY_EXPERIMENT")
+        # Make sure to create a new sample of type "MICROSCOPY_EXPERIMENT" and
+        # assign it to the collection
+        openBISExperimentSample = self.createSample(openBISIdentifier,
+                                                    "MICROSCOPY_EXPERIMENT",
+                                                    setExperiment=True,
+                                                    collection)
 
         if openBISExperimentSample is None:
             msg = "PROCESSOR::processExperimentNode(): " + \
@@ -236,9 +260,6 @@ class Processor:
         else:
             self._logger.info("PROCESSOR::processExperimentNode(): " + \
                               "Created experiment sample with identifier " + openBISIdentifier)
-
-        # Set the collection
-        openBISExperimentSample.setExperiment(collection)
 
         # Inform
         self._logger.info("PROCESSOR::processExperimentNode(): " + \
@@ -360,7 +381,8 @@ class Processor:
         # Create the sample
         sample = self.createSampleWithGenCode(openBISSample.getSampleIdentifier(),
                                               openBISSample.getExperiment(),
-                                              "MICROSCOPY_SAMPLE_TYPE")
+                                              "MICROSCOPY_SAMPLE_TYPE",
+                                              setExperiment=True)
 
         # Inform
         self._logger.info("PROCESSOR::processMicroscopyFile(): " + \
@@ -514,7 +536,8 @@ class Processor:
         # Create the sample
         sample = self.createSampleWithGenCode(openBISSample.getSampleIdentifier(),
                                               openBISSample.getExperiment(),
-                                              "MICROSCOPY_SAMPLE_TYPE")
+                                              "MICROSCOPY_SAMPLE_TYPE",
+                                              setExperiment=True)
 
         # Inform
         self._logger.info("PROCESSOR::processMicroscopyCompositeFile(): " + \
