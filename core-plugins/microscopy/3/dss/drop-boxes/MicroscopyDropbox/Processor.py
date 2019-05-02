@@ -123,7 +123,16 @@ class Processor:
         # Set the experiment (collection)?
         if setExperiment:
             if openBISCollection is not None:
+
+                # Assign to collection
                 sample.setExperiment(openBISCollection)
+
+                # Inform
+                self._logger.info("Assigned sample of type " + sampleType +
+                                  " and identifier " + str(sample.getSampleIdentifier()) +
+                                  " to collection with identifier " +
+                                  str(openBISCollection.getExperimentIdentifier()))
+
             else:
                 raise Exception("A valid Collection object must be provided!")
 
@@ -164,7 +173,15 @@ class Processor:
 
         # Set the experiment (collection)?
         if setExperiment:
+
+            # Assign to collection
             sample.setExperiment(openBISCollection)
+
+            # Inform
+            self._logger.info("Assigned sample of type " + sampleType +
+                              " and identifier " + str(sample.getSampleIdentifier()) +
+                              " to collection with identifier " +
+                              str(openBISCollection.getExperimentIdentifier()))
 
         return sample
 
@@ -479,24 +496,15 @@ class Processor:
                 dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME",
                                          allSeriesMetadata[i]["name"])
 
-            # Inform
-            self._logger.info("PROCESSOR::processMicroscopyFile(): " +
-                              "Dataset of type " + str(dataset.getDataSetType()) +
-                              " has permId " + str(sample.getPermId()))
-
-            self._logger.info("PROCESSOR::processMicroscopyFile(): " +
-                              "Assigning dataset to sample of type " + str(sample.getSampleType()) +
-                              " and identifier " + str(sample.getSampleIdentifier()))
-
             # Set the (common) sample for the series
             dataset.setSample(sample)
 
             # Inform
             self._logger.info("PROCESSOR::processMicroscopyFile(): " +
-                              "Dataset assigned to sample " + str(sample.getSampleIdentifier()))
-
-            self._logger.info("PROCESSOR::processMicroscopyFile(): " +
-                              "Dataset is assigned to experiment: " + str(sample.getExperiment()))
+                              "Dataset of type " + str(dataset.getDataSetType()) +
+                              " and permId " + str(sample.getPermId()) +
+                              " assigned to sample of type " + str(sample.getSampleType()) +
+                              " and identifier " + str(sample.getSampleIdentifier()))
 
     def processMicroscopyCompositeFile(self, microscopyCompositeFileNode,
                                        openBISSample):
