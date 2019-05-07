@@ -497,6 +497,7 @@ class Processor:
                                          allSeriesMetadata[i]["name"])
 
             # Set the (common) sample for the series
+            dataset.establishSampleLinkForContainedDataSets()
             dataset.setSample(sample)
 
             # Inform
@@ -707,6 +708,7 @@ class Processor:
                     dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME", "series_" + str(seriesNum))
 
             # Set the (common) sample for the series
+            dataset.establishSampleLinkForContainedDataSets()
             dataset.setSample(sample)
 
     def register(self, tree):
