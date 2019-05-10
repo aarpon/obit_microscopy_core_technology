@@ -141,14 +141,36 @@ class Mover():
                               "    samplePermId   : " + samplePermId + "\n" +
                               "    mode           : " + mode)
 
-        # Store the valid file extensions
-        self._validExtensions = self._getValidExtensions()
+        #
+        # Store and interpret input arguments
+        #
+
+        # (COLLECTION) Experiment identifier
+        self._collectionId = experimentId
+
+        # Experiment sample type
+        self._expSampleType = "MICROSCOPY_EXPERIMENT"
+
+        # (MICROSCOPY_EXPERIMENT) sample permanent identifier
+        self._expSamplePermId = expSamplePermId
+
+        # Sample type
+        self._sampleType = "MICROSCOPY_SAMPLE_TYPE"
+
+        # Sample identifier
+        self._samplePermId = samplePermId
+
+        # Export all experiment flag
+        self._exportCompleteExperiment = False
+        if self._samplePermId == "":
+            self._exportCompleteExperiment = True
 
         # Store properties
         self._properties = properties
 
-        # (COLLECTION) Experiment identifier
-        self._collectionId = experimentId
+        #
+        # Retrieve relevant objects
+        #
 
         # Get (COLLECTION) experiment
         self._collection = searchService.getExperiment(self._collectionId)
@@ -157,23 +179,8 @@ class Mover():
             self._logger.info("Retrieved experiment with perm id " +
                               self._collection.permId)
 
-        # Collection name
-        self._collectionName = self._collectionId[self._collectionId.rfind("/") + 1:]
-
-        # (MICROSCOPY_EXPERIMENT) sample permanent identifier
-        self._expSamplePermId = expSamplePermId
-
-        # Experiment sample type
-        self._expSampleType = "MICROSCOPY_EXPERIMENT"
-
         # Get the MICROSCOPY_EXPERIMENT sample
         self._expSample = self._getMicroscopyExperimentSample()
-
-        # Sample identifier
-        self._samplePermId = samplePermId
-
-        # Sample type
-        self._sampleType = "MICROSCOPY_SAMPLE_TYPE"
 
         # Optional: get the MICROSCOPY_SAMPLE_TYPE sample
         self._sample = None
@@ -181,8 +188,18 @@ class Mover():
             self._sample = self._getMicroscopySampleTypeSample()
 
             # Inform
-            self._logger.info("MICROSCOPY_SAMPLE_TYPE sample retrieved " + \
+            self._logger.info(self._sampleType + " sample retrieved " + \
                               "with PERM-ID: " + str(self._sample.permId))
+
+        #
+        # Set some constants
+        #
+
+        # Store the valid file extensions
+        self._validExtensions = self._getValidExtensions()
+
+        # Collection name
+        self._collectionName = self._collectionId[self._collectionId.rfind("/") + 1:]
 
         # Experiment code (alias)
         self._expSampleCode = self._expSample.getCode()
@@ -231,7 +248,7 @@ class Mover():
                                             self._expSampleCode)
 
         # Get the experiment name
-        self._experimentName = self._expSample.getPropertyValue("MICROSCOPY_EXPERIMENT_NAME")
+        self._experimentName = self._expSample.getPropertyValue(self._expSampleType + "_NAME")
 
         # Experiment full path within the export path
         self._experimentPath = os.path.join(self._rootExportPath,
@@ -259,12 +276,27 @@ class Mover():
         the method returns True. Otherwise, it returns False.
         """
 
+        # Check that the collection could be retrieved
+        if self._collection is None:
+            self._message = "Could not retrieve collection with " \
+            "identifier " + self._collectionId + "!"
+            self._logger.error(self._message)
+            return False
+
         # Check that the experiment could be retrieved
         if self._expSample is None:
             self._message = "Could not retrieve experiment with " \
-            "identifier " + self._expSampleId + "!"
+            "identifier " + self._expSamplePermId + "!"
             self._logger.error(self._message)
             return False
+
+        # If necessary, check that the sample could be retrieved
+        if not self._exportCompleteExperiment:
+            if self._sample is None:
+                self._message = "Could not retrieve sample with " \
+                    "identifier " + self._samplePermId + "!"
+                self._logger.error(self._message)
+                return False
 
         # At this stage we can create the experiment folder in the user dir
         # (and export root)
@@ -457,7 +489,7 @@ class Mover():
 
         # Get the datasets for the experiment
         dataSets = []
-        if self._samplePermId == "":
+        if self._exportCompleteExperiment:
             # Collect datasets for **all samples** of type MICROSCOPY_SAMPLE_TYPE
             # beloging to the specified MICROSCOPY_EXPERIMENT sample
             dataSets = self._getDataSetsForMicroscopyExperimentSample(requestedDatasetType)
@@ -506,12 +538,117 @@ class Mover():
         If none are found, return [].
         """
 
+        # Retrieve datasets for sample
+        dataSets = self._getDataSets(self._expSampleType,
+                                     self._expSamplePermId,
+                                     self._sampleType,
+                                     self._samplePermId,
+                                     requestedDatasetType)
+
+        # Return
+        return dataSets
+
+    def _getDataSetsForMicroscopyExperimentSample(self, requestedDatasetType="MICROSCOPY_IMG_CONTAINER"):
+        """
+        Return a list of datasets of the requested type belonging to the MICROSCOPY_EXPERIMENT 
+        (i.e. all contained MICROSCOPY_SAMPLE_TYPE samples).
+        If none are found, return [].
+        """
+
+        # Only two types of experiment are allowed
+        assert requestedDatasetType == "MICROSCOPY_IMG_CONTAINER" or requestedDatasetType == "MICROSCOPY_ACCESSORY_FILE", \
+            "Input argument 'requestedDatasetType' must be one of MICROSCOPY_IMG_CONTAINER or MICROSCOPY_ACCESSORY_FILE."
+
+        # Inform
+        self._logger.info("Retrieving datasets of type " + requestedDatasetType + \
+                          " for all MICROSCOPY_SAMPLE_TYPE samples.")
+
+        # Get the samples
+        samples = self._getSamples(self._expSampleType, self._expSamplePermId, self._sampleType)
+
+        # Did we find any samples?
+        if len(samples) == 0:
+            self._message = "Could not retrieve any samples of type MICROSCOPY_SAMPLE_TYPE " + \
+                " for parent sample MICROSCOPY_EXPERIMENT with id " + self._expSampleId + \
+                " from COLLECTION experiment " + self._collectionId + "."
+            self._logger.error(self._message)
+
+            # No datasets found; return an empty list
+            dataSets = []
+            return dataSets
+
+        if _DEBUG:
+            self._logger.info("Retrieved " + str(len(samples)) + \
+                              " samples of type MICROSCOPY_SAMPLE_TYPE from " + \
+                              "experiment sample:")
+
+        #
+        # Then, get all datasets of requested type for each of the MICROSCOPY_SAMPLE_TYPE samples.
+        # Please notice that datasets of type MICROSCOPY_IMG_CONTAINER must exist for all samples,
+        # whereas datasets of type MICROSCOPY_ACCESSORY_FILE may be absent.
+        #
+
+        if _DEBUG:
+            self._logger.info("Retrieving datasets of type " +
+                              requestedDatasetType + " from " +
+                              "MICROSCOPY_SAMPLE_TYPE samples.")
+
+        # Initialize dataSets list
+        dataSets = []
+
+        # Process all samples
+        for sample in samples:
+
+            if _DEBUG:
+                self._logger.info("* Querying sample with identifier " + sample.getSampleIdentifier() + \
+                                  " and permId " + sample.getPermId())
+
+            # Retrieve datasets for sample
+            currentDataSets = self._getDataSets(self._expSampleType,
+                                                self._expSamplePermId,
+                                                self._sampleType,
+                                                sample.getPermId(),
+                                                requestedDatasetType)
+
+            # We expect that ALL samples have at least one dataset of type MICROSCOPY_IMG_CONTAINER,
+            # but samples of type MICROSCOPY_ACCESSORY_FILE may be absent.
+            numRetrievedDataSets = len(currentDataSets)
+            if numRetrievedDataSets == 0 and requestedDatasetType == "MICROSCOPY_IMG_CONTAINER":
+                self._message = "Could not retrieve any datasets for sample of type " + \
+                "MICROSCOPY_SAMPLE_TYPE and permId " + sample.getPermId() + "."
+                self._logger.error(self._message)
+                # Return an empty list of datasets
+                dataSets = []
+                return dataSets
+
+            # Append the retrieved datasets to the global list
+            if numRetrievedDataSets > 0:
+                dataSets.extend(currentDataSets)
+
+        # We collected all datasets
+        return dataSets
+
+    def _getDataSets(self, expSampleType, expSamplePermId, sampleType, samplePermId,
+                     requestedDatasetType="MICROSCOPY_IMG_CONTAINER"):
+        """
+        Return a list of datasets of requested type belonging to the MICROSCOPY_EXPERIMENT sample 
+        and a specific sample of type MICROSCOPY_SAMPLE_TYPE.
+        If none are found, return [].
+        """
+
         # Only two types of experiment are allowed
         assert requestedDatasetType == "MICROSCOPY_IMG_CONTAINER" or requestedDatasetType == "MICROSCOPY_ACCESSORY_FILE", \
             "Input argument 'requestedDatasetType' must be one of MICROSCOPY_IMG_CONTAINER or MICROSCOPY_ACCESSORY_FILE."
 
         self._logger.info("_getDataSetsForMicroscopySampleType() called " +
                           "with requested data type " + requestedDatasetType)
+
+        if _DEBUG:
+            self._logger.info("* Requested dataset type: " + requestedDatasetType)
+            self._logger.info("* Requested experiment sample type: " + expSampleType)
+            self._logger.info("* Requested experiment sample permId: " + expSamplePermId)
+            self._logger.info("* Requested sample type: " + sampleType)
+            self._logger.info("* Requested sample permId: " + samplePermId)
 
         # Dataset criteria
         datasetSearchCriteria = SearchCriteria()
@@ -526,11 +663,11 @@ class Mover():
         sampleExpCriteria.addMatchClause(
             MatchClause.createAttributeMatch(
                 MatchClauseAttribute.TYPE,
-                self._expSampleType))
+                expSampleType))
         sampleExpCriteria.addMatchClause(
             MatchClause.createAttributeMatch(
                 MatchClauseAttribute.PERM_ID,
-                 self._expSamplePermId)
+                expSamplePermId)
             )
 
         # Add search criteria for sample of type MICROSCOPY_SAMPLE_TYPE with specified CODE
@@ -538,12 +675,12 @@ class Mover():
         sampleCriteria.addMatchClause(
             MatchClause.createAttributeMatch(
                 MatchClauseAttribute.TYPE,
-                self._sampleType)
+                sampleType)
             )
         sampleCriteria.addMatchClause(
              MatchClause.createAttributeMatch(
                 MatchClauseAttribute.PERM_ID,
-                self._samplePermId)
+                samplePermId)
              )
         sampleCriteria.addSubCriteria(
             SearchSubCriteria.createSampleParentCriteria(
@@ -565,155 +702,49 @@ class Mover():
         # Return
         return dataSets
 
-    def _getDataSetsForMicroscopyExperimentSample(self, requestedDatasetType="MICROSCOPY_IMG_CONTAINER"):
+    def _getSamples(self, expSampleType, expSamplePermId, sampleType):
+
         """
-        Return a list of datasets of the requested type belonging to the MICROSCOPY_EXPERIMENT 
-        (i.e. all contained MICROSCOPY_SAMPLE_TYPE samples).
+        Return a list of datasets of requested type belonging to the MICROSCOPY_EXPERIMENT sample 
+        and a specific sample of type MICROSCOPY_SAMPLE_TYPE.
         If none are found, return [].
         """
 
-        # Only two types of experiment are allowed
-        assert requestedDatasetType == "MICROSCOPY_IMG_CONTAINER" or requestedDatasetType == "MICROSCOPY_ACCESSORY_FILE", \
-            "Input argument 'requestedDatasetType' must be one of MICROSCOPY_IMG_CONTAINER or MICROSCOPY_ACCESSORY_FILE."
+        if _DEBUG:
+            self._logger.info("* Requested experiment sample type: " + expSampleType)
+            self._logger.info("* Requested experiment sample permId: " + expSamplePermId)
+            self._logger.info("* Requested sample type: " + sampleType)
 
-        # Inform
-        self._logger.info("Retrieving datasets of type " + requestedDatasetType + \
-                          " for all MICROSCOPY_SAMPLE_TYPE samples.")
-
-        # Search criteria for sample of type MICROSCOPY_EXPERIMENT with specified CODE
-        sampleExpCriteria = SearchCriteria()
-        sampleExpCriteria.addMatchClause(
-            MatchClause.createAttributeMatch(
-                MatchClauseAttribute.TYPE,
-                "MICROSCOPY_EXPERIMENT"
-                )
-            )
-        sampleExpCriteria.addMatchClause(
-            MatchClause.createAttributeMatch(
-                MatchClauseAttribute.PERM_ID,
-                self._expSamplePermId
-                )
-            )
-
-        #
-        # First, get all samples of type MICROSCOPY_SAMPLE_TYPE for
-        # the requested MICROSCOPY_EXPERIMENT sample.
-        #
-
-        # Search criteria for all samples of type MICROSCOPY_SAMPLE_TYPE
+        # Search samples of type MICROSCOPY_SAMPLE_TYPE
         sampleCriteria = SearchCriteria()
         sampleCriteria.addMatchClause(
             MatchClause.createAttributeMatch(
                 MatchClauseAttribute.TYPE,
-                 self._sampleType
-                 )
+                sampleType)
             )
 
-        # Add the sampleExpCriteria as parent sample criteria
-        sampleCriteria.addSubCriteria(
-            SearchSubCriteria.createSampleParentCriteria(
-                sampleExpCriteria
-                )
-            )
-
-        # Retrieve the MICROSCOPY_SAMPLE_TYPE samples
-        samples = searchService.searchForSamples(sampleCriteria)
-
-        # Did we find any samples?
-        if len(samples) == 0:
-            self._message = "Could not retrieve any samples of type MICROSCOPY_SAMPLE_TYPE " + \
-                " for parent sample MICROSCOPY_EXPERIMENT with id " + self._expSampleId + \
-                " from COLLECTION experiment " + self._collectionId + "."
-            self._logger.error(self._message)
-
-            # No datasets found; return an empty list
-            dataSets = []
-            return dataSets
-
-        if _DEBUG:
-            self._logger.info("Retrieved " + str(len(samples)) + \
-                              " samples of type MICROSCOPY_SAMPLE_TYPE from " + \
-                              "experiment sample.")
-        #
-        # Then, get all datasets of requested type for each of the MICROSCOPY_SAMPLE_TYPE samples.
-        # Please notice that datasets of type MICROSCOPY_IMG_CONTAINER must exist for all samples,
-        # whereas datasets of type MICROSCOPY_ACCESSORY_FILE may be absent.
-        #
-
-        if _DEBUG:
-            self._logger.info("Retrieving datasets of type " +
-                              requestedDatasetType + " from " +
-                              "MICROSCOPY_SAMPLE_TYPE samples.")
-
-        # Initialize dataSets list
-        dataSets = []
-
-        # Dataset criteria: set type to match the requested one
-        datasetSearchCriteria = SearchCriteria()
-        datasetSearchCriteria.addMatchClause(
+        # Search parent sample of type MICROSCOPY_EXPERIMENT with specified permId
+        sampleParentCriteria = SearchCriteria()
+        sampleParentCriteria.addMatchClause(
             MatchClause.createAttributeMatch(
                 MatchClauseAttribute.TYPE,
-                requestedDatasetType
+                expSampleType))
+        sampleParentCriteria.addMatchClause(
+            MatchClause.createAttributeMatch(
+                MatchClauseAttribute.PERM_ID,
+                expSamplePermId))
+
+        # Add the parent sample subcriteria
+        sampleCriteria.addSubCriteria(
+            SearchSubCriteria.createSampleParentCriteria(
+                sampleParentCriteria
                 )
             )
 
-        # Process all samples
-        for sample in samples:
-
-            if _DEBUG:
-                self._logger.info("Querying dataset for sample with permId " + \
-                                  sample.getPermId())
-
-            # We recycle the expCriteria and sampleExpCriteria from above; we create
-            # a sample search criteria for current sample type and code
-            sampleCriteria = SearchCriteria()
-            sampleCriteria.addMatchClause(
-                MatchClause.createAttributeMatch(
-                    MatchClauseAttribute.TYPE,
-                    self._sampleType
-                    )
-                )
-
-            # Add current sample code as criterion
-            sampleCriteria.addMatchClause(
-                MatchClause.createAttributeMatch(
-                    MatchClauseAttribute.PERM_ID,
-                    sample.getPermId()
-                    )
-                )
-            sampleCriteria.addSubCriteria(
-                SearchSubCriteria.createSampleParentCriteria(
-                    sampleExpCriteria
-                    )
-                )
-
-            # Add search for a parent sample of type MICROSCOPY_SAMPLE_TYPE as subcriterion
-            datasetSearchCriteria.addSubCriteria(
-                SearchSubCriteria.createSampleCriteria(
-                    sampleCriteria
-                    )
-                )
-
-            # Retrieve the datasets
-            currentDataSets = searchService.searchForDataSets(datasetSearchCriteria)
-
-            # We expect that ALL samples have at least one dataset of type MICROSCOPY_IMG_CONTAINER,
-            # but samples of type MICROSCOPY_ACCESSORY_FILE may be absent.
-            numRetrievedDataSets = len(currentDataSets)
-            if numRetrievedDataSets == 0 and requestedDatasetType == "MICROSCOPY_IMG_CONTAINER":
-                self._message = "Could not retrieve any datasets for sample of type " + \
-                "MICROSCOPY_SAMPLE_TYPE and permId " + sample.getPermId() + "."
-                self._logger.error(self._message)
-                # Return an empty list of datasets
-                dataSets = []
-                return dataSets
-
-            # Append the retrieved datasets to the global list
-            if numRetrievedDataSets > 0:
-                dataSets.extend(currentDataSets)
-
-        # We collected all datasets
-        return dataSets
+        # Search
+        samples = searchService.searchForSamples(sampleCriteria)
+        # Return
+        return samples
 
     def _getFilesForDataSets(self, dataSets, requestedDatasetType="MICROSCOPY_IMG_CONTAINER"):
         """
@@ -783,7 +814,6 @@ class Mover():
         """Copies the source directory (with full path) recursively to directory dstDir.
         """
         dstSubDir = os.path.join(dstDir, os.path.basename(source))
-        self._logger.info("Creating directory " + dstDir)
         self._createDir(dstSubDir)
 
         # Info
