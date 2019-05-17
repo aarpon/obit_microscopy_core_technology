@@ -556,6 +556,7 @@ class Processor:
         # Set the sample name
         name = microscopyCompositeFileNode.attrib.get("name")
         sample.setPropertyValue("MICROSCOPY_SAMPLE_NAME", name)
+        sample.setPropertyValue("$NAME", name)
 
         # Set the sample description
         sampleDescr = microscopyCompositeFileNode.attrib.get("description")
