@@ -109,7 +109,7 @@ DataViewer.prototype.initView = function() {
             numSample++;
 
             // Add a new row for the next three thumbnails
-            if (numSample % 3 === 1) {
+            if (numSample % 4 === 1) {
                 newThumbRow = $("<div />", {class: "row"});
                 sampleView_div.append(newThumbRow);
             }
@@ -143,7 +143,9 @@ DataViewer.prototype.initView = function() {
             // elements related to current sample
             var newThumbCol = $("<div />",
                 {
-                    class: "col-md-4",
+                    class: "col-md-3",
+                    display: "inline",
+                    "text-align": "center",
                     id : sample.code
                 });
 
@@ -163,6 +165,8 @@ DataViewer.prototype.initView = function() {
             var thumbnailImage = $("<img />",
                 {
                     src: "./img/wait.png",
+                    class: "img-responsive",
+                    display: "inline",
                     id: "image_" + sample.code,
                     title: name
                 });
@@ -393,6 +397,7 @@ DataViewer.prototype.displayThumbnailForSample= function(sample, img_id) {
                                 var eUrl = encodeURI(url);
                                 eUrl = eUrl.replace('+', '%2B');
                                 $("#" + img_id).attr("src", eUrl);
+                                $("#" + img_id).css("display", "inline");
 
                             });
                     } else {
