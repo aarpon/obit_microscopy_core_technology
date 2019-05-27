@@ -379,6 +379,14 @@ assignment_DATA_SET_MICROSCOPY_IMG_CONTAINER_MICROSCOPY_IMG_CONTAINER_NAME.setSe
 assignment_DATA_SET_MICROSCOPY_IMG_CONTAINER_MICROSCOPY_IMG_CONTAINER_NAME.setPositionInForms(2)
 assignment_DATA_SET_MICROSCOPY_IMG_CONTAINER_MICROSCOPY_IMG_CONTAINER_NAME.setShownEdit(False)
 
+# DATA_SET_MICROSCOPY_IMG_CONTAINER_NAME
+assignment_DATA_SET_MICROSCOPY_IMG_CONTAINER_NAME = tr.assignPropertyType(data_set_type_MICROSCOPY_IMG_CONTAINER,
+                                                                          prop_type_NAME)
+assignment_DATA_SET_MICROSCOPY_IMG_CONTAINER_NAME.setMandatory(False)
+assignment_DATA_SET_MICROSCOPY_IMG_CONTAINER_NAME.setSection(None)
+assignment_DATA_SET_MICROSCOPY_IMG_CONTAINER_NAME.setPositionInForms(3)
+assignment_DATA_SET_MICROSCOPY_IMG_CONTAINER_NAME.setShownEdit(False)
+
 # DATA_SET_MICROSCOPY_IMG_OVERVIEW_RESOLUTION
 assignment_DATA_SET_MICROSCOPY_IMG_OVERVIEW_RESOLUTION = tr.assignPropertyType(data_set_type_MICROSCOPY_IMG_OVERVIEW,
                                                                                prop_type_RESOLUTION)
