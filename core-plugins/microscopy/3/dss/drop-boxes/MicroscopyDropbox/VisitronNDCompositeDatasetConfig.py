@@ -463,6 +463,8 @@ class VisitronNDCompositeDatasetConfig(MicroscopyCompositeDatasetConfig):
             metadata = self._allSeriesMetadata[i]
             fileNamesFromMetadata = metadata['filenames'].split(',')
             for name in fileNamesFromMetadata:
+                if self._DEBUG:
+                    self._logger.info("Comparing with " + str(name))
                 if name.lower().endswith(fileName.lower()):
                     return i
         return -1
