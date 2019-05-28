@@ -212,22 +212,6 @@ DataModel.prototype.getMicroscopyExperimentSampleData = function (action) {
  */
 DataModel.prototype.getDataSetsForSampleAndExperiment = function (action) {
 
-    // Experiment criteria (experiment of type "COLLECTION" and code expCode)
-    var experimentCriteria = new SearchCriteria();
-    experimentCriteria.addMatchClause(
-        SearchCriteriaMatchClause.createAttributeMatch(
-            "CODE",
-            this.experimentId
-        )
-    );
-    experimentCriteria.addMatchClause(
-        SearchCriteriaMatchClause.createAttributeMatch(
-            "TYPE",
-            "COLLECTION"
-        )
-    );
-
-
     // Sample criteria (sample of type "MICROSCOPY_SAMPLE_TYPE" and code sampleCode)
     var sampleCriteria = new SearchCriteria();
     sampleCriteria.addMatchClause(
@@ -255,9 +239,6 @@ DataModel.prototype.getDataSetsForSampleAndExperiment = function (action) {
     // Add sample and experiment search criteria as subcriteria
     datasetCriteria.addSubCriteria(
         SearchSubCriteria.createSampleCriteria(sampleCriteria)
-    );
-    datasetCriteria.addSubCriteria(
-        SearchSubCriteria.createExperimentCriteria(experimentCriteria)
     );
 
     // Search
