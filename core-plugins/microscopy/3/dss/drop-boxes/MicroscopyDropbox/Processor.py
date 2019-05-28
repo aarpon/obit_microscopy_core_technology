@@ -468,6 +468,9 @@ class Processor:
                 # Store the series name in the MICROSCOPY_IMG_CONTAINER_NAME property
                 dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME", allSeriesMetadata[i]["name"])
 
+                # Store the series name in the $NAME property
+                dataset.setPropertyValue("$NAME", allSeriesMetadata[i]["name"])
+
                 # Now store a reference to the first dataset
                 image_data_set = dataset
 
@@ -495,6 +498,9 @@ class Processor:
                 # Store the series name in the MICROSCOPY_IMG_CONTAINER_NAME property
                 dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME",
                                          allSeriesMetadata[i]["name"])
+
+                # Store the series name in the $NAME property
+                dataset.setPropertyValue("$NAME", allSeriesMetadata[i]["name"])
 
             # Set the (common) sample for the series
             dataset.establishSampleLinkForContainedDataSets()
@@ -662,9 +668,11 @@ class Processor:
                                          seriesMetadataXML)
 
                 # Store the series name in the MICROSCOPY_IMG_CONTAINER_NAME property
-                # TODO Get and store the correct series name
                 dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME",
                                          allSeriesMetadata[i]["name"])
+
+                # Store the series name in the $NAME property
+                dataset.setPropertyValue("$NAME", allSeriesMetadata[i]["name"])
 
                 # Register the accessory files for YouScope experiments
                 if compositeFileType == "YouScope Experiment":
@@ -695,7 +703,7 @@ class Processor:
                 dataset = self._transaction.createNewImageDataSetFromDataSet(compositeDatasetConfig,
                                                                              image_data_set)
 
-                # Store the metadata in the MICROSCOPY_IMG_CONTAINER_METADATA property
+                # Store the metadata in the MICROSCOPY_IMG_CONTAINER_METADATA and $NAME properties
                 dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_METADATA", seriesMetadataXML)
 
                 # Store the series name in the MICROSCOPY_IMG_CONTAINER_NAME property
@@ -703,10 +711,12 @@ class Processor:
                     self._logger.info("PROCESSOR::processMicroscopyCompositeFile(): " + \
                                       "The series name is " + str(allSeriesMetadata[i]["name"]))
                     dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME", allSeriesMetadata[i]["name"])
+                    dataset.setPropertyValue("$NAME", allSeriesMetadata[i]["name"])
                 else:
                     self._logger.info("PROCESSOR::processMicroscopyCompositeFile(): " + \
                                       "Falling back to series name series_" + str(seriesNum))
                     dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME", "series_" + str(seriesNum))
+                    dataset.setPropertyValue("$NAME", "series_" + str(seriesNum))
 
             # Set the (common) sample for the series
             dataset.establishSampleLinkForContainedDataSets()
