@@ -359,8 +359,8 @@ DataViewer.prototype.displayActions = function(microscopyExperimentSample) {
 DataViewer.prototype.displayThumbnailForSample= function(sample, img_id) {
 
 	// Get the datasets with type "MICROSCOPY_IMG_THUMBNAIL" for current sample
-    DATAMODEL.getMicroscopyImgThumbnailDataSetsForMicroscopySample(DATAMODEL.collectionId,
-        sample.code, function(dataset) {
+    DATAMODEL.getMicroscopyImgThumbnailDataSetsForMicroscopySample(sample.permId,
+        function(dataset) {
 
         // Get the containers
         if (dataset == null) {

@@ -336,24 +336,13 @@ DataModel.prototype.processResultsFromExportDataSetsServerSidePlugin = function 
  * @param sampleCode Sample code.
  * @param action Function callback.
  */
-DataModel.prototype.getMicroscopyImgThumbnailDataSetsForMicroscopySample = function (expCode, sampleCode, action) {
-
-    // Experiment criteria (experiment of type "COLLECTION" and code expCode)
-    var experimentCriteria = new SearchCriteria();
-    experimentCriteria.addMatchClause(
-        SearchCriteriaMatchClause.createAttributeMatch(
-            "CODE", expCode)
-    );
-    experimentCriteria.addMatchClause(
-        SearchCriteriaMatchClause.createAttributeMatch(
-            "TYPE", "COLLECTION")
-    );
+DataModel.prototype.getMicroscopyImgThumbnailDataSetsForMicroscopySample = function (samplePermId, action) {
 
     // Sample criteria (sample of type "MICROSCOPY_SAMPLE_TYPE" and code sampleCode)
     var sampleCriteria = new SearchCriteria();
     sampleCriteria.addMatchClause(
         SearchCriteriaMatchClause.createAttributeMatch(
-            "CODE", sampleCode)
+            "PERM_ID", samplePermId)
     );
     sampleCriteria.addMatchClause(
         SearchCriteriaMatchClause.createAttributeMatch(
@@ -370,9 +359,6 @@ DataModel.prototype.getMicroscopyImgThumbnailDataSetsForMicroscopySample = funct
     // Add sample and experiment search criteria as subcriteria
     datasetCriteria.addSubCriteria(
         SearchSubCriteria.createSampleCriteria(sampleCriteria)
-    );
-    datasetCriteria.addSubCriteria(
-        SearchSubCriteria.createExperimentCriteria(experimentCriteria)
     );
 
     // Search
