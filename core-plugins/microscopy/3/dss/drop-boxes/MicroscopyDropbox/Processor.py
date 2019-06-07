@@ -822,12 +822,12 @@ class Processor:
             if len(tag) == 0:
                 continue
 
-            # If the tag (sample of type "ORGANIZATION_UNIT") does not yet exist, create it
+            # The tag (a sample of type "ORGANIZATION_UNIT") is expected to exist.
+            # If it does not exist, we skip creation, since we do not have NAME
+            # and DESCRIPTION to create a meaningful one.
             sample = self._transaction.getSample(tag)
-            if sample is None:
-                sample = self._transaction.createNewSample(tag, "ORGANIZATION_UNIT")
-
-            tagSampleIdentifiers.append(tag)
+            if sample is not None:
+                tagSampleIdentifiers.append(tag)
 
         # Add tag samples as parent
         openBISExperimentSample.setParentSampleIdentifiers(tagSampleIdentifiers)
