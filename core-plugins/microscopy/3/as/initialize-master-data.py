@@ -112,7 +112,6 @@ data_set_type_MICROSCOPY_IMG_CONTAINER.setDeletionDisallowed(False)
 if 'setDataSetKind' in dir(data_set_type_MICROSCOPY_IMG_CONTAINER):
     data_set_type_MICROSCOPY_IMG_CONTAINER.setDataSetKind('CONTAINER')
 
-
 # MICROSCOPY_IMG_OVERVIEW
 data_set_type_MICROSCOPY_IMG_OVERVIEW = tr.getOrCreateNewDataSetType('MICROSCOPY_IMG_OVERVIEW')
 data_set_type_MICROSCOPY_IMG_OVERVIEW.setDescription('Overview Microscopy Images. Generated from raw images.')
@@ -153,7 +152,7 @@ prop_type_DEFAULT_OBJECT_TYPE.setInternalNamespace(True)
 prop_type_DESCRIPTION = tr.getOrCreateNewPropertyType('DESCRIPTION', DataType.VARCHAR)
 prop_type_DESCRIPTION.setLabel('Description')
 prop_type_DESCRIPTION.setManagedInternally(False)
-prop_type_DESCRIPTION.setInternalNamespace(True)
+prop_type_DESCRIPTION.setInternalNamespace(False)
 
 # NAME
 prop_type_NAME = tr.getOrCreateNewPropertyType('NAME', DataType.VARCHAR)
