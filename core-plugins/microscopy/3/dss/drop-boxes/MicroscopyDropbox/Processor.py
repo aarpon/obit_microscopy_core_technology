@@ -25,21 +25,6 @@ class Processor:
     """The Processor class performs all steps required for registering datasets
     from the assigned dropbox folder."""
 
-    # A transaction object passed by openBIS
-    _transaction = None
-
-    # The incoming folder to process (a java.io.File object)
-    _incoming = ""
-
-    # The user name
-    _username = ""
-
-    # The machine name
-    _machinename = ""
-
-    # The logger
-    _logger = None
-
     # The version number
     __version__ = 2
 
@@ -52,6 +37,18 @@ class Processor:
 
         # Set up logging
         self._logger = logger
+
+        # The user name
+        self._username = ""
+
+        # The machine name
+        self._machinename = ""
+
+        # Store the transaction time stamp
+        self._transactionTimeStamp = self._getCurrentTimeStampMS()
+
+        # Keep track of the total number of samples in the transaction
+        self._transactionSampleCount = 0
 
     def dictToXML(self, d):
         """Converts a dictionary into an XML string."""
@@ -75,6 +72,22 @@ class Processor:
 
         t = datetime.now()
         return t.strftime("%y%d%m%H%M%S") + unicode(t)[20:]
+
+    def _getCurrentTimeStampMS(self):
+        """Create an univocal time stamp based on the current date and time
+        (works around incomplete API of Jython 2.5).
+        """
+
+        t = datetime.now()
+        return unicode(t.strftime("%y%d%m%H%M%S%f"))
+
+    def _getUniqueSampleCode(self, sampleType):
+        """Return a unique sample code based on the sample type,
+        the transaction time stamp, and the global transaction
+        sample count."""
+
+        self._transactionSampleCount += 1
+        return sampleType + "_" + self._transactionTimeStamp + "_" + str(self._transactionSampleCount)
 
     def createSample(self,
                      sampleIdentifier,
@@ -138,11 +151,11 @@ class Processor:
 
         return sample
 
-    def createSampleWithGenCode(self,
-                                spaceCode,
-                                openBISCollection,
-                                sampleType,
-                                setExperiment=True):
+    def createSampleWithManagedCode(self,
+                                    spaceCode,
+                                    openBISCollection,
+                                    sampleType,
+                                    setExperiment=True):
         """Create a sample with automatically generated code.
 
         Depending on whether project samples are enabled in openBIS, the sample
@@ -158,30 +171,28 @@ class Processor:
 
         if self._transaction.serverInformation.get('project-samples-enabled') == 'true':
 
+            # Build sample identifier
             identifier = openBISCollection.getExperimentIdentifier()
             project_identifier = identifier[:identifier.rfind('/')]
-            sample = self._transaction.createNewProjectSampleWithGeneratedCode(project_identifier,
-                                                                               sampleType)
+            identifier = project_identifier + "/" + self._getUniqueSampleCode(sampleType)
+
         else:
 
             # Make sure there are not slashes in the spaceCode
             spaceCode = spaceCode.replace("/", "")
 
-            # Create the sample
-            sample = self._transaction.createNewSampleWithGeneratedCode(spaceCode,
-                                                                        sampleType)
+            # Build sample identifier
+            identifier = "/" + spaceCode + "/" + self._getUniqueSampleCode(sampleType)
+
+        # Inform
+        self._logger.info("Creating sample of type " + sampleType + " with (unique) identifier " + identifier)
+
+        # Create the sample
+        sample = self._transaction.createNewSample(identifier, sampleType)
 
         # Set the experiment (collection)?
         if setExperiment:
-
-            # Assign to collection
             sample.setExperiment(openBISCollection)
-
-            # Inform
-            self._logger.info("Assigned sample of type " + sampleType +
-                              " and identifier " + str(sample.getSampleIdentifier()) +
-                              " to collection with identifier " +
-                              str(openBISCollection.getExperimentIdentifier()))
 
         return sample
 
@@ -396,10 +407,10 @@ class Processor:
                           str(num_series) + " series.")
 
         # Create the sample
-        sample = self.createSampleWithGenCode(openBISSample.getSampleIdentifier(),
-                                              openBISSample.getExperiment(),
-                                              "MICROSCOPY_SAMPLE_TYPE",
-                                              setExperiment=True)
+        sample = self.createSampleWithManagedCode(openBISSample.getSampleIdentifier(),
+                                                  openBISSample.getExperiment(),
+                                                  "MICROSCOPY_SAMPLE_TYPE",
+                                                  setExperiment=True)
 
         # Inform
         self._logger.info("PROCESSOR::processMicroscopyFile(): " + \
@@ -549,10 +560,10 @@ class Processor:
         num_series = len(microscopyCompositeFileNode)
 
         # Create the sample
-        sample = self.createSampleWithGenCode(openBISSample.getSampleIdentifier(),
-                                              openBISSample.getExperiment(),
-                                              "MICROSCOPY_SAMPLE_TYPE",
-                                              setExperiment=True)
+        sample = self.createSampleWithManagedCode(openBISSample.getSampleIdentifier(),
+                                                  openBISSample.getExperiment(),
+                                                  "MICROSCOPY_SAMPLE_TYPE",
+                                                  setExperiment=True)
 
         # Inform
         self._logger.info("PROCESSOR::processMicroscopyCompositeFile(): " + \
