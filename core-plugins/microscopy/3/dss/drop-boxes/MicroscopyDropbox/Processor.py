@@ -264,8 +264,8 @@ class Processor:
 
         # Make sure to keep the code length within the limits imposed by
         # openBIS for codes
-        if len(openBISIdentifier) > 41:
-            openBISIdentifier = openBISIdentifier[0:41]
+        if len(openBISIdentifier) > 80:
+            openBISIdentifier = openBISIdentifier[0:80]
 
         # Create univocal ID
         openBISIdentifier = openBISIdentifier + "_" + self.getCustomTimeStamp()
