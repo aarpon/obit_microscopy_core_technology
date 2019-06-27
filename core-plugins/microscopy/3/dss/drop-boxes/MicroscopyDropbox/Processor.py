@@ -50,6 +50,9 @@ class Processor:
         # Keep track of the total number of samples in the transaction
         self._transactionSampleCount = 0
 
+        # Keep track of the collection objects created/accessed in the transaction
+        self._collectionObjects = {}
+
     def dictToXML(self, d):
         """Converts a dictionary into an XML string."""
 
@@ -213,30 +216,41 @@ class Processor:
         @return IExperiment collection
         """
 
-        # Try retrieving the collection
-        collection = self._transaction.getExperiment(openBISCollectionIdentifier)
+        # First, check if the openBISCollectionIdentifier is already known
+        if openBISCollectionIdentifier in self._collectionObjects:
 
-        # If the collection does not exist, create it
-        if collection is None:
+            # Retrieve it from the dictionary
+            collection = self._collectionObjects[openBISCollectionIdentifier]
 
-            # Create a new collection of type "COLLECTION"
-            collection = self._transaction.createNewExperiment(openBISCollectionIdentifier,
-                                                               "COLLECTION")
+        else:
+
+            # Try retrieving the collection from openBIS
+            collection = self._transaction.getExperiment(openBISCollectionIdentifier)
+
+            # If the collection does not exist, create it
             if collection is None:
-                msg = "PROCESSOR::getOrCreateCollection(): failed creating " + \
-                      "collection with ID " + openBISCollectionIdentifier + "."
-                self._logger.err(msg)
-                raise Exception(msg)
 
-            else:
-                self._logger.info("PROCESSOR::getOrCreateCollection(): " +
-                                  "Created collection with ID " + openBISCollectionIdentifier + ".")
+                # Create a new collection of type "COLLECTION"
+                collection = self._transaction.createNewExperiment(openBISCollectionIdentifier,
+                                                                   "COLLECTION")
+                if collection is None:
+                    msg = "PROCESSOR::getOrCreateCollection(): failed creating " + \
+                          "collection with ID " + openBISCollectionIdentifier + "."
+                    self._logger.err(msg)
+                    raise Exception(msg)
 
-                # The collection name is hard-coded to "Microscopy experiments collection"
-                collectionName = "Microscopy experiments collection"
+                else:
+                    self._logger.info("PROCESSOR::getOrCreateCollection(): " +
+                                      "Created collection with ID " + openBISCollectionIdentifier + ".")
 
-                # Set the collection name
-                collection.setPropertyValue("$NAME", collectionName)
+                    # The collection name is hard-coded to "Microscopy experiments collection"
+                    collectionName = "Microscopy experiments collection"
+
+                    # Set the collection name
+                    collection.setPropertyValue("$NAME", collectionName)
+
+            # Add the collection to the local dictionary
+            self._collectionObjects[openBISCollectionIdentifier] = collection
 
         return collection
 
