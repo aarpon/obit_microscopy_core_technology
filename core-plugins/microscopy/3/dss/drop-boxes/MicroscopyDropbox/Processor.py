@@ -433,7 +433,6 @@ class Processor:
 
         # Set the sample name
         file_name_without_path = relativeFileName[relativeFileName.rfind('/') + 1:]
-        sample.setPropertyValue("MICROSCOPY_SAMPLE_NAME", file_name_without_path)
         sample.setPropertyValue("$NAME", file_name_without_path)
 
         # Set the sample description
@@ -490,9 +489,6 @@ class Processor:
                 # Store the metadata in the MICROSCOPY_IMG_CONTAINER_METADATA property
                 dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_METADATA", seriesMetadataXML)
 
-                # Store the series name in the MICROSCOPY_IMG_CONTAINER_NAME property
-                dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME", allSeriesMetadata[i]["name"])
-
                 # Store the series name in the $NAME property
                 dataset.setPropertyValue("$NAME", allSeriesMetadata[i]["name"])
 
@@ -519,10 +515,6 @@ class Processor:
                 # Store the metadata in the MICROSCOPY_IMG_CONTAINER_METADATA property
                 dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_METADATA",
                                          seriesMetadataXML)
-
-                # Store the series name in the MICROSCOPY_IMG_CONTAINER_NAME property
-                dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME",
-                                         allSeriesMetadata[i]["name"])
 
                 # Store the series name in the $NAME property
                 dataset.setPropertyValue("$NAME", allSeriesMetadata[i]["name"])
@@ -586,7 +578,6 @@ class Processor:
 
         # Set the sample name
         name = microscopyCompositeFileNode.attrib.get("name")
-        sample.setPropertyValue("MICROSCOPY_SAMPLE_NAME", name)
         sample.setPropertyValue("$NAME", name)
 
         # Set the sample description
@@ -692,10 +683,6 @@ class Processor:
                 dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_METADATA",
                                          seriesMetadataXML)
 
-                # Store the series name in the MICROSCOPY_IMG_CONTAINER_NAME property
-                dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME",
-                                         allSeriesMetadata[i]["name"])
-
                 # Store the series name in the $NAME property
                 dataset.setPropertyValue("$NAME", allSeriesMetadata[i]["name"])
 
@@ -735,12 +722,10 @@ class Processor:
                 if "name" in allSeriesMetadata[i] and allSeriesMetadata[i]["name"] != "":
                     self._logger.info("PROCESSOR::processMicroscopyCompositeFile(): " + \
                                       "The series name is " + str(allSeriesMetadata[i]["name"]))
-                    dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME", allSeriesMetadata[i]["name"])
                     dataset.setPropertyValue("$NAME", allSeriesMetadata[i]["name"])
                 else:
                     self._logger.info("PROCESSOR::processMicroscopyCompositeFile(): " + \
                                       "Falling back to series name series_" + str(seriesNum))
-                    dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_NAME", "series_" + str(seriesNum))
                     dataset.setPropertyValue("$NAME", "series_" + str(seriesNum))
 
             # Set the (common) sample for the series
