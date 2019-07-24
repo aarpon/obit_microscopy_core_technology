@@ -718,7 +718,7 @@ class Processor:
                 # Store the metadata in the MICROSCOPY_IMG_CONTAINER_METADATA and $NAME properties
                 dataset.setPropertyValue("MICROSCOPY_IMG_CONTAINER_METADATA", seriesMetadataXML)
 
-                # Store the series name in the MICROSCOPY_IMG_CONTAINER_NAME property
+                # Store the series name in the NAME property
                 if "name" in allSeriesMetadata[i] and allSeriesMetadata[i]["name"] != "":
                     self._logger.info("PROCESSOR::processMicroscopyCompositeFile(): " + \
                                       "The series name is " + str(allSeriesMetadata[i]["name"]))
