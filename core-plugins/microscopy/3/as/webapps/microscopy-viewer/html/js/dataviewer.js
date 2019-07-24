@@ -69,8 +69,8 @@ DataViewer.prototype.initView = function() {
 
     // Display the sample name
     var sample_name;
-    if (sample.properties.MICROSCOPY_SAMPLE_NAME) {
-        sample_name = sample.properties.MICROSCOPY_SAMPLE_NAME;
+    if (sample.properties["NAME"]) {
+        sample_name = sample.properties["NAME"];
     } else {
         sample_name = sample.code;
     }
@@ -625,7 +625,7 @@ DataViewer.prototype.displayViewer = function(dataSetCodes) {
                 // Example of how to customize a widget
                 view.getDataSetText = function(dataSetCode) {
                     var indx = DATAMODEL.dataSetCodes.indexOf(dataSetCode);
-                    return DATAMODEL.dataSets[indx].properties.MICROSCOPY_IMG_CONTAINER_NAME;
+                    return DATAMODEL.dataSets[indx].properties["$NAME"];
                 };
 
             // Add a change listener to a widget
