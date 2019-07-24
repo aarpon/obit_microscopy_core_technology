@@ -604,9 +604,6 @@ class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig)
             # Set the dataset type
             dataset.setDataSetType(datasetType)
 
-            # Set the MICROSCOPY_ACCESSORY_FILE_NAME property
-            dataset.setPropertyValue("MICROSCOPY_ACCESSORY_FILE_NAME", f)
-
             # Set the $NAME property
             dataset.setPropertyValue("$NAME", f)
 

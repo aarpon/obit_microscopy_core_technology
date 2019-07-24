@@ -116,8 +116,8 @@ DataViewer.prototype.initView = function() {
 
             // Prepare the name to be shown
             var name;
-            if (sample.properties.MICROSCOPY_SAMPLE_NAME) {
-                name = sample.properties.MICROSCOPY_SAMPLE_NAME;
+            if (sample.properties["NAME"]) {
+                name = sample.properties["NAME"];
             } else {
                 name = sample.code;
             }
