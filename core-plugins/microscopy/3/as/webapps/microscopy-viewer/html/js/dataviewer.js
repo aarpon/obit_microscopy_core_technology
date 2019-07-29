@@ -90,7 +90,7 @@ DataViewer.prototype.initView = function() {
     experimentNameRow.append($("<div>").addClass("metadataTitle").append(expNameTitle));
 
     // Display the experiment name (code) and link it to the experiment web app
-    var link = $("<a>").text(expSample.properties.MICROSCOPY_EXPERIMENT_NAME).attr("href", "#").click(
+    var link = $("<a>").text(expSample.properties["NAME"]).attr("href", "#").click(
         DATAVIEWER.linkToExperiment(expSample.permId)
     );
 
