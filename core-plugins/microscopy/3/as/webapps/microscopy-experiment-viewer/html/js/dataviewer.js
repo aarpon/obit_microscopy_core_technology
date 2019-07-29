@@ -65,7 +65,7 @@ DataViewer.prototype.initView = function() {
     }
 
     // Display the sample name
-    experimentNameView_div.append("<h2>" + microscopyExperimentSample.properties.MICROSCOPY_EXPERIMENT_NAME + "</h2>");
+    experimentNameView_div.append("<h2>" + microscopyExperimentSample.properties.NAME + "</h2>");
 
     // Display the experiment description
     var exp_descr;
