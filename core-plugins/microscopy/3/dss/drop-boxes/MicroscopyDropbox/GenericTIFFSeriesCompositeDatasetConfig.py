@@ -184,14 +184,11 @@ class GenericTIFFSeriesCompositeDatasetConfig(MicroscopyCompositeDatasetConfig):
             if self._basename == "" or self._basename != basename:
                 self._basename = basename
 
-                # The series number is not always defined in the file name.
-                # In the regex, the group(2) optionally matches _s{digits};
-                # in case group(2) is not None, the actual series number is
-                # stored in group(4). 
-                if m.group("series") is None:
-                    series = 0
-                else:
-                    series = int("series")
+            # The series number is not always defined in the file name.
+            if m.group("series") is None:
+                series = 0
+            else:
+                series = int(m.group("series"))
 
             # Make sure to process only the relevant series
             if series != self._seriesNum:
@@ -213,7 +210,7 @@ class GenericTIFFSeriesCompositeDatasetConfig(MicroscopyCompositeDatasetConfig):
             if m.group("channel") is None:
                 ch = 0
             else:
-                ch = int(m.group(8))
+                ch = int(m.group("channel"))
             
         else:
             
@@ -262,7 +259,7 @@ class GenericTIFFSeriesCompositeDatasetConfig(MicroscopyCompositeDatasetConfig):
         Metadata = []
 
         # Initialize a new ImageMetadata object
-        imageMetadata = ImageMetadata();
+        imageMetadata = ImageMetadata()
 
         # Fill in all information
         imageMetadata.imageIdentifier = imageIdentifiers.get(0) 
@@ -361,7 +358,7 @@ class GenericTIFFSeriesCompositeDatasetConfig(MicroscopyCompositeDatasetConfig):
         """
 
         # Get the indices of series and channel from the channel code
-        p = re.compile("SERIES-(\d+)_CHANNEL-(\d+)")
+        p = re.compile(r"SERIES-(\d+)_CHANNEL-(\d+)")
         m = p.match(channelCode)
         if m is None or len(m.groups()) != 2:
             err = "GENERICTIFFSERIESCOMPOSITEDATASETCONFIG::_getSeriesAndChannelNumbers(): " + \
