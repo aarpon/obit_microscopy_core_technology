@@ -248,7 +248,7 @@ class Mover():
                                             self._expSampleCode)
 
         # Get the experiment name
-        self._experimentName = self._expSample.getPropertyValue(self._expSampleType + "_NAME")
+        self._experimentName = self._expSample.getPropertyValue("$NAME")
 
         # Experiment full path within the export path
         self._experimentPath = os.path.join(self._rootExportPath,
