@@ -41,12 +41,10 @@ define(["openbis",
          * Properties
          */
 
-        // Store a reference to the DataViewer as a global
-        // variable for easier reach from callbacks.
+        // Make sure the DataViewer is instantiated.
         if (! window.DATAVIEWER) {
             window.DATAVIEWER = new DataViewer();
         }
-        this.dataViewer = window.DATAVIEWER;
 
         // Instantiate openBIS V3 API
         this.openbisV3 = new openbis();
@@ -189,8 +187,17 @@ define(["openbis",
                 // Store the child damples
                 dataModelObj.samples = dataModelObj.microscopyExperimentSample.children;
 
-                // Display
-                dataModelObj.dataViewer.initView();
+                // Display the experiment sample name
+                DATAVIEWER.displayExperimentSampleName();
+
+                // Display the experiment descripyion
+                DATAVIEWER.displayExperimentDescription();
+
+                // Display the acquisition details
+                DATAVIEWER.displayAcquisitionDetails();
+
+                // Display the thumbnails
+                DATAVIEWER.displayThumbnails();
             });
         },
 

@@ -30,70 +30,36 @@ define([], function () {
         constructor: DataViewer,
 
         /**
-         * Displays experiment info.
+         * Display the experiment name
          */
-        initView: function () {
-
-            // Div IDs
-            let experimentNameView_div, experimentTagView_div,
-                experimentDescriptionView_div, experimentAcquisitionDetailsView_div;
-
-            // Aliases
-            let samples = DATAMODEL.samples;
-            let microscopyExperimentSample = DATAMODEL.microscopyExperimentSample;
+        displayExperimentSampleName: function() {
 
             // Get the experiment name view
-            experimentNameView_div = $("#experimentNameView");
+            const experimentNameView_div = $("#experimentNameView");
             experimentNameView_div.empty();
 
-            // Clear the tags view
-            experimentTagView_div = $("#experimentTagView");
-            experimentTagView_div.empty();
-
-            // Clear the description view
-            experimentDescriptionView_div = $("#experimentDescriptionView");
-            experimentDescriptionView_div.empty();
-
-            // Clear the acquisition detail view
-            experimentAcquisitionDetailsView_div = $("#experimentAcquisitionDetailsView");
-            experimentAcquisitionDetailsView_div.empty();
-            experimentAcquisitionDetailsView_div.append(this.prepareTitle("Acquisition details", "default"));
-            if (microscopyExperimentSample.properties["MICROSCOPY_EXPERIMENT_ACQ_HARDWARE_FRIENDLY_NAME"]) {
-                experimentAcquisitionDetailsView_div.append($("<p>").html("This experiment was performed on <b>" +
-                    microscopyExperimentSample.properties["MICROSCOPY_EXPERIMENT_ACQ_HARDWARE_FRIENDLY_NAME"] + "</b> and registered on " +
-                    (new Date(microscopyExperimentSample.registrationDate)).toDateString() + "."));
-
-            } else {
-                experimentAcquisitionDetailsView_div.append($("<p>").html("This experiment was registered on " +
-                    (new Date(microscopyExperimentSample.registrationDate)).toDateString() + "."));
-            }
-
-            // Get the sample view
-            const sampleView_div = $("#sampleView");
-            sampleView_div.empty();
-
             // Make sure we have something to display
-            if (microscopyExperimentSample == null) {
+            if (DATAMODEL.microscopyExperimentSample == null) {
                 experimentNameView_div.append("<h2>Sorry, could not retrieve information!</h2>");
                 experimentNameView_div.append("<p>Please contact your administrator.</p>");
                 return;
             }
 
             // Display the sample name
-            experimentNameView_div.append("<h2>" + microscopyExperimentSample.properties["$NAME"] + "</h2>");
+            experimentNameView_div.append("<h2>" + DATAMODEL.microscopyExperimentSample.properties["$NAME"] + "</h2>");
+        },
 
-            // Display the experiment description
-            let exp_descr;
-            if (microscopyExperimentSample.properties["MICROSCOPY_EXPERIMENT_DESCRIPTION"]) {
-                exp_descr = microscopyExperimentSample.properties["MICROSCOPY_EXPERIMENT_DESCRIPTION"];
-            } else {
-                exp_descr = "<i>No description provided.</i>";
-            }
-            experimentDescriptionView_div.append(this.prepareTitle("Description"));
-            experimentDescriptionView_div.append($("<p>").html(exp_descr));
+        /**
+         * Display the thumbnails
+         */
+        displayThumbnails: function() {
+
+            // Get the sample view
+            const sampleView_div = $("#sampleView");
+            sampleView_div.empty();
 
             // Display the samples
-            if (samples != null) {
+            if (DATAMODEL.samples != null) {
 
                 let newThumbRow = null;
                 let numSample = 0;
@@ -101,7 +67,7 @@ define([], function () {
                 // Display samples with a link to their corresponding webapp.
                 // Later we will reorganize the layout (when the thumbnails
                 // are ready to be retrieved from openBIS).
-                samples.forEach(function (sample) {
+                DATAMODEL.samples.forEach(function (sample) {
 
                     // Keep track of the number of the sample
                     numSample++;
@@ -197,6 +163,63 @@ define([], function () {
                 // Display the attachments
                 this.displayAttachments(DATAMODEL.microscopyExperimentSample);
 
+            }
+        },
+
+        /**
+         * Display the experiment description
+         */
+        displayExperimentDescription: function() {
+
+            // Clear the description view
+            const experimentDescriptionView_div = $("#experimentDescriptionView");
+            experimentDescriptionView_div.empty();
+
+            if (DATAMODEL.microscopyExperimentSample == null) {
+                return;
+            }
+
+            // Display the experiment description
+            let exp_descr;
+            if (DATAMODEL.microscopyExperimentSample.properties["MICROSCOPY_EXPERIMENT_DESCRIPTION"]) {
+                exp_descr = DATAMODEL.microscopyExperimentSample.properties["MICROSCOPY_EXPERIMENT_DESCRIPTION"];
+            } else {
+                exp_descr = "<i>No description provided.</i>";
+            }
+            experimentDescriptionView_div.append(this.prepareTitle("Description"));
+            experimentDescriptionView_div.append($("<p>").html(exp_descr));
+        },
+
+        /**
+         * Display the acquisition details
+         */
+        displayAcquisitionDetails: function() {
+
+            // Clear the acquisition detail view
+            const experimentAcquisitionDetailsView_div = $("#experimentAcquisitionDetailsView");
+            experimentAcquisitionDetailsView_div.empty();
+
+            if (DATAMODEL.microscopyExperimentSample == null) {
+                return;
+            }
+
+            // Add section title
+            experimentAcquisitionDetailsView_div.append(
+                this.prepareTitle("Acquisition details", "default")
+            );
+
+            if (DATAMODEL.microscopyExperimentSample.properties["MICROSCOPY_EXPERIMENT_ACQ_HARDWARE_FRIENDLY_NAME"]) {
+                experimentAcquisitionDetailsView_div.append(
+                    $("<p>")
+                        .html("This experiment was performed on <b>" +
+                            DATAMODEL.microscopyExperimentSample.properties["MICROSCOPY_EXPERIMENT_ACQ_HARDWARE_FRIENDLY_NAME"] +
+                            "</b> and registered on " +
+                            (new Date(DATAMODEL.microscopyExperimentSample.registrationDate)).toDateString() + "."));
+            } else {
+                experimentAcquisitionDetailsView_div.append(
+                    $("<p>")
+                        .html("This experiment was registered on " +
+                            (new Date(DATAMODEL.microscopyExperimentSample.registrationDate)).toDateString() + "."));
             }
         },
 
@@ -298,7 +321,7 @@ define([], function () {
         displayTags: function(experimentSample) {
 
             // Get the div
-            let experimentTagView = $("#experimentTagView");
+            const experimentTagView = $("#experimentTagView");
             experimentTagView.empty();
 
             // Get sample tags
