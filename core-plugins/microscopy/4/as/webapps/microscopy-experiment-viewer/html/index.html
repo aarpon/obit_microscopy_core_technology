@@ -32,8 +32,6 @@
     <!-- Include local scripts -->
     <script src="./js/config/config.js"></script>
     <script src="./etc/config.js"></script>
-    <script src="./js/dataviewer.js"></script>
-    <script src="./js/datamodel.js"></script>
 
 </head>
 <body>
@@ -70,9 +68,22 @@
     </div>
 </div>
 
+<!-- requireJS openbis configuration -->
+<script src="/openbis/resources/api/v3/config.js"></script>
+
+<!-- Add local js scripts to requireJS paths -->
+<script>
+    require.paths["js/util"] = "/openbis/webapp/flow-viewer/js/util";
+    require.paths["js/datamodel"] = "/openbis/webapp/microscopy-experiment-viewer/js/datamodel";
+    require.paths["js/dataviewer"] = "/openbis/webapp/microscopy-experiment-viewer/js/dataviewer";
+</script>
+
+<!-- Add requireJS -->
+<script type="text/javascript" src="/openbis/resources/api/v3/require.js"></script>
+
 <script>
 
-    $(document).ready(function () {
+    require(["js/datamodel", "js/dataviewer"], function (DataModel, DataViewer) {
 
         /* Merge default and custom configuration */
         window.CONFIG = $.extend({}, DEFAULT_CONFIG, CONFIG);
