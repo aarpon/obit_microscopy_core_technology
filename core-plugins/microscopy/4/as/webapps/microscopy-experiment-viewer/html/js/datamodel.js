@@ -162,9 +162,14 @@ define(["openbis",
             fetchOptions.withExperiment();
             fetchOptions.withExperiment().withType();
 
-            // Children are MICROSCOPY_SAMPLEs
-            fetchOptions.withChildren().withType();
-            fetchOptions.withChildren().withProperties();
+            // Children are MICROSCOPY_SAMPLEs; let's not
+            // retrieve more than 250.
+            let childrenFetchOptions = new SampleFetchOptions();
+            childrenFetchOptions.withType();
+            childrenFetchOptions.withProperties();
+            childrenFetchOptions.from(0);
+            childrenFetchOptions.count(250);
+            fetchOptions.withChildrenUsing(childrenFetchOptions);
 
             // Parents are ORGANIZATION_UNITs ("tags")
             let parentFetchOptions = new SampleFetchOptions();
