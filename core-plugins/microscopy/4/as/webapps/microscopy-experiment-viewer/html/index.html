@@ -1,0 +1,95 @@
+<html>
+<head>
+
+    <meta charset="utf-8">
+
+    <!-- Required by bootstrap -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Include jquery -->
+    <script src="./third-party/jquery/js/jquery.min.js"></script>
+    <script src="./third-party/jquery/js/jquery.cookie.js"></script>
+    <script src="./third-party/jquery/js/jquery-ui.custom.min.js"></script>
+
+    <!-- Include bootstrap -->
+    <script src="./third-party/bootstrap/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="/openbis/resources/lib/bootstrap-slider/css/bootstrap-slider.min.css">
+
+    <!--[if lt IE 9]>
+    <script src="./third-party/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <script src="./third-party/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- Include stylesheets -->
+    <link rel="stylesheet" media="screen" href="./third-party/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" media="screen" href="./third-party/bootstrap/css/bootstrap-theme.min.css">
+    <link rel="stylesheet" type="text/css" href="./css/default.css">
+    <link rel="stylesheet" href="/openbis/resources/lib/bootstrap/css/bootstrap.min.css">
+
+    <!-- Include local scripts -->
+    <script src="./js/config/config.js"></script>
+    <script src="./etc/config.js"></script>
+
+</head>
+<body>
+<div id="webapp">
+    <div class="container-fluid">
+
+        <div class="row">
+            <div id="experimentNameView" class="col-md-12">Please wait...</div>
+        </div>
+        <div class="row">
+            <div id="experimentTagView" class="col-md-4">&nbsp;</div>
+            <div id="experimentDescriptionView" class="col-md-8">&nbsp;</div>
+        </div>
+        <div class="row">
+            <div id="experimentAttachmentsView" class="col-md-4">&nbsp;</div>
+            <div id="experimentAcquisitionDetailsView" class="col-md-8">&nbsp;</div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="panel panel-info">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Datasets (samples)</h3>
+                    </div>
+                    <div class="panel-body">
+                        <div id="actionView">&nbsp;</div>
+                        <div id="actionViewExpl"></div>
+                        <div id="statusView">&nbsp;</div>
+                        <div id="sampleView">&nbsp;</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- requireJS openbis configuration -->
+<script src="/openbis/resources/api/v3/config.js"></script>
+
+<!-- Add local js scripts to requireJS paths -->
+<script>
+    require.paths["js/datamodel"] = "/openbis/webapp/microscopy-experiment-viewer/js/datamodel";
+    require.paths["js/dataviewer"] = "/openbis/webapp/microscopy-experiment-viewer/js/dataviewer";
+</script>
+
+<!-- Add requireJS -->
+<script type="text/javascript" src="/openbis/resources/api/v3/require.js"></script>
+
+<script>
+
+    require(["js/datamodel", "js/dataviewer"], function (DataModel, DataViewer) {
+
+        /* Merge default and custom configuration */
+        window.CONFIG = $.extend({}, DEFAULT_CONFIG, CONFIG);
+
+        /* Initialize global objects */
+        window.DATAVIEWER = new DataViewer();
+        window.DATAMODEL = new DataModel();
+
+    });
+
+</script>
+</body>
+</html>
