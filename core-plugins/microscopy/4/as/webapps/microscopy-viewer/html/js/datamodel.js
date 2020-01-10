@@ -5,462 +5,423 @@
  *
  */
 
+define(["openbis",
+        "as/dto/sample/search/SampleSearchCriteria",
+        "as/dto/sample/fetchoptions/SampleFetchOptions",
+        "as/dto/dataset/search/DataSetSearchCriteria",
+        "as/dto/dataset/fetchoptions/DataSetFetchOptions",
+        "as/dto/service/search/AggregationServiceSearchCriteria",
+        "as/dto/service/fetchoptions/AggregationServiceFetchOptions",
+        "as/dto/service/execute/AggregationServiceExecutionOptions",
+        "js/dataviewer"
+    ],
+    function (openbis,
+              SampleSearchCriteria,
+              SampleFetchOptions,
+              DataSetSearchCriteria,
+              DataSetFetchOptions,
+              AggregationServiceSearchCriteria,
+              AggregationServiceFetchOptions,
+              AggregationServiceExecutionOptions,
+              DataViewer) {
 
-/**
- * Define a model class to hold the microscopy data.
- */
-function DataModel() {
+        "use strict";
 
-    "use strict";
+        /**
+         * DataModel class
+         **/
+        let DataModel = function () {
 
-    // Create a context object to access the context information
-    this.context = new openbisWebAppContext();
+            if (!(this instanceof DataModel)) {
+                throw new TypeError("DataModel constructor cannot be called as a function.");
+            }
 
-    // Create an OpenBIS facade to call JSON RPC services
-    this.openbisServer = new openbis("/openbis");
+            /**
+             * Server-side services
+             */
+            this.exportDatasetsService = null;
 
-    // Reuse the current sessionId that we received in the context for
-    // all the facade calls
-    this.openbisServer.useSession(this.context.getSessionId());
+            /**
+             * Properties
+             */
 
-    // Sample identifier
-    this.microscopySampleId = this.context.getEntityIdentifier();
+            // Make sure the DataViewer is instantiated.
+            if (! window.DATAVIEWER) {
+                window.DATAVIEWER = new DataViewer();
+            }
 
-    // Sample perm ID
-    this.microscopySamplePermId = this.context.getEntityPermId();
+            // Instantiate openBIS V3 API
+            this.openbisV3 = new openbis();
 
-    // Sample type
-    this.microscopySampleType = this.context.getEntityType();
+            // Use the context to log in
+            this.openbisV3.loginFromContext();
 
-    // Sample
-    this.microscopySample = null;
+            // Retrieve information from the context
+            this.webappcontext = this.openbisV3.getWebAppContext();
 
-    // openBIS experiment identifier
-    this.experimentId = null;
+            // Sample perm ID
+            this.microscopySamplePermId = this.webappcontext.getEntityPermId();
 
-    // MICROSCOPY_EXPERIMENT sample (parent of the MICROSCOPY_SAMPLE_TYPE
-    // sample returned by the context)
-    this.microscopyExperimentSample = null;
+            // Sample type
+            this.microscopySampleType = this.webappcontext.getEntityType();
 
-    // MICROSCOPY_EXPERIMENT sample name
-    this.microscopyExperimentSampleName = "";
+            // Sample
+            this.microscopySample = null;
 
-    // Datasets and dataset codes
-    this.dataSets = [];
-    this.dataSetCodes = [];
+            // openBIS experiment identifier
+            this.experimentId = null;
 
-    // Does the experiment contain accessory files?
-    this.accessoryFileDatasets = [];
+            // MICROSCOPY_EXPERIMENT sample
+            // (parent of the MICROSCOPY_SAMPLE_TYPE sample returned by the context)
+            this.microscopyExperimentSample = null;
 
-    // Alias
-    var dataModelObj = this;
+            // Datasets and dataset codes
+            this.dataSets = [];
+            this.dataSetCodes = [];
 
-    // Initialize all information concerning this sample
-    this.initData(function (response) {
+            // Does the experiment contain accessory files?
+            this.accessoryFileDatasets = [];
 
-        if (response.hasOwnProperty("error")) {
+            // Retrieve the relevant data
+            this.initData();
+        };
 
-            // Server returned an error
-            dataModelObj.microscopySample = null;
-            dataModelObj.microscopySampleId = null;
-            dataModelObj.microscopySamplePermId = null;
-            dataModelObj.microscopyExperimentSample = null;
-            dataModelObj.microscopyExperimentSampleName = "Error: could not retrieve experiment!";
+        /**
+         * Methods
+         */
 
-            // Initialize the experiment view
-            DATAVIEWER.initView();
+        DataModel.prototype = {
 
-        } else {
+            constructor: DataModel,
 
-            // Check that we got the sample associated with the openbisWebAppContext().getEntityIdentifier()
-            if (response.result && response.result.length === 1) {
+            /**
+             * Get all data relative to current sample
+             */
+            initData: function() {
 
-                // Store the sample object
-                dataModelObj.microscopySample = response.result[0];
+                // Search for the sample of current type and given perm id
+                let criteria = new SampleSearchCriteria();
+                criteria.withType().withCode().thatEquals(this.microscopySampleType);
+                criteria.withPermId().thatEquals(this.microscopySamplePermId);
+                let fetchOptions = new SampleFetchOptions();
+                fetchOptions.withExperiment().withType();
+                fetchOptions.withProperties();
 
-                // Store the openBIS experiment ID
-                dataModelObj.experimentId = dataModelObj.microscopySample.experimentIdentifierOrNull;
+                // Parents are ORGANIZATION_UNITs ("tags")
+                let parentFetchOptions = new SampleFetchOptions();
+                parentFetchOptions.withType();
+                parentFetchOptions.withProperties();
+                fetchOptions.withParentsUsing(parentFetchOptions);
 
-                // Store the MICROSCOPY_EXPERIMENT sample object
-                dataModelObj.microscopyExperimentSample = dataModelObj.microscopySample.parents[0];
+                // Keep a reference to this object (for the callback)
+                let dataModelObj = this;
 
-                // Store the MICROSCOPY_EXPERIMENT_NAME property of the MICROSCOPY_EXPERIMENT sample
-                dataModelObj.microscopyExperimentSampleName =
-                    dataModelObj.microscopyExperimentSample.properties.MICROSCOPY_EXPERIMENT_NAME;
+                // Query the server
+                this.openbisV3.searchSamples(criteria, fetchOptions).done(function (result) {
 
-                // Now retrieve the list of datasets for the experiment and sample
-                dataModelObj.getDataSetsForSampleAndExperiment(function (response) {
+                    // Store the retrieved MICROSCOPY_SAMPLE object
+                    dataModelObj.microscopySample = result.getObjects()[0];
 
-                    if (response.hasOwnProperty("error")) {
-                        // Server returned an error
-                        DATAVIEWER.displayStatus(response.error, "error");
-                    } else {
+                    // Store the {...}_EXPERIMENT sample object as well
+                    if (dataModelObj.microscopySample.parents.length !== 1 ||
+                        dataModelObj.microscopySample.parents[0].type.code !== "MICROSCOPY_EXPERIMENT") {
 
-                        // Store the datasets
-                        if (response.result.length === 0) {
+                        DATAVIEWER.displayStatus("The dataset seems to be corrupted!",
+                            "danger");
+                        return;
+                    }
+                    dataModelObj.microscopyExperimentSample = dataModelObj.microscopySample.parents[0];
 
-                            var msg = "No datasets found for experiment with code " +
-                                dataModelObj.microscopyExperimentSample.code;
-                            DATAVIEWER.displayStatus(msg, "error");
+                    // Get the datasets of type MICROSCOPY_IMG_CONTAINER
+                    dataModelObj.getDataSetsForViewer();
 
-                        } else {
+                    // Get the samples of type "MICROSCOPY_ACCESSORY_FILE"
+                    dataModelObj.getAccessoryFiles();
 
-                            // Put dataset codes into an array
-                            var dataSetCodes = [];
-                            for (i = 0; i < response.result.length; i++) {
-                                dataSetCodes.push(response.result[i].code)
+                    // Display the sample name
+                    DATAVIEWER.displaySampleName();
+
+                    // Display the experiment info
+                    DATAVIEWER.displayExperimentInfo();
+
+                    // Display the (physical) microscopy file info
+                    DATAVIEWER.displayDataSetInfo();
+                });
+            },
+
+            /**
+             * Call an aggregation plug-in to copy the datasets associated to selected
+             * node to the user folder.
+             * @param experimentId COLLECTION experiment ID
+             * @param expSamplePermId MICROSCOPY_EXPERIMENT sample permanent ID.
+             * @param samplePermId MICROSCOPY_SAMPLE_TYPE sample permanent ID
+             * @param mode Mode to be passed to the aggregation service.
+             */
+            callServerSidePluginExportDataSets: function (experimentId,
+                                                          expSamplePermId,
+                                                          samplePermId,
+                                                          mode) {
+
+                // Parameters for the aggregation service
+                let parameters = {
+                    experimentId: experimentId,
+                    expSamplePermId: expSamplePermId,
+                    samplePermId: samplePermId,
+                    mode: mode
+                };
+
+                // Inform the user that we are about to process the request
+                DATAVIEWER.displayStatus(
+                    "Please wait while processing your request. This might take a while...",
+                    "info");
+
+                // Call service
+                if (null === this.exportDatasetsService) {
+                    let criteria = new AggregationServiceSearchCriteria();
+                    criteria.withName().thatEquals("export_microscopy_datasets");
+                    let fetchOptions = new AggregationServiceFetchOptions();
+                    this.openbisV3.searchAggregationServices(criteria, fetchOptions).then(function(result) {
+                        if (undefined === result.objects) {
+                            console.log("Could not retrieve the server-side aggregation service!");
+                            return;
+                        }
+                        DATAMODEL.exportDatasetsService = result.getObjects()[0];
+
+                        // Now call the service
+                        let options = new AggregationServiceExecutionOptions();
+                        for (let key in parameters) {
+                            options.withParameter(key, parameters[key]);
+                        }
+                        DATAMODEL.openbisV3.executeAggregationService(
+                            DATAMODEL.exportDatasetsService.getPermId(),
+                            options).then(function(result) {
+                            DATAMODEL.processResultsFromExportDataSetsServerSidePlugin(result);
+                        });
+                    });
+                } else {
+                    // Call the service
+                    let options = new AggregationServiceExecutionOptions();
+                    for (let key in parameters) {
+                        options.withParameter(key, parameters[key]);
+                    }
+                    this.openbisV3.executeAggregationService(
+                        this.exportDatasetsService.getPermId(),
+                        options).then(function(result) {
+                        DATAMODEL.processResultsFromExportDataSetsServerSidePlugin(result);
+                    });
+                }
+            },
+
+            /**
+             * Get datasets of type MICROSCOPY_IMG_CONTAINER.
+             */
+            getDataSetsForViewer: function() {
+
+                // Get the datasets of type MICROSCOPY_IMG_CONTAINER
+                let dataSetCriteria = new DataSetSearchCriteria();
+                dataSetCriteria.withType().withCode().thatEquals("MICROSCOPY_IMG_CONTAINER");
+                dataSetCriteria.withSample().withPermId().thatEquals(this.microscopySample.permId.permId);
+
+                let dataSetFetchOptions = new DataSetFetchOptions();
+                dataSetFetchOptions.withChildren();
+                dataSetFetchOptions.withProperties();
+                dataSetFetchOptions.withComponents();
+                dataSetFetchOptions.withComponents().withType();
+
+                // Alias
+                const dataModelObj = this;
+
+                // Query the server
+                this.openbisV3.searchDataSets(dataSetCriteria, dataSetFetchOptions).done(function (result) {
+
+                    // Get the datasets
+                    let dataSets = result.getObjects();
+
+                    // Put dataset codes into an array
+                    let dataSetCodes = [];
+                    for (i = 0; i < dataSets.length; i++) {
+                        dataSetCodes.push(dataSets[i].code)
+                    }
+
+                    // Sort by code
+                    dataSetCodes.sort();
+
+                    // Store
+                    dataModelObj.dataSetCodes = dataSetCodes;
+
+                    // Sort and store the datasets as well
+                    dataModelObj.dataSets = [];
+                    var unsortedDataSets = dataSets;
+                    for (var i = 0; i < dataSetCodes.length; i++) {
+                        for (var j = 0; j < unsortedDataSets.length; j++) {
+                            if (unsortedDataSets[j].code === dataSetCodes[i]) {
+                                // Found. Add it to the datasets and remove it from the unsorted list
+                                dataModelObj.dataSets.push(unsortedDataSets[j]);
+                                unsortedDataSets.splice(j, 1);
+                                break;
                             }
-
-                            // Sort by code
-                            dataSetCodes.sort();
-
-                            // Store
-                            dataModelObj.dataSetCodes = dataSetCodes;
-
-                            // Sort and store the datasets as well
-                            dataModelObj.dataSets = [];
-                            var unsortedDataSets = response.result;
-                            for (var i = 0; i < dataSetCodes.length; i++) {
-                                for (var j = 0; j < unsortedDataSets.length; j++) {
-                                    if (unsortedDataSets[j].code === dataSetCodes[i]) {
-                                        // Found. Add it to the datasets and remove it from the unsorted list
-                                        dataModelObj.dataSets.push(unsortedDataSets[j]);
-                                        unsortedDataSets.splice(j, 1);
-                                        break;
-                                    }
-                                }
-                            }
-
-                            // Does the experiment contain accessory files?
-                            dataModelObj.experimentContainsAccessoryFiles(function (response) {
-
-                                // Store the datasets
-                                if (response.hasOwnProperty("error")) {
-
-                                    var msg = "Could not retrieve list of accessory files for experiment!";
-                                    DATAVIEWER.displayStatus(msg, "error");
-
-                                } else {
-
-                                    // Store the list of accessory datasets
-                                    dataModelObj.accessoryFileDatasets = response.result;
-
-                                    // Initialize the experiment view
-                                    DATAVIEWER.initView();
-                                }
-                            });
-
                         }
                     }
 
+                    // Display the metadata
+                    if (dataModelObj.dataSets.length > 0 &&
+                        dataModelObj.dataSetCodes.length > 0) {
+
+                        // Display the viewer (it will take care of refreshing automatically when
+                        // the series changes, so we do no need to worry about it.
+                        DATAVIEWER.displayViewer(dataModelObj.dataSetCodes);
+
+                        // Refresh the series-dependent part of the UI. The same function will be attached
+                        // to the ChangeListener of the series selector widget, so that the various parts of
+                        // the UI are updated when the user chooses another series in the file.
+                        DATAVIEWER.refreshView(dataModelObj.dataSetCodes[0]);
+                    }
                 });
 
-            } else {
+            },
 
-                // Could not retrieve the sample object
-                dataModelObj.microscopySample = null;
-                dataModelObj.microscopySampleId = null;
-                dataModelObj.microscopySamplePermId = null;
-                dataModelObj.microscopyExperimentSample = null;
-                dataModelObj.microscopyExperimentSampleName = "Error: could not retrieve experiment!";
+            /**
+             * Get datasets of type MICROSCOPY_ACCESSORY_FILE.
+             */
+            getAccessoryFiles: function() {
 
-                // Initialize the experiment view
-                DATAVIEWER.initView();
+                // Get the datasets of type MICROSCOPY_ACCESSORY_FILE
+                let dataSetCriteria = new DataSetSearchCriteria();
+                dataSetCriteria.withType().withCode().thatEquals("MICROSCOPY_ACCESSORY_FILE");
+                dataSetCriteria.withSample().withPermId().thatEquals(this.microscopySample.permId.permId);
 
-            }
-        }
+                let dataSetFetchOptions = new DataSetFetchOptions();
+                dataSetFetchOptions.withChildren();
+                dataSetFetchOptions.withProperties();
+                dataSetFetchOptions.withComponents();
+                dataSetFetchOptions.withComponents().withType();
 
-    });
-}
+                // Alias
+                const dataModelObj = this;
 
-/**
- * Get all data relative to current sample
- * @param action Function callback.
- */
-DataModel.prototype.initData = function (action) {
+                // Query the server
+                this.openbisV3.searchDataSets(dataSetCriteria, dataSetFetchOptions).done(function (result) {
 
-    // Search for the MICROSCOPY_SAMPLE_TYPE sample. Make sure to retrieve the parent samples as well
-    var searchCriteria = new SearchCriteria();
-    searchCriteria.addMatchClause(
-        SearchCriteriaMatchClause.createAttributeMatch(
-            "TYPE",
-            this.microscopySampleType)
-    );
-    searchCriteria.addMatchClause(
-        SearchCriteriaMatchClause.createAttributeMatch(
-            "PERM_ID",
-            this.microscopySamplePermId));
+                    // Store the list of accessory datasets
+                    dataModelObj.accessoryFileDatasets = result.getObjects();
+                });
+            },
 
-    this.openbisServer.searchForSamplesWithFetchOptions(searchCriteria,
-        ["PROPERTIES", "PARENTS"], action);
+            /**
+             * Process the results returned from the callServerSidePluginExportDataSets() server-side plug-in
+             * @param table Result table
+             */
+            processResultsFromExportDataSetsServerSidePlugin: function (table) {
 
-};
+                // Did we get the expected result?
+                if (!table.rows || table.rows.length !== 1) {
+                    DATAVIEWER.displayStatus(
+                        "There was an error exporting the data!",
+                        "danger");
+                    return;
+                }
 
-/**
- * Get current experiment.
- * @param {Function} action Function callback
- */
-DataModel.prototype.getMicroscopyExperimentSampleData = function (action) {
-    // sampleId must be in an array: [sampleId]
-    this.openbisServer.listExperimentsForIdentifiers(
-        [this.experimentId], action);
-};
+                // Get the row of results
+                let row = table.rows[0];
 
-/**
- * Get datasets for current experiments
- * @param action
- */
-DataModel.prototype.getDataSetsForSampleAndExperiment = function (action) {
+                // Retrieve the uid
+                let r_UID = row[0].value;
 
-    // Sample criteria (sample of type "MICROSCOPY_SAMPLE_TYPE" and code sampleCode)
-    var sampleCriteria = new SearchCriteria();
-    sampleCriteria.addMatchClause(
-        SearchCriteriaMatchClause.createAttributeMatch(
-            "PERM_ID",
-            this.microscopySamplePermId
-        )
-    );
-    sampleCriteria.addMatchClause(
-        SearchCriteriaMatchClause.createAttributeMatch(
-            "TYPE",
-            "MICROSCOPY_SAMPLE_TYPE"
-        )
-    );
+                // Is the process completed?
+                let r_Completed = row[1].value;
 
-    // Dataset criteria
-    var datasetCriteria = new SearchCriteria();
-    datasetCriteria.addMatchClause(
-        SearchCriteriaMatchClause.createAttributeMatch(
-            "TYPE",
-            "MICROSCOPY_IMG_CONTAINER"
-        )
-    );
+                if (r_Completed === 0) {
 
-    // Add sample and experiment search criteria as subcriteria
-    datasetCriteria.addSubCriteria(
-        SearchSubCriteria.createSampleCriteria(sampleCriteria)
-    );
+                    // Call the plug-in
+                    setTimeout(function () {
 
-    // Search
-    this.openbisServer.searchForDataSets(datasetCriteria, action);
+                            // We only need the UID of the job
+                            let parameters = {};
+                            parameters["uid"] = r_UID;
 
-};
+                            // Now call the service
+                            let options = new AggregationServiceExecutionOptions();
+                            options.withParameter("uid", r_UID);
 
-/**
- * Checks whether the experiment contains accessory files.
- * @param action
- */
-DataModel.prototype.experimentContainsAccessoryFiles = function (action) {
+                            DATAMODEL.openbisV3.executeAggregationService(
+                                DATAMODEL.exportDatasetsService.getPermId(),
+                                options).then(function (result) {
+                                DATAMODEL.processResultsFromExportDataSetsServerSidePlugin(result);
+                            })
+                        },
+                        parseInt(CONFIG['queryPluginStatusInterval']));
 
-    // Experiment criteria (experiment of type "COLLECTION" and code expCode)
-    var experimentCriteria = new SearchCriteria();
-    experimentCriteria.addMatchClause(
-        SearchCriteriaMatchClause.createAttributeMatch(
-            "CODE",
-            this.experimentId
-        )
-    );
-    experimentCriteria.addMatchClause(
-        SearchCriteriaMatchClause.createAttributeMatch(
-            "TYPE",
-            "COLLECTION"
-        )
-    );
+                    // Return here
+                    return;
 
+                }
 
-    // Sample criteria (sample of type "MICROSCOPY_SAMPLE_TYPE" and permId microscopySamplePermId)
-    var sampleCriteria = new SearchCriteria();
-    sampleCriteria.addMatchClause(
-        SearchCriteriaMatchClause.createAttributeMatch(
-            "PERM_ID",
-            this.microscopySamplePermId)
-    );
-    sampleCriteria.addMatchClause(
-        SearchCriteriaMatchClause.createAttributeMatch(
-            "TYPE",
-            "MICROSCOPY_SAMPLE_TYPE")
-    );
+                // The service completed. We can now process the results.
 
-    // Dataset criteria
-    var datasetCriteria = new SearchCriteria();
-    datasetCriteria.addMatchClause(
-        SearchCriteriaMatchClause.createAttributeMatch(
-            "TYPE",
-            "MICROSCOPY_ACCESSORY_FILE"
-        )
-    );
+                // Level of the message
+                let level = "";
 
-    // Add sample and experiment search criteria as subcriteria
-    datasetCriteria.addSubCriteria(
-        SearchSubCriteria.createSampleCriteria(sampleCriteria)
-    );
-    datasetCriteria.addSubCriteria(
-        SearchSubCriteria.createExperimentCriteria(experimentCriteria)
-    );
+                // Returned parameters
+                let r_Success = row[2].value;
+                let r_ErrorMessage = row[3].value;
+                let r_NCopiedFiles = row[4].value;
+                let r_RelativeExpFolder = row[5].value;
+                let r_ZipArchiveFileName = row[6].value;
+                let r_Mode = row[7].value;
 
-    // Search
-    this.openbisServer.searchForDataSets(datasetCriteria, action);
-
-};
-
-/**
- * Call an aggregation plug-in to copy the datasets associated to the experiment and sample.
- * @param experimentId Experiment ID
- * @param sampleId Sample ID
- * @param mode Mode to be passed to the aggragation service.
- */
-DataModel.prototype.copyDatasetsToUserDir = function (experimentId, expSamplePermId, samplePermId, mode) {
-
-    // Add call to the aggregation service
-    var parameters = {
-        experimentId: experimentId,
-        expSamplePermId: expSamplePermId,
-        samplePermId: samplePermId,
-        mode: mode
-    };
-
-    // Inform the user that we are about to process the request
-    DATAVIEWER.displayStatus("Please wait while processing your request. This might take a while...", "info");
-
-    // Must use global object
-    DATAMODEL.openbisServer.createReportFromAggregationService(CONFIG['dataStoreServer'],
-        "export_microscopy_datasets", parameters,
-        DATAMODEL.processResultsFromExportDataSetsServerSidePlugin);
-};
-
-/**
- * Process the results returned from the copyDatasetsToUserDir() server-side plug-in
- * @param response JSON object
- */
-DataModel.prototype.processResultsFromExportDataSetsServerSidePlugin = function (response) {
-
-    var status;
-    var unexpected = "Sorry, unexpected feedback from server " +
-        "obtained. Please contact your administrator.";
-    var level = "";
-    var row;
-
-    // Returned parameters
-    var r_UID;
-    var r_Completed;
-    var r_Success;
-    var r_ErrorMessage;
-    var r_NCopiedFiles;
-    var r_RelativeExpFolder;
-    var r_ZipArchiveFileName;
-    var r_Mode;
-
-    // First check if we have an error
-    if (response.error) {
-
-        // Indeed there was an error.
-        status = "Sorry, could not process request.";
-        level = "error";
-        r_Success = "0";
-
-    } else {
-
-        // No obvious error. Retrieve the results
-        status = "";
-        if (response.result.rows.length !== 1) {
-
-            // Unexpected number of rows returned
-            status = unexpected;
-            level = "error";
-
-        } else {
-
-            // We have a (potentially) valid result
-            row = response.result.rows[0];
-
-            // Retrieve the uid
-            r_UID = row[0].value;
-
-            // Retrieve the 'completed' status
-            r_Completed = row[1].value;
-
-            // If the processing is not completed, we wait a few seconds and trigger the
-            // server-side plug-in again. The interval is defined by the admin.
-            if (r_Completed === "0") {
-
-                // We only need the UID of the job
-                parameters = {};
-                parameters["uid"] = r_UID;
-
-                // Call the plug-in
-                setTimeout(function () {
-                        DATAMODEL.openbisServer.createReportFromAggregationService(
-                            CONFIG['dataStoreServer'],
-                            "export_microscopy_datasets", parameters,
-                            DATAMODEL.processResultsFromExportDataSetsServerSidePlugin)
-                    },
-                    parseInt(CONFIG['queryPluginStatusInterval']));
-
-                // Return here
-                return;
-
-            } else {
-
-                if (row.length !== 8) {
-
-                    // Again, something is wrong with the returned results
-                    status = unexpected;
-                    level = "error";
-
-                } else {
-
-                    // Extract returned values for clarity
-                    r_Success = row[2].value;
-                    r_ErrorMessage = row[3].value;
-                    r_NCopiedFiles = row[4].value;
-                    r_RelativeExpFolder = row[5].value;
-                    r_ZipArchiveFileName = row[6].value;
-                    r_Mode = row[7].value;
-
-                    if (r_Success === "1") {
-                        var snip = "<b>Congratulations!</b>&nbsp;";
-                        if (r_NCopiedFiles === 1) {
-                            snip = snip +
-                                "<span class=\"badge\">1</span> file was ";
-                        } else {
-                            snip = snip +
-                                "<span class=\"badge\">" +
-                                r_NCopiedFiles + "</span> files were ";
-                        }
-                        if (r_Mode === "normal") {
-                            status = snip + "successfully exported to " +
-                                "{...}/" + r_RelativeExpFolder + ".";
-                        } else if (r_Mode === "hrm") {
-                            status = snip + "successfully exported to your HRM source folder.";
-                        } else {
-                            // Add a placeholder to store the download URL.
-                            status = snip + "successfully packaged. <span id=\"download_url_span\"></span>";
-                        }
-                        level = "success";
+                if (r_Success === 1) {
+                    let snip = "<b>Congratulations!</b>&nbsp;";
+                    if (r_NCopiedFiles === 1) {
+                        snip = snip + "<span class=\"badge\">1</span> file was ";
                     } else {
-                        if (r_Mode === "normal") {
-                            status = "Sorry, there was an error exporting " +
-                                "to your user folder:<br /><br />\"" +
-                                r_ErrorMessage + "\".";
-                        } else {
-                            status = "Sorry, there was an error packaging your files for download!";
-                        }
-                        level = "error";
+                        snip = snip + "<span class=\"badge\">" + r_NCopiedFiles + "</span> files were ";
                     }
+                    if (r_Mode === "normal") {
+                        status = snip + "successfully exported to {...}/" + r_RelativeExpFolder + ".";
+                    } else if (r_Mode === "hrm") {
+                        status = snip + "successfully exported to your HRM source folder.";
+                    } else {
+                        // Add a placeholder to store the download URL.
+                        status = snip + "successfully packaged. <span id=\"download_url_span\"></span>";
+                    }
+                    level = "success";
+                } else {
+                    if (r_Mode === "normal") {
+                        status = "Sorry, there was an error exporting " +
+                            "to your user folder:<br /><br />\"" +
+                            r_ErrorMessage + "\".";
+                    } else {
+                        status = "Sorry, there was an error packaging your files for download!";
+                    }
+                    level = "error";
+                }
+
+                DATAVIEWER.displayStatus(status, level);
+
+                if (r_Success === 1 && r_Mode === "zip") {
+
+                    // Build the download URL with a little hack
+                    DATAMODEL.openbisV3.getDataStoreFacade().createDataSetUpload("dummy").then(function(result) {
+                        let url = result.getUrl();
+                        let indx = url.indexOf("/datastore_server/store_share_file_upload");
+                        if (indx !== -1) {
+                            let dssUrl = url.substring(0, indx);
+                            let downloadUrl = encodeURI(
+                                dssUrl + "/datastore_server/session_workspace_file_download?" +
+                                "sessionID=" + DATAMODEL.openbisV3.getWebAppContext().sessionId + "&filePath=" +
+                                r_ZipArchiveFileName);
+
+                            let downloadString =
+                                '<img src="img/download.png" heigth="32" width="32"/>&nbsp;<a href="' +
+                                downloadUrl + '">Download</a>!';
+                            $("#download_url_span").html(downloadString);
+
+                        }
+                    });
                 }
             }
-        }
-    }
-    DATAVIEWER.displayStatus(status, level);
+        };
 
-    // Retrieve the URL (asynchronously)
-    if (r_Success === "1" && r_Mode === "zip") {
-        DATAMODEL.openbisServer.createSessionWorkspaceDownloadUrl(r_ZipArchiveFileName,
-            function (url) {
-                var downloadString =
-                    '<img src="img/download.png" alt="Download" height="32" width="32"/>&nbsp;<a href="' + url + '">' +
-                    'Download</a>!';
-                $("#download_url_span").html(downloadString);
-            });
-    }
-};
+        // Return a DataModel object
+        return DataModel;
+    });

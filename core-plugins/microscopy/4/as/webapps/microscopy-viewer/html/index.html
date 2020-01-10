@@ -17,8 +17,6 @@
 
     <!-- Image viewer -->
     <link rel="stylesheet" href="/openbis/resources/components/imageviewer/css/image-viewer.css">
-    <script type="text/javascript" src="/openbis/resources/config.js"></script>
-    <script type="text/javascript" src="/openbis/resources/require.js"></script>
 
     <!--[if lt IE 9]>
     <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
@@ -37,8 +35,6 @@
     <!-- Include local scripts -->
     <script src="./js/config/config.js"></script>
     <script src="./etc/config.js"></script>
-    <script src="./js/dataviewer.js"></script>
-    <script src="./js/datamodel.js"></script>
 
 </head>
 <body>
@@ -57,8 +53,11 @@
                         <h3 class="panel-title">File/Series info</h3>
                     </div>
                     <div class="panel-body">
-                        <div id="detailView">&nbsp;</div>
-                        <div id="paramView">&nbsp;</div>
+                        <div id="detailView">
+                            <div id="experimentView">&nbsp;</div>
+                            <div id="dataSetView">&nbsp;</div>
+                            <div id="paramView">&nbsp;</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -88,10 +87,22 @@
     </div>
 </div>
 
+<!-- requireJS openbis configuration -->
+<script src="/openbis/resources/api/v3/config.js"></script>
+
+<!-- Add local js scripts to requireJS paths -->
+<script>
+    require.paths["js/datamodel"] = "/openbis/webapp/microscopy-viewer/js/datamodel";
+    require.paths["js/dataviewer"] = "/openbis/webapp/microscopy-viewer/js/dataviewer";
+</script>
+
+<!-- Add requireJS -->
+<script type="text/javascript" src="/openbis/resources/api/v3/require.js"></script>
+
 <script>
 
     // ask for jquery library, openbis-screening facade and the image viewer component
-    require(["jquery", "openbis-screening", "components/imageviewer/ImageViewerWidget"], function ($, openbis, ImageViewerWidget) {
+    require(["js/datamodel", "js/dataviewer"], function (DataModel, DataViewer) {
 
         /* Merge default and custom configuration */
         window.CONFIG = $.extend({}, DEFAULT_CONFIG, CONFIG);
