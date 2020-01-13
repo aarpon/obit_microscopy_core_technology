@@ -197,8 +197,8 @@ define(["openbis",
                 let fetchOptions = new SampleFetchOptions();
                 fetchOptions.withType();
                 fetchOptions.withProperties();
-                fetchOptions.from(0);
-                fetchOptions.count(100);
+                fetchOptions.from(DATAVIEWER.indexOfFirstThumbnail);
+                fetchOptions.count(DATAVIEWER.totalNumberOfThumbnailsPerPage);
 
                 // Search for the MICROSCOPY_SAMPLE_TYPE samples
                 dataModelObj.openbisV3.searchSamples(criteria, fetchOptions).done(function(result) {
@@ -206,11 +206,14 @@ define(["openbis",
                     // Keep track of the total number
                     dataModelObj.totalNumberOfMicroscopySamples = result.totalCount;
 
-                    // Store the samples
-                    dataModelObj.samples = result.getObjects();
+                    // Store the retrieved samples in the total array of samples
+                    dataModelObj.samples = new Array(result.totalCount);
+                    for (let i = 0; i < result.objects.length; i++) {
+                        dataModelObj.samples[DATAVIEWER.indexOfFirstThumbnail + i] = result.objects[i];
+                    }
 
                     // Set up pagination if needed
-                    DATAVIEWER.setUpPaginationIfNeeded(dataModelObj.samples.length);
+                    DATAVIEWER.setUpPaginationIfNeeded(result.totalCount);
 
                     // Display the thumbnails
                     DATAVIEWER.displayThumbnails();
@@ -346,6 +349,53 @@ define(["openbis",
                     }
                 });
             }
+        },
+
+        /**
+         * Retrieve the next batch of samples only if they were not cached already.
+         *
+         * If the sample at position 'firstIndex' is already presend in DataMover.samples, it is
+         * assume that the whole batch of DataViewer. is already cached. Otherwise, the samples
+         * are retreived from the server.
+         *
+         * @param firstIndex Index of the first sample to retrieve.
+         */
+        retrieveBatchOfSamplesIfNeeded: function(firstIndex) {
+
+            if (undefined !== this.samples[firstIndex]) {
+                return;
+            }
+
+            // Set up the search criteria for the samples of type MICROSCOPY_SAMPLE_TYPE
+            let criteria = new SampleSearchCriteria();
+            criteria.withType().withCode().thatEquals("MICROSCOPY_SAMPLE_TYPE");
+            criteria.withParents().withIdentifier().thatEquals(this.microscopyExperimentSampleId);
+
+            // Fetch options
+            let fetchOptions = new SampleFetchOptions();
+            fetchOptions.withType();
+            fetchOptions.withProperties();
+            fetchOptions.from(firstIndex);
+            fetchOptions.count(DATAVIEWER.totalNumberOfThumbnailsPerPage);
+
+            // Alias
+            const dataModelObj = this;
+
+            // Search for the MICROSCOPY_SAMPLE_TYPE samples
+            dataModelObj.openbisV3.searchSamples(criteria, fetchOptions).done(function(result) {
+
+                // Keep track of the total number
+                dataModelObj.totalNumberOfMicroscopySamples = result.totalCount;
+
+                // Store the retrieved samples in the total array of samples
+                for (let i = 0; i < result.objects.length; i++) {
+                    dataModelObj.samples[firstIndex+ i] = result.objects[i];
+                }
+
+                // Display the thumbnails
+                DATAVIEWER.displayThumbnails();
+
+            });
         }
     };
 

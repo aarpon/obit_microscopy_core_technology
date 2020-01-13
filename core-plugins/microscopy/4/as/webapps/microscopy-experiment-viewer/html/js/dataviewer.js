@@ -635,6 +635,9 @@ define([], function () {
                             (dataViewerObj.indexOfFirstThumbnail + 1) + " - " +
                             lastIndex + " of " + totalNumberOfSamples);
 
+                        // Retrieve samples if needed
+                        DATAMODEL.retrieveBatchOfSamplesIfNeeded(dataViewerObj.indexOfFirstThumbnail);
+
                         // Redraw the thumbnails
                         dataViewerObj.displayThumbnails();
                     }
