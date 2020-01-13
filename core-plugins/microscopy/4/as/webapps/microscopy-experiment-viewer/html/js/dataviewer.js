@@ -629,6 +629,9 @@ define([], function () {
 
                         // Calculate the value of the last index
                         let lastIndex = pageNumber * dataViewerObj.totalNumberOfThumbnailsPerPage;
+                        if (lastIndex > DATAMODEL.samples.length) {
+                            lastIndex = DATAMODEL.samples.length;
+                        }
 
                         // Set text
                         paginationText.text("" +
