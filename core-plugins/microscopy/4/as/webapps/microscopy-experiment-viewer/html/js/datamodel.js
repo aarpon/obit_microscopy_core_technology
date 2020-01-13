@@ -209,6 +209,9 @@ define(["openbis",
                     // Store the samples
                     dataModelObj.samples = result.getObjects();
 
+                    // Set up pagination if needed
+                    DATAVIEWER.setUpPaginationIfNeeded(dataModelObj.samples.length);
+
                     // Display the thumbnails
                     DATAVIEWER.displayThumbnails();
 
@@ -222,6 +225,12 @@ define(["openbis",
 
                 // Display the acquisition details
                 DATAVIEWER.displayAcquisitionDetails();
+
+                // Display the tags
+                DATAVIEWER.displayTags(DATAMODEL.microscopyExperimentSample);
+
+                // Display the attachments
+                DATAVIEWER.displayAttachments(DATAMODEL.microscopyExperimentSample);
             });
         },
 

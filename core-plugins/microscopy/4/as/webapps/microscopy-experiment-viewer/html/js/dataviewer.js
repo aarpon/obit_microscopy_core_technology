@@ -16,6 +16,12 @@ define([], function () {
         if (!(this instanceof DataViewer)) {
             throw new TypeError("DataViewer constructor cannot be called as a function.");
         }
+
+        // Max number of thumbnails to display (before the pagination is activated)
+        this.totalNumberOfThumbnailsPerPage = 100;
+
+        // Current index of the first thumbnail to display
+        this.indexOfFirstThumbnail = 0;
     };
 
     /**
@@ -32,7 +38,7 @@ define([], function () {
         /**
          * Display the experiment name
          */
-        displayExperimentSampleName: function() {
+        displayExperimentSampleName: function () {
 
             // Get the experiment name view
             const experimentNameView_div = $("#experimentNameView");
@@ -52,7 +58,7 @@ define([], function () {
         /**
          * Display the thumbnails
          */
-        displayThumbnails: function() {
+        displayThumbnails: function () {
 
             // Get the sample view
             const sampleView_div = $("#sampleView");
@@ -64,10 +70,22 @@ define([], function () {
                 let newThumbRow = null;
                 let numSample = 0;
 
+                // Alias
+                const dataViewerObj = this;
+
                 // Display samples with a link to their corresponding webapp.
                 // Later we will reorganize the layout (when the thumbnails
                 // are ready to be retrieved from openBIS).
-                DATAMODEL.samples.forEach(function (sample) {
+                let lastPossibleIndex = DATAMODEL.samples.length - 1;
+                let indexOfLastThumbnail = dataViewerObj.indexOfFirstThumbnail +
+                    dataViewerObj.totalNumberOfThumbnailsPerPage - 1;
+                if (indexOfLastThumbnail > lastPossibleIndex) {
+                    indexOfLastThumbnail = lastPossibleIndex;
+                }
+                for (let i = dataViewerObj.indexOfFirstThumbnail; i <= indexOfLastThumbnail; i++) {
+
+                    // Get current sample
+                    let sample = DATAMODEL.samples[i];
 
                     // Keep track of the number of the sample
                     numSample++;
@@ -152,24 +170,17 @@ define([], function () {
                     // Now retrieve the link to the thumbnail image asynchronously and update the <img>
                     DATAVIEWER.displayThumbnailForSample(sample, "image_" + sample.code);
 
-                });
+                }
 
                 // Display the export action
                 this.displayActions(DATAMODEL.microscopyExperimentSample);
-
-                // Display the tags
-                this.displayTags(DATAMODEL.microscopyExperimentSample);
-
-                // Display the attachments
-                this.displayAttachments(DATAMODEL.microscopyExperimentSample);
-
             }
         },
 
         /**
          * Display the experiment description
          */
-        displayExperimentDescription: function() {
+        displayExperimentDescription: function () {
 
             // Clear the description view
             const experimentDescriptionView_div = $("#experimentDescriptionView");
@@ -193,7 +204,7 @@ define([], function () {
         /**
          * Display the acquisition details
          */
-        displayAcquisitionDetails: function() {
+        displayAcquisitionDetails: function () {
 
             // Clear the acquisition detail view
             const experimentAcquisitionDetailsView_div = $("#experimentAcquisitionDetailsView");
@@ -228,7 +239,7 @@ define([], function () {
          *
          * @param experimentSample {...}_EXPERIMENT sample.
          */
-        displayAttachments: function(experimentSample) {
+        displayAttachments: function (experimentSample) {
 
             // Get the div
             let experimentAttachmentsViewId = $("#experimentAttachmentsView");
@@ -277,7 +288,7 @@ define([], function () {
          * @param status: text to be displayed
          * @param level: one of "success", "info", "warning", "error". Default is "info"
          */
-        displayStatus: function(status, level) {
+        displayStatus: function (status, level) {
 
             // Get the the statusView div
             const statusView_div = $("#statusView");
@@ -318,7 +329,7 @@ define([], function () {
          *
          * @param experimentSample {...}_EXPERIMENT sample.
          */
-        displayTags: function(experimentSample) {
+        displayTags: function (experimentSample) {
 
             // Get the div
             const experimentTagView = $("#experimentTagView");
@@ -472,7 +483,7 @@ define([], function () {
          * plugin 'copy_datasets_to_userdir'
          * @param microscopyExperimentSample: Experiment node
          */
-        displayActions: function(microscopyExperimentSample) {
+        displayActions: function (microscopyExperimentSample) {
 
             // Get the actionView_div div and empty it
             const actionView_div = $("#actionView");
@@ -511,7 +522,7 @@ define([], function () {
                             $("#actionViewExpl").html("");
                         })
                     .html("")
-                    .click(function() {
+                    .click(function () {
                         DATAMODEL.callServerSidePluginExportDataSets(
                             experimentId, expSamplePermId, "", "normal");
                         return false;
@@ -541,7 +552,7 @@ define([], function () {
                             $("#actionViewExpl").html("");
                         })
                     .html("")
-                    .click(function() {
+                    .click(function () {
                         DATAMODEL.callServerSidePluginExportDataSets(
                             experimentId, expSamplePermId, "", "hrm");
                         return false;
@@ -570,7 +581,7 @@ define([], function () {
                         $("#actionViewExpl").html("");
                     })
                 .html("")
-                .click(function() {
+                .click(function () {
                     DATAMODEL.callServerSidePluginExportDataSets(
                         experimentId, expSamplePermId, "", "zip");
                     return false;
@@ -580,8 +591,56 @@ define([], function () {
 
             actionView_div.append(link);
 
-        }
+        },
 
+        /**
+         * If needed, set up pagination for thumbnails.
+         * @param totalNumberOfSamples Total number of samples in the dataset.
+         */
+        setUpPaginationIfNeeded: function(totalNumberOfSamples) {
+
+            // Get and clear the divs
+            const paginationText = $("#paginationText");
+            paginationText.empty();
+            const paginationView = $("#paginationView");
+            paginationView.empty();
+
+            if (totalNumberOfSamples > this.totalNumberOfThumbnailsPerPage) {
+
+                // Calculate the value of the last index
+                let lastIndex = this.totalNumberOfThumbnailsPerPage;
+
+                // Set text
+                paginationText.text("" +
+                    (this.indexOfFirstThumbnail + 1) + " - " +
+                    lastIndex + " of " + totalNumberOfSamples);
+
+                const dataViewerObj = this;
+
+                paginationView.pagination({
+                    items: totalNumberOfSamples,
+                    itemsOnPage: this.totalNumberOfThumbnailsPerPage,
+                    cssStyle: 'compact-theme',
+                    onPageClick: function(pageNumber, event) {
+
+                        // Calculate the new value of indexOfFirstThumbnail
+                        dataViewerObj.indexOfFirstThumbnail = (pageNumber - 1) *
+                            dataViewerObj.totalNumberOfThumbnailsPerPage;
+
+                        // Calculate the value of the last index
+                        let lastIndex = pageNumber * dataViewerObj.totalNumberOfThumbnailsPerPage;
+
+                        // Set text
+                        paginationText.text("" +
+                            (dataViewerObj.indexOfFirstThumbnail + 1) + " - " +
+                            lastIndex + " of " + totalNumberOfSamples);
+
+                        // Redraw the thumbnails
+                        dataViewerObj.displayThumbnails();
+                    }
+                })
+            }
+        }
     };
 
     // Return a DataViewer object

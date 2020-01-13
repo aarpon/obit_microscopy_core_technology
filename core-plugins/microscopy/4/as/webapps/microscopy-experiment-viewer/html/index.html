@@ -11,6 +11,10 @@
     <script src="./third-party/jquery/js/jquery.cookie.js"></script>
     <script src="./third-party/jquery/js/jquery-ui.custom.min.js"></script>
 
+    <!-- Simple pagination -->
+    <script src="./third-party/simplePagination/jquery.simplePagination.js"></script>
+    <link rel="stylesheet" href="./third-party/simplePagination/simplePagination.css">
+
     <!-- Include bootstrap -->
     <script src="./third-party/bootstrap/js/bootstrap.min.js"></script>
     <link rel="stylesheet" href="/openbis/resources/lib/bootstrap-slider/css/bootstrap-slider.min.css">
@@ -20,7 +24,7 @@
     <script src="./third-party/respond/1.4.2/respond.min.js"></script>
     <![endif]-->
 
-    <!-- Include stylesheets -->
+    <!-- Include other stylesheets -->
     <link rel="stylesheet" media="screen" href="./third-party/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" media="screen" href="./third-party/bootstrap/css/bootstrap-theme.min.css">
     <link rel="stylesheet" type="text/css" href="./css/default.css">
@@ -55,6 +59,10 @@
                     <div class="panel-body">
                         <div id="actionView">&nbsp;</div>
                         <div id="actionViewExpl"></div>
+                        <div id="paginationViewContainer">
+                            <div id="paginationText"></div>
+                            <div id="paginationView"></div>
+                        </div>
                         <div id="statusView">&nbsp;</div>
                         <div id="sampleView">&nbsp;</div>
                     </div>

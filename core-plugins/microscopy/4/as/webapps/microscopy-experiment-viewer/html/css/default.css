@@ -50,6 +50,20 @@
     text-align: center;
 }
 
+#paginationViewContainer {
+}
+
+#paginationText {
+    float: left;
+    margin-right: 10px;
+    font-size: 10px;
+    font-weight: bold;
+    padding-top: 8px;
+}
+
+#paginationView {
+}
+
 #actionViewExpl {
     height: 20px;
     vertical-align: middle;
@@ -80,6 +94,7 @@
     text-align: center;
     padding-top: 10px;
     padding-bottom: 10px;
+    display: inline-block;
 }
 
 .filename {
