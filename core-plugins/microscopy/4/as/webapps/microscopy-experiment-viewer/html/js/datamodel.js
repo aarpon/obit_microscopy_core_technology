@@ -8,6 +8,7 @@
 define(["openbis",
         "as/dto/sample/search/SampleSearchCriteria",
         "as/dto/sample/fetchoptions/SampleFetchOptions",
+        "as/dto/sample/id/SampleIdentifier",
         "as/dto/service/search/AggregationServiceSearchCriteria",
         "as/dto/service/fetchoptions/AggregationServiceFetchOptions",
         "as/dto/service/execute/AggregationServiceExecutionOptions",
@@ -16,6 +17,7 @@ define(["openbis",
     function(openbis,
              SampleSearchCriteria,
              SampleFetchOptions,
+             SampleIdentifier,
              AggregationServiceSearchCriteria,
              AggregationServiceFetchOptions,
              AggregationServiceExecutionOptions,
@@ -69,6 +71,10 @@ define(["openbis",
 
         // Samples
         this.samples = null;
+
+        // Keep track the number of samples of type MICROSCOPY_SAMPLE_TYPE for
+        // pagination (if there are too many).
+        this.totalNumberOfMicroscopySamples = 0;
 
         // Retrieve the {...}_EXPERIMENT data with all relevant information
         this.getMicroscopyExperimentSampleDataAndDisplay();
@@ -149,25 +155,17 @@ define(["openbis",
          */
         getMicroscopyExperimentSampleDataAndDisplay: function() {
 
+            /*
+             * Initially we get the MICROSCOPY_EXPERIMENT sample object without children (of type MICROSCOPY_SAMPLE).
+             */
+
             // Search for the sample of type and given perm id
-            let criteria = new SampleSearchCriteria();
-            criteria.withType().withCode().thatEquals(this.microscopyExperimentSampleType);
-            criteria.withIdentifier().thatEquals(this.microscopyExperimentSampleId);
             let fetchOptions = new SampleFetchOptions();
             fetchOptions.withType();
             fetchOptions.withProperties();
             fetchOptions.withDataSets().withType();
             fetchOptions.withExperiment();
             fetchOptions.withExperiment().withType();
-
-            // Children are MICROSCOPY_SAMPLEs; let's not
-            // retrieve more than 250.
-            let childrenFetchOptions = new SampleFetchOptions();
-            childrenFetchOptions.withType();
-            childrenFetchOptions.withProperties();
-            childrenFetchOptions.from(0);
-            childrenFetchOptions.count(250);
-            fetchOptions.withChildrenUsing(childrenFetchOptions);
 
             // Parents are ORGANIZATION_UNITs ("tags")
             let parentFetchOptions = new SampleFetchOptions();
@@ -179,13 +177,42 @@ define(["openbis",
             let dataModelObj = this;
 
             // Query the server
-            this.openbisV3.searchSamples(criteria, fetchOptions).done(function (result) {
+            const microscopyExpSampleId = new SampleIdentifier(this.microscopyExperimentSampleId);
+            this.openbisV3.getSamples([microscopyExpSampleId], fetchOptions).done(function (map) {
 
                 // Store the {...}_EXPERIMENT sample object
-                dataModelObj.microscopyExperimentSample = result.getObjects()[0];
+                dataModelObj.microscopyExperimentSample = map[microscopyExpSampleId];
 
-                // Store the child damples
-                dataModelObj.samples = dataModelObj.microscopyExperimentSample.children;
+                /*
+                 * Now we retrieve the child MICROSCOPY_SAMPLE_TYPE samples, but not more than 100.
+                 * We query the total number and in case set up pagination.
+                 */
+
+                // Set up the search criteria for the samples of type MICROSCOPY_SAMPLE_TYPE
+                let criteria = new SampleSearchCriteria();
+                criteria.withType().withCode().thatEquals("MICROSCOPY_SAMPLE_TYPE");
+                criteria.withParents().withIdentifier().thatEquals(dataModelObj.microscopyExperimentSampleId);
+
+                // Fetch options
+                let fetchOptions = new SampleFetchOptions();
+                fetchOptions.withType();
+                fetchOptions.withProperties();
+                fetchOptions.from(0);
+                fetchOptions.count(100);
+
+                // Search for the MICROSCOPY_SAMPLE_TYPE samples
+                dataModelObj.openbisV3.searchSamples(criteria, fetchOptions).done(function(result) {
+
+                    // Keep track of the total number
+                    dataModelObj.totalNumberOfMicroscopySamples = result.totalCount;
+
+                    // Store the samples
+                    dataModelObj.samples = result.getObjects();
+
+                    // Display the thumbnails
+                    DATAVIEWER.displayThumbnails();
+
+                });
 
                 // Display the experiment sample name
                 DATAVIEWER.displayExperimentSampleName();
@@ -195,9 +222,6 @@ define(["openbis",
 
                 // Display the acquisition details
                 DATAVIEWER.displayAcquisitionDetails();
-
-                // Display the thumbnails
-                DATAVIEWER.displayThumbnails();
             });
         },
 
