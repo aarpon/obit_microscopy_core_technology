@@ -67,11 +67,12 @@ define([], function () {
             // Display the samples
             if (DATAMODEL.samples != null) {
 
-                let newThumbRow = null;
-                let numSample = 0;
-
                 // Alias
                 const dataViewerObj = this;
+
+                // Add a row
+                let newThumbRow = $("<div />", {class: "row"});
+                sampleView_div.append(newThumbRow);
 
                 // Display samples with a link to their corresponding webapp.
                 // Later we will reorganize the layout (when the thumbnails
@@ -86,15 +87,6 @@ define([], function () {
 
                     // Get current sample
                     let sample = DATAMODEL.samples[i];
-
-                    // Keep track of the number of the sample
-                    numSample++;
-
-                    // Add a new row for the next three thumbnails
-                    if (numSample % 4 === 1) {
-                        newThumbRow = $("<div />", {class: "row"});
-                        sampleView_div.append(newThumbRow);
-                    }
 
                     // Prepare the name to be shown
                     let name;
@@ -125,7 +117,7 @@ define([], function () {
                     // elements related to current sample
                     let newThumbCol = $("<div />",
                         {
-                            class: "col-md-3",
+                            class: "col col-sm-6 col-md-3 col-lg-2",
                             display: "inline",
                             "text-align": "center",
                             id: sample.code
@@ -169,7 +161,6 @@ define([], function () {
 
                     // Now retrieve the link to the thumbnail image asynchronously and update the <img>
                     DATAVIEWER.displayThumbnailForSample(sample, "image_" + sample.code);
-
                 }
 
                 // Display the export action
@@ -594,10 +585,11 @@ define([], function () {
         },
 
         /**
-         * If needed, set up pagination for thumbnails.
+         * Set up pagination for thumbnails. If there are less thumbnails than the
+         * page size, the controls are shown but inactive.
          * @param totalNumberOfSamples Total number of samples in the dataset.
          */
-        setUpPaginationIfNeeded: function(totalNumberOfSamples) {
+        setUpPagination: function (totalNumberOfSamples) {
 
             // Get and clear the divs
             const paginationText = $("#paginationText");
@@ -605,47 +597,47 @@ define([], function () {
             const paginationView = $("#paginationView");
             paginationView.empty();
 
-            if (totalNumberOfSamples > this.totalNumberOfThumbnailsPerPage) {
-
-                // Calculate the value of the last index
-                let lastIndex = this.totalNumberOfThumbnailsPerPage;
-
-                // Set text
-                paginationText.text("" +
-                    (this.indexOfFirstThumbnail + 1) + " - " +
-                    lastIndex + " of " + totalNumberOfSamples);
-
-                const dataViewerObj = this;
-
-                paginationView.pagination({
-                    items: totalNumberOfSamples,
-                    itemsOnPage: this.totalNumberOfThumbnailsPerPage,
-                    cssStyle: 'compact-theme',
-                    onPageClick: function(pageNumber, event) {
-
-                        // Calculate the new value of indexOfFirstThumbnail
-                        dataViewerObj.indexOfFirstThumbnail = (pageNumber - 1) *
-                            dataViewerObj.totalNumberOfThumbnailsPerPage;
-
-                        // Calculate the value of the last index
-                        let lastIndex = pageNumber * dataViewerObj.totalNumberOfThumbnailsPerPage;
-                        if (lastIndex > DATAMODEL.samples.length) {
-                            lastIndex = DATAMODEL.samples.length;
-                        }
-
-                        // Set text
-                        paginationText.text("" +
-                            (dataViewerObj.indexOfFirstThumbnail + 1) + " - " +
-                            lastIndex + " of " + totalNumberOfSamples);
-
-                        // Retrieve samples if needed
-                        DATAMODEL.retrieveBatchOfSamplesIfNeeded(dataViewerObj.indexOfFirstThumbnail);
-
-                        // Redraw the thumbnails
-                        dataViewerObj.displayThumbnails();
-                    }
-                })
+            // Calculate the value of the last index
+            let lastIndex = this.totalNumberOfThumbnailsPerPage;
+            if (lastIndex > DATAMODEL.samples.length) {
+                lastIndex = DATAMODEL.samples.length;
             }
+
+            // Set text
+            paginationText.text("" +
+                (this.indexOfFirstThumbnail + 1) + " - " +
+                lastIndex + " of " + totalNumberOfSamples);
+
+            const dataViewerObj = this;
+
+            paginationView.pagination({
+                items: totalNumberOfSamples,
+                itemsOnPage: this.totalNumberOfThumbnailsPerPage,
+                cssStyle: 'compact-theme',
+                onPageClick: function (pageNumber, event) {
+
+                    // Calculate the new value of indexOfFirstThumbnail
+                    dataViewerObj.indexOfFirstThumbnail = (pageNumber - 1) *
+                        dataViewerObj.totalNumberOfThumbnailsPerPage;
+
+                    // Calculate the value of the last index
+                    let lastIndex = pageNumber * dataViewerObj.totalNumberOfThumbnailsPerPage;
+                    if (lastIndex > DATAMODEL.samples.length) {
+                        lastIndex = DATAMODEL.samples.length;
+                    }
+
+                    // Set text
+                    paginationText.text("" +
+                        (dataViewerObj.indexOfFirstThumbnail + 1) + " - " +
+                        lastIndex + " of " + totalNumberOfSamples);
+
+                    // Retrieve samples if needed
+                    DATAMODEL.retrieveBatchOfSamplesIfNeeded(dataViewerObj.indexOfFirstThumbnail);
+
+                    // Redraw the thumbnails
+                    dataViewerObj.displayThumbnails();
+                }
+            })
         }
     };
 

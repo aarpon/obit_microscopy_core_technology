@@ -213,7 +213,7 @@ define(["openbis",
                     }
 
                     // Set up pagination if needed
-                    DATAVIEWER.setUpPaginationIfNeeded(result.totalCount);
+                    DATAVIEWER.setUpPagination(result.totalCount);
 
                     // Display the thumbnails
                     DATAVIEWER.displayThumbnails();
