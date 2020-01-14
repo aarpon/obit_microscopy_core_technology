@@ -481,10 +481,10 @@ define([], function () {
 
                                 if (!f.isDirectory()) {
 
-                                    if (f.permId.filePath == "thumbnail.png") {
+                                    if (f.getPath() == "thumbnail.png") {
                                         // Build the download URL
                                         let url = f.getDataStore().getDownloadUrl() + "/datastore_server/" +
-                                            f.permId.dataSetId.permId + "/" + f.permId.filePath + "?sessionID=" +
+                                            f.permId.dataSetId.permId + "/" + f.getPath() + "?sessionID=" +
                                             DATAMODEL.openbisV3.getWebAppContext().sessionId;
 
                                         // Replace the image
