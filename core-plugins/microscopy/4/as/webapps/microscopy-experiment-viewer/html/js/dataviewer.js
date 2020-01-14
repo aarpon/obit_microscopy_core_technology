@@ -402,7 +402,7 @@ define([], function () {
                     DataSetFileFetchOptions) {
 
                     let dataSetCriteria = new DataSetSearchCriteria();
-                    dataSetCriteria.withType().withCode().thatEquals("MICROSCOPY_IMG_THUMBNAIL");
+                    dataSetCriteria.withType().withCode().thatEquals("MICROSCOPY_IMG_CONTAINER");
                     dataSetCriteria.withSample().withPermId().thatEquals(sample.permId.permId);
 
                     let dataSetFetchOptions = new DataSetFetchOptions();
@@ -417,7 +417,35 @@ define([], function () {
                             return null;
                         }
 
-                        let dataSet = result.getObjects()[0];
+                        // Declare the dataSet that we will use to retrieve the thumbnail
+                        let dataSet = null;
+
+                        // All MICROSCOPY_IMG_CONTAINER datasets (i.e. a file series) contain a MICROSCOPY_IMG_OVERVIEW
+                        // and a MICROSCOPY_IMG dataset; one of the series will also contain a MICROSCOPY_IMG_THUMBNAIL,
+                        // which is what we are looking for here.
+                        // Even though the MICROSCOPY_IMG_THUMBNAIL is always created for series 0, we cannot guarantee
+                        // here that series zero will be returned as the first. We quickly scan through the returned
+                        // results for the MICROSCOPY_IMG_CONTAINER that has three contained datasets.
+                        // From there we can then quickly retrieve the MICROSCOPY_IMG_THUMBNAIL.
+                        external_loop:
+                        for (let i = 0; i < result.objects.length; i++) {
+                            let currentDataSet = result.objects[i];
+                            if (null == currentDataSet.components) {
+                                continue;
+                            }
+                            for (let j = 0; j < currentDataSet.components.length; j++) {
+                                if (currentDataSet.components[j].type.code === "MICROSCOPY_IMG_THUMBNAIL") {
+                                    dataSet = currentDataSet.components[j];
+                                    break external_loop;
+                                }
+                            }
+                        }
+
+                        // Check that we indeed found the dataSet of type MICROSCOPY_IMG_THUMBNAIL
+                        if (dataSet == null) {
+                            return;
+                        }
+
                         // Now retrieve the thumbnail and add display it
 
                         // Get the file
@@ -453,15 +481,17 @@ define([], function () {
 
                                 if (!f.isDirectory()) {
 
-                                    // Build the download URL
-                                    let url = f.getDataStore().getDownloadUrl() + "/datastore_server/" +
-                                        f.permId.dataSetId.permId + "/" + f.getPath() + "?sessionID=" +
-                                        DATAMODEL.openbisV3.getWebAppContext().sessionId;
+                                    if (f.permId.filePath == "thumbnail.png") {
+                                        // Build the download URL
+                                        let url = f.getDataStore().getDownloadUrl() + "/datastore_server/" +
+                                            f.permId.dataSetId.permId + "/" + f.permId.filePath + "?sessionID=" +
+                                            DATAMODEL.openbisV3.getWebAppContext().sessionId;
 
-                                    // Replace the image
-                                    let eUrl = encodeURI(url);
-                                    eUrl = eUrl.replace('+', '%2B');
-                                    imD.attr("src", eUrl);
+                                        // Replace the image
+                                        let eUrl = encodeURI(url);
+                                        eUrl = eUrl.replace('+', '%2B');
+                                        imD.attr("src", eUrl);
+                                    }
                                 }
                             });
                         });
