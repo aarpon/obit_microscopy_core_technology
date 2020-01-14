@@ -99,8 +99,8 @@ define([], function () {
                     // Make sure it is not too long
                     let displayName;
                     let l = name.length;
-                    if (l > 40) {
-                        displayName = name.substring(0, 18) + "..." + name.substring(l - 18);
+                    if (l > 30) {
+                        displayName = name.substring(0, 13) + "..." + name.substring(l - 13);
                     } else {
                         displayName = name;
                     }
