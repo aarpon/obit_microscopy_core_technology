@@ -160,10 +160,11 @@ class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig)
         self.setDataSetType("MICROSCOPY_IMG")
 
         # Create representative image (MIP) for the first series only
-        if self._seriesIndices.index(self._seriesNum) == 0:
-            self.setImageGenerationAlgorithm(
-                YouScopeExperimentMaximumIntensityProjectionGenerationAlgorithm(
-                    "MICROSCOPY_IMG_THUMBNAIL", 256, 256, "thumbnail.png"))
+        if GlobalSettings.GenerateImageThumbnail is True:
+            if self._seriesIndices.index(self._seriesNum) == 0:
+                self.setImageGenerationAlgorithm(
+                    YouScopeExperimentMaximumIntensityProjectionGenerationAlgorithm(
+                        "MICROSCOPY_IMG_THUMBNAIL", 256, 256, "thumbnail.png"))
 
     def createChannel(self, channelCode):
         """Create a channel from the channelCode with the name as read from

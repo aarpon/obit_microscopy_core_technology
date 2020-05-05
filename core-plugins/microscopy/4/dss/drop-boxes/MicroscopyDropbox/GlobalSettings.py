@@ -16,10 +16,13 @@ class GlobalSettings(object):
     # are displayed in the image viewer. Examples:
     #
     # ["128x128"]
-    # ["128x128", "256x256"] 
-    # 
+    # ["128x128", "256x256"]
+    #
     # Set to [] to disable generation of the thumbnails. If ImageResolutions is
     # set to [], the image viewer will generate the views on the fly at the
-    # full the resolution and at 1/4 of the full resolution (in X and Y). Please 
-    # notice that a minimum resolution of 128x128 is enforced. 
+    # full the resolution and at 1/4 of the full resolution (in X and Y). Please
+    # notice that a minimum resolution of 128x128 is enforced.
     ImageResolutions =  []
+
+    # Toggle generation of image thumbnail for the Microscopy Experiment Viever
+    GenerateImageThumbnail = False
