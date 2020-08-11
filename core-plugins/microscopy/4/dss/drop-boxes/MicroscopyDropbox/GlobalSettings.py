@@ -25,4 +25,4 @@ class GlobalSettings(object):
     ImageResolutions = []
 
     # Toggle generation of image thumbnail for the Microscopy Experiment Viever
-    GenerateImageThumbnail = True
+    GenerateImageThumbnail = False
