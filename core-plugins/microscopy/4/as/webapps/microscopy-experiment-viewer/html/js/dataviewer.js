@@ -138,7 +138,7 @@ define([], function () {
                     // we will replace it asynchronously.
                     let thumbnailImage = $("<img />",
                         {
-                            src: "./img/wait.png",
+                            src: "./img/wait.gif",
                             class: "img-responsive",
                             display: "inline",
                             id: "image_" + sample.code,
@@ -414,6 +414,17 @@ define([], function () {
                     // Query the server
                     DATAMODEL.openbisV3.searchDataSets(dataSetCriteria, dataSetFetchOptions).done(function (result) {
                         if (result.getTotalCount() === 0) {
+
+                            // Thumbnail
+                            let imD = $("#" + img_id);
+
+                            // Make sure to reset the display attribute
+                            imD.css("display", "inline");
+
+                            // Thumbnail not found!
+                            imD.attr("src", "./img/unavailable.png");
+                            imD.attr("title", "Could not find a thumbnail for this dataset!");
+
                             return null;
                         }
 
@@ -443,6 +454,17 @@ define([], function () {
 
                         // Check that we indeed found the dataSet of type MICROSCOPY_IMG_THUMBNAIL
                         if (dataSet == null) {
+
+                            // Thumbnail
+                            let imD = $("#" + img_id);
+
+                            // Make sure to reset the display attribute
+                            imD.css("display", "inline");
+
+                            // Thumbnail not found!
+                            imD.attr("src", "./img/unavailable.png");
+                            imD.attr("title", "Could not find a thumbnail for this dataset!");
+
                             return;
                         }
 
@@ -467,7 +489,7 @@ define([], function () {
                             if (result.getTotalCount() === 0) {
 
                                 // Thumbnail not found!
-                                imD.attr("src", "./img/image_unavailable.png");
+                                imD.attr("src", "./img/unavailable.png");
                                 imD.attr("title", "Could not find a thumbnail for this dataset!");
 
                                 return;
