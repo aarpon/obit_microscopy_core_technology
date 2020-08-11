@@ -22,7 +22,7 @@ class GlobalSettings(object):
     # set to [], the image viewer will generate the views on the fly at the
     # full the resolution and at 1/4 of the full resolution (in X and Y). Please
     # notice that a minimum resolution of 128x128 is enforced.
-    ImageResolutions =  []
+    ImageResolutions = []
 
     # Toggle generation of image thumbnail for the Microscopy Experiment Viever
-    GenerateImageThumbnail = False
+    GenerateImageThumbnail = True
