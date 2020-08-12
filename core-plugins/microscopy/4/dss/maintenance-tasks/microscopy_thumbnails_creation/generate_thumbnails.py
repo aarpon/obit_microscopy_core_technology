@@ -4,6 +4,8 @@ from sets import Set
 
 from ch.systemsx.cisd.openbis.dss.etl.dto.api.impl import MaximumIntensityProjectionGenerationAlgorithm
 
+_DEBUG = False
+
 
 def setUpLogging():
     """Set up logging."""
@@ -31,9 +33,18 @@ def setUpLogging():
 
 def _get_series_num(logger):
     """Retrieve series numbers."""
+
     series_numbers = Set()
     for image_info in image_data_set_structure.getImages():
+
+        if logger is not None:
+            logger.info("ImageInfo channel code: " + str(image_info.getChannelCode()))
+
         series_numbers.add(image_info.tryGetSeriesNumber())
+
+    if logger is not None:
+        logger.info("Series numbers: " + str(series_numbers))
+
     return series_numbers.pop()
 
 
@@ -41,16 +52,21 @@ def process(transaction, parameters, tableBuilder):
     """Maintenance task entry point."""
 
     # Set up logging
-    logger = setUpLogging()
-
-    # Log some info
-    logger.info("Dataset contains " + str(len(image_data_set_structure.getImages())) + " images.")
+    logger = None
+    if _DEBUG:
+        logger = setUpLogging()
 
     # Get series number
-    seriesNum = int(_get_series_num(logger))
+    series_num = int(_get_series_num(logger))
 
     # Thumbnails are created only for the first series
-    if seriesNum == 0:
+    if series_num == 0:
         image_config.setImageGenerationAlgorithm(
             MaximumIntensityProjectionGenerationAlgorithm(
                 "MICROSCOPY_IMG_THUMBNAIL", 256, 256, "thumbnail.png"))
+        if logger is not None:
+            logger.info("Series number: " + str(series_num) + ": requested thumbnail generation.")
+
+    else:
+        if logger is not None:
+            logger.info("Series number: " + str(series_num) + ": skipped thumbnail generation.")
