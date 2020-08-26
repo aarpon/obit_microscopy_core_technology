@@ -256,17 +256,10 @@ DataModel.prototype.experimentContainsAccessoryFiles = function (action) {
     var experimentCriteria = new SearchCriteria();
     experimentCriteria.addMatchClause(
         SearchCriteriaMatchClause.createAttributeMatch(
-            "CODE",
-            this.experimentId
-        )
-    );
-    experimentCriteria.addMatchClause(
-        SearchCriteriaMatchClause.createAttributeMatch(
             "TYPE",
             "COLLECTION"
         )
     );
-
 
     // Sample criteria (sample of type "MICROSCOPY_SAMPLE_TYPE" and permId microscopySamplePermId)
     var sampleCriteria = new SearchCriteria();
