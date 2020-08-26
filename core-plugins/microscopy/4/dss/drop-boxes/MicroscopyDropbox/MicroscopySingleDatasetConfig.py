@@ -17,7 +17,6 @@ from ch.systemsx.cisd.openbis.dss.etl.dto.api import OriginalDataStorageFormat
 from ch.systemsx.cisd.openbis.dss.etl.dto.api import ChannelColorRGB
 from ch.systemsx.cisd.openbis.dss.etl.dto.api import Channel
 import xml.etree.ElementTree as ET
-from GlobalSettings import GlobalSettings
 
 
 class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
@@ -71,19 +70,6 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
         # Set the image library
         self.setImageLibrary("BioFormats")
 
-        # Disable thumbnail generation by ImageMagick
-        self.setUseImageMagicToGenerateThumbnails(False)
-
-        # Specify resolution of image representations explicitly
-        resolutions = GlobalSettings.ImageResolutions
-        if not resolutions:
-            self._logger.info("MicroscopySingleDatasetConfig: Skipping thumbnails generation.")
-            self.setGenerateThumbnails(False)
-        else:
-            self._logger.info("MicroscopySingleDatasetConfig: Creating thumbnails at resolutions: " + str(resolutions))
-            self.setGenerateImageRepresentationsUsingImageResolutions(resolutions)
-            self.setGenerateThumbnails(True)
-
         # Set the recognized extensions to match those in the Annotation Tool
         self.setRecognizedImageExtensions([\
                 "czi", "dv", "ics", "ids", "ims", "lei", "lif",
@@ -93,12 +79,6 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
         # Set the dataset type
         self.setDataSetType("MICROSCOPY_IMG")
 
-        # Create representative image (MIP) for series 0 only
-        if GlobalSettings.GenerateImageThumbnail is True:
-            if int(seriesNum) == 0:
-                self.setImageGenerationAlgorithm(
-                    MaximumIntensityProjectionGenerationAlgorithm(
-                        "MICROSCOPY_IMG_THUMBNAIL", 256, 256, "thumbnail.png"))
 
     def createChannel(self, channelCode):
         """Create a channel from the channelCode with the name as read from
