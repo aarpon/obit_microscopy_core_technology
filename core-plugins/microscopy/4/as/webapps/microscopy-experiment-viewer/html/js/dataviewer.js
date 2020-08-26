@@ -258,7 +258,7 @@ define([], function () {
             let link = $("<a>")
                 .text(text)
                 .attr("href", "#")
-                .attr("title", text)
+                .attr("title", "These are Data Sets of type 'ATTACHMENT'.")
                 .click(
                     function () {
                         let url = "#entity=SAMPLE&permId=" + experimentSample.permId +
