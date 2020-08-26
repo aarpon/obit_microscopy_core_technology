@@ -4,7 +4,7 @@ from sets import Set
 
 from ch.systemsx.cisd.openbis.dss.etl.dto.api.impl import MaximumIntensityProjectionGenerationAlgorithm
 
-_DEBUG = False
+_DEBUG = True
 
 
 def setUpLogging():
