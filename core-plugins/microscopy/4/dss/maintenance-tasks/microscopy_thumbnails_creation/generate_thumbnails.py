@@ -2,9 +2,9 @@ import os
 import logging
 from sets import Set
 
-from ch.systemsx.cisd.openbis.dss.etl.dto.api.impl import MaximumIntensityProjectionGenerationAlgorithm
+from custom_mip_generation_algorithm import CustomExperimentMaximumIntensityProjectionGenerationAlgorithm
 
-_DEBUG = True
+_DEBUG = False
 
 
 def setUpLogging():
@@ -38,6 +38,7 @@ def _get_series_num(logger):
     for image_info in image_data_set_structure.getImages():
 
         if logger is not None:
+            logger.info("ImageInfo timepoint: " + str(image_info.tryGetTimepoint()))
             logger.info("ImageInfo channel code: " + str(image_info.getChannelCode()))
 
         series_numbers.add(image_info.tryGetSeriesNumber())
@@ -62,7 +63,7 @@ def process(transaction, parameters, tableBuilder):
     # Thumbnails are created only for the first series
     if series_num == 0:
         image_config.setImageGenerationAlgorithm(
-            MaximumIntensityProjectionGenerationAlgorithm(
+            CustomExperimentMaximumIntensityProjectionGenerationAlgorithm(
                 "MICROSCOPY_IMG_THUMBNAIL", 256, 256, "thumbnail.png"))
         if logger is not None:
             logger.info("Series number: " + str(series_num) + ": requested thumbnail generation.")
