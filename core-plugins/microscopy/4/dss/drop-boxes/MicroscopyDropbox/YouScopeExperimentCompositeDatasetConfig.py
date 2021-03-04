@@ -13,7 +13,6 @@ from os import listdir
 from os.path import isfile
 from os.path import join
 from MicroscopyCompositeDatasetConfig import MicroscopyCompositeDatasetConfig
-from YouScopeExperimentMaximumIntensityProjectionGenerationAlgorithm import YouScopeExperimentMaximumIntensityProjectionGenerationAlgorithm
 from ch.systemsx.cisd.openbis.dss.etl.dto.api import ChannelColor
 from ch.systemsx.cisd.openbis.dss.etl.dto.api import ImageIdentifier
 from ch.systemsx.cisd.openbis.dss.etl.dto.api import ImageMetadata
@@ -21,7 +20,6 @@ from ch.systemsx.cisd.openbis.dss.etl.dto.api import OriginalDataStorageFormat
 from ch.systemsx.cisd.openbis.dss.etl.dto.api import ChannelColorRGB
 from ch.systemsx.cisd.openbis.dss.etl.dto.api import Channel
 import xml.etree.ElementTree as ET
-from GlobalSettings import GlobalSettings
 from java.io import BufferedReader
 from java.io import File
 from java.io import FileReader
@@ -143,28 +141,12 @@ class YouScopeExperimentCompositeDatasetConfig(MicroscopyCompositeDatasetConfig)
         # Disable thumbnail generation by ImageMagick
         self.setUseImageMagicToGenerateThumbnails(False)
 
-        # Specify resolution of image representations explicitly
-        resolutions = GlobalSettings.ImageResolutions
-        if not resolutions:
-            self._logger.info("Skipping thumbnails generation.")
-            self.setGenerateThumbnails(False)
-        else:
-            self._logger.info("Creating thumbnails at resolutions: " + str(resolutions))
-            self.setGenerateImageRepresentationsUsingImageResolutions(resolutions)
-            self.setGenerateThumbnails(True)
-
         # Set the recognized extensions -- currently just tif(f)
         self.setRecognizedImageExtensions(["tif", "tiff"])
 
         # Set the dataset type
         self.setDataSetType("MICROSCOPY_IMG")
 
-        # Create representative image (MIP) for the first series only
-        if GlobalSettings.GenerateImageThumbnail is True:
-            if self._seriesIndices.index(self._seriesNum) == 0:
-                self.setImageGenerationAlgorithm(
-                    YouScopeExperimentMaximumIntensityProjectionGenerationAlgorithm(
-                        "MICROSCOPY_IMG_THUMBNAIL", 256, 256, "thumbnail.png"))
 
     def createChannel(self, channelCode):
         """Create a channel from the channelCode with the name as read from

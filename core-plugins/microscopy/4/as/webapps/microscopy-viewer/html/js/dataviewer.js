@@ -300,6 +300,60 @@ define([], function() {
         },
 
         /**
+         * Display information concerning the retrieved accessory datasets.
+         */
+        displayAccessoryDatasets: function() {
+
+            // Get the number of retrieved accessory datasets
+            let n = DATAMODEL.accessoryFileDatasets.length;
+
+            // Prepare the text
+            let accessoryDatasetsSummary;
+            if (n === 0) {
+                accessoryDatasetsSummary = "There are no accessory datasets.";
+            } else if (n === 1) {
+                accessoryDatasetsSummary = "There is one accessory dataset.";
+            } else {
+                accessoryDatasetsSummary = "There are " + n + " accessory datasets.";
+            }
+
+            // Link to the data-sets tab
+            let accessoryDatasetsLink = $("<a>")
+                .text(accessoryDatasetsSummary)
+                .attr("href", "#")
+                .attr("title", "These are Data Sets of type 'MICROSCOPY_ACCESSORY_FILE'.")
+                .addClass("metadataValue")
+                .click(
+                    function () {
+                        let url = "#entity=SAMPLE&permId=" + DATAMODEL.microscopySamplePermId +
+                            "&ui-subtab=data-sets-section&ui-timestamp=" + (new Date().getTime());
+                        window.top.location.hash = url;
+                        return false;
+                    });
+
+            // Get the accessory datasets view
+            const accessoryDataSetView = $("#accessoryDataSetView");
+            accessoryDataSetView.empty();
+
+            // Create a row to store the accessory datasets info
+            let accessoryDataSetRow = $("<div>").addClass("row");
+
+            // Accessory datasets title
+            let accessoryDataSetTitle = $("<div>")
+                .addClass("metadataTitleText")
+                .html("Accessory datasets");
+            accessoryDataSetRow.append($("<div>")
+                .addClass("metadataTitle")
+                .append(accessoryDataSetTitle));
+
+            // Accessory datasets info
+            accessoryDataSetRow.append(accessoryDatasetsLink);
+
+            // Display the experiment description row
+            accessoryDataSetView.append(accessoryDataSetRow);
+        },
+
+        /**
          * Display metadata for specified dataset code.
          * @param dataSetCode Data set code for which to display the metadata.
          */

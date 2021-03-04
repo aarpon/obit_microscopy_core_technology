@@ -9,7 +9,6 @@ Created on Feb 20, 2014
 import re
 import random
 from MicroscopyCompositeDatasetConfig import MicroscopyCompositeDatasetConfig
-from LeicaTIFFSeriesMaximumIntensityProjectionGenerationAlgorithm import LeicaTIFFSeriesMaximumIntensityProjectionGenerationAlgorithm
 from ch.systemsx.cisd.openbis.dss.etl.dto.api import ChannelColor
 from ch.systemsx.cisd.openbis.dss.etl.dto.api import ImageIdentifier
 from ch.systemsx.cisd.openbis.dss.etl.dto.api import ImageMetadata
@@ -17,7 +16,6 @@ from ch.systemsx.cisd.openbis.dss.etl.dto.api import OriginalDataStorageFormat
 from ch.systemsx.cisd.openbis.dss.etl.dto.api import ChannelColorRGB
 from ch.systemsx.cisd.openbis.dss.etl.dto.api import Channel
 import xml.etree.ElementTree as ET
-from GlobalSettings import GlobalSettings
 
 
 class LeicaTIFFSeriesCompositeDatasetConfig(MicroscopyCompositeDatasetConfig):
@@ -103,31 +101,11 @@ class LeicaTIFFSeriesCompositeDatasetConfig(MicroscopyCompositeDatasetConfig):
         # Set the image library
         self.setImageLibrary("BioFormats")
 
-        # Disable thumbnail generation by ImageMagick
-        self.setUseImageMagicToGenerateThumbnails(False)
-
-        # Specify resolution of image representations explicitly
-        resolutions = GlobalSettings.ImageResolutions
-        if not resolutions:
-            self._logger.info("Skipping thumbnails generation.")
-            self.setGenerateThumbnails(False)
-        else:
-            self._logger.info("Creating thumbnails at resolutions: " + str(resolutions))
-            self.setGenerateImageRepresentationsUsingImageResolutions(resolutions)
-            self.setGenerateThumbnails(True)
-
         # Set the recognized extensions -- currently just tif(f)
         self.setRecognizedImageExtensions(["tif", "tiff"])
 
         # Set the dataset type
         self.setDataSetType("MICROSCOPY_IMG")
-
-        # Create representative image (MIP) for the first series only
-        if GlobalSettings.GenerateImageThumbnail is True:
-            if self._seriesIndices.index(self._seriesNum) == 0:
-                self.setImageGenerationAlgorithm(
-                    LeicaTIFFSeriesMaximumIntensityProjectionGenerationAlgorithm(
-                        "MICROSCOPY_IMG_THUMBNAIL", 256, 256, "thumbnail.png"))
 
 
     def createChannel(self, channelCode):

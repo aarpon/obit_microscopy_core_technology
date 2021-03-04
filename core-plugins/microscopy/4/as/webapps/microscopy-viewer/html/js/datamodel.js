@@ -304,6 +304,9 @@ define(["openbis",
 
                     // Store the list of accessory datasets
                     dataModelObj.accessoryFileDatasets = result.getObjects();
+
+                    // Display information about accessory datasets
+                    DATAVIEWER.displayAccessoryDatasets();
                 });
             },
 
