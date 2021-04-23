@@ -628,7 +628,7 @@ DataViewer.prototype.displayViewer = function(dataSetCodes) {
                     return DATAMODEL.dataSets[indx].properties["$NAME"];
                 };
 
-            // Add a change listener to a widget
+                // Add a change listener to a widget
                 chooser.addChangeListener(function(event) {
                     DATAVIEWER.refreshView(event.getNewValue());
                 });
