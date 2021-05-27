@@ -18,7 +18,7 @@ define([], function () {
         }
 
         // Max number of thumbnails to display (before the pagination is activated)
-        this.totalNumberOfThumbnailsPerPage = 100;
+        this.totalNumberOfThumbnailsPerPage = 25;
 
         // Current index of the first thumbnail to display
         this.indexOfFirstThumbnail = 0;
