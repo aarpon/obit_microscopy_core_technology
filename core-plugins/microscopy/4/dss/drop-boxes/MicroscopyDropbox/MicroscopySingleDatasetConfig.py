@@ -72,7 +72,7 @@ class MicroscopySingleDatasetConfig(SimpleImageContainerDataConfig):
 
         # Set the recognized extensions to match those in the Annotation Tool
         self.setRecognizedImageExtensions([\
-                "czi", "dv", "ics", "ids", "ims", "lei", "lif",
+                "czi", "dv", "ims", "lei", "lif",
                 "liff", "lsm", "nd", "nd2", "oib", "oif", "ome",
                 "r3d", "stk", "tif", "tiff", "zvi"])
 
