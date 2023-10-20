@@ -1,0 +1,20 @@
+{
+  "commonSpaces":
+  {
+
+  },
+  "commonSamples":
+  {
+  },
+  "commonExperiments":
+  [
+
+  ],
+  "groups":
+  [
+    {
+      "createUserSpace": false
+    }
+  ]
+}
+
